@@ -1,4 +1,4 @@
-import { db } from "../database/init.ts";
+import { users, employees, transactions, securityLogs } from "../database/init.ts";
 import { validateInput, logSecurityEvent } from "../auth/auth.ts";
 
 const PAYMENT_VALIDATION_PATTERNS = {

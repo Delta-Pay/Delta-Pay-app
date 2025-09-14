@@ -17,6 +17,7 @@ import {
 import { 
   authenticateUser, 
   authenticateEmployee, 
+  authenticateToken,
   rateLimit, 
   csrfProtection, 
   logRequests 
@@ -27,7 +28,7 @@ const app = new Application();
 const router = new Router();
 
 initializeDatabase();
-seedDefaultEmployee();
+await seedDefaultEmployee();
 
 app.use(logRequests);
 app.use(rateLimit);

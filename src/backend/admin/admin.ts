@@ -1,4 +1,4 @@
-import { db } from "../database/init.ts";
+import { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
 import { logSecurityEvent } from "../auth/auth.ts";
 
 export async function getSecurityLogs(limit: number = 100, offset: number = 0, severity?: string): Promise<{ success: boolean; message: string; logs?: any[] }> {

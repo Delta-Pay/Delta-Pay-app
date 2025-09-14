@@ -1,5 +1,5 @@
 import { verifyToken, logSecurityEvent } from "../auth/auth.ts";
-import { db } from "../database/init.ts";
+import { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
 
 export async function authenticateToken(ctx: any, next: () => Promise<void>) {
   const authHeader = ctx.request.headers.get("Authorization");

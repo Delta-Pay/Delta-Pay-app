@@ -1,8 +1,6 @@
-import { db } from "../database/init.ts";
+import { users, employees, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
 import { create, verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
-import { Argon2 } from "https://deno.land/x/argon2@v0.31.0/mod.ts";
-
-const argon2 = new Argon2();
+import { crypto } from "https://deno.land/std@0.200.0/crypto/mod.ts";
 const JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
 
 const VALIDATION_PATTERNS = {
@@ -28,11 +26,76 @@ export function validateInput(data: Record<string, string>, patterns: Record<str
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  return await argon2.hash(password);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    await crypto.subtle.importKey(
+      "raw",
+      data,
+      { name: "PBKDF2" },
+      false,
+      ["deriveBits"]
+    ),
+    256
+  );
+  
+  const keyArray = new Uint8Array(key);
+  const combined = new Uint8Array(salt.length + keyArray.length);
+  combined.set(salt);
+  combined.set(keyArray, salt.length);
+  
+  return btoa(String.fromCharCode(...combined));
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return await argon2.verify(hash, password);
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const combined = new Uint8Array(atob(hash).split('').map(char => char.charCodeAt(0)));
+    
+    const salt = combined.slice(0, 16);
+    const storedKey = combined.slice(16);
+    
+    const key = await crypto.subtle.deriveBits(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      await crypto.subtle.importKey(
+        "raw",
+        data,
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits"]
+      ),
+      256
+    );
+    
+    const derivedKey = new Uint8Array(key);
+    
+    if (derivedKey.length !== storedKey.length) {
+      return false;
+    }
+    
+    for (let i = 0; i < derivedKey.length; i++) {
+      if (derivedKey[i] !== storedKey[i]) {
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 export async function generateToken(userId: number, userType: 'user' | 'employee'): Promise<string> {
@@ -71,23 +134,32 @@ export async function registerUser(userData: {
   }
 
   try {
-    const existingUser = db.query(
-      "SELECT id FROM users WHERE username = ? OR id_number = ? OR account_number = ?",
-      [userData.username, userData.idNumber, userData.accountNumber]
+    const existingUser = users.find(user => 
+      user.username === userData.username || 
+      user.id_number === userData.idNumber || 
+      user.account_number === userData.accountNumber
     );
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
       return { success: false, message: "User with this username, ID number, or account number already exists" };
     }
 
     const passwordHash = await hashPassword(userData.password);
 
-    db.execute(`
-      INSERT INTO users (full_name, id_number, account_number, username, password_hash)
-      VALUES (?, ?, ?, ?, ?)
-    `, [userData.fullName, userData.idNumber, userData.accountNumber, userData.username, passwordHash]);
+    const newUser = {
+      id: users.length + 1,
+      full_name: userData.fullName,
+      id_number: userData.idNumber,
+      account_number: userData.accountNumber,
+      username: userData.username,
+      password_hash: passwordHash,
+      created_at: new Date().toISOString(),
+      is_active: true,
+      failed_login_attempts: 0
+    };
 
-    const userId = db.lastInsertRowId;
+    users.push(newUser);
+    const userId = newUser.id;
 
     logSecurityEvent({
       userId,
@@ -244,7 +316,7 @@ export async function loginEmployee(username: string, password: string, ipAddres
       return { success: false, message: "Account is temporarily locked. Please try again later." };
     }
 
-    const isPasswordValid = password === "admin123";
+    const isPasswordValid = await verifyPassword(password, employeeData[2]);
 
     if (!isPasswordValid) {
       const failedAttempts = employeeData[4] + 1;
@@ -315,6 +387,19 @@ export async function loginEmployee(username: string, password: string, ipAddres
     });
     return { success: false, message: "Login failed due to server error" };
   }
+}
+
+export function generateCSRFToken(userId?: number, employeeId?: number): string {
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36).substring(2);
+  const payload = userId ? `user_${userId}_${timestamp}_${random}` : `employee_${employeeId}_${timestamp}_${random}`;
+  
+  db.execute(`
+    INSERT INTO csrf_tokens (token, user_id, employee_id, expires_at)
+    VALUES (?, ?, ?, ?)
+  `, [payload, userId || null, employeeId || null, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()]);
+  
+  return payload;
 }
 
 export function logSecurityEvent(event: {

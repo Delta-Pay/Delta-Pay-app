@@ -1,4 +1,4 @@
-import { db } from "../database/init.ts";
+import { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
 
 export class DatabaseUtils {
   static async executeQuery(query: string, params: any[] = []): Promise<any[]> {
