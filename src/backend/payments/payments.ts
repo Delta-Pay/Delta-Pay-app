@@ -1,7 +1,6 @@
-import { db } from "./database.ts";
-import { validateInput, logSecurityEvent } from "./auth.ts";
+import { db } from "../database/init.ts";
+import { validateInput, logSecurityEvent } from "../auth/auth.ts";
 
-// Payment validation patterns
 const PAYMENT_VALIDATION_PATTERNS = {
   amount: /^\d+(\.\d{1,2})?$/,
   currency: /^[A-Z]{3}$/,
@@ -10,13 +9,9 @@ const PAYMENT_VALIDATION_PATTERNS = {
   swiftCode: /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/
 };
 
-// Supported currencies
 const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'ZAR', 'AUD', 'CAD', 'CHF', 'JPY'];
-
-// Supported providers
 const SUPPORTED_PROVIDERS = ['SWIFT', 'SEPA', 'ACH', 'WIRE'];
 
-// Create a new payment transaction
 export async function createPayment(paymentData: {
   amount: string;
   currency: string;
@@ -26,35 +21,29 @@ export async function createPayment(paymentData: {
   notes?: string;
 }, userId: number, ipAddress: string): Promise<{ success: boolean; message: string; transactionId?: number }> {
   try {
-    // Validate input data
     const validation = validateInput(paymentData, PAYMENT_VALIDATION_PATTERNS);
     if (!validation.isValid) {
       return { success: false, message: `Validation errors: ${validation.errors.join(', ')}` };
     }
 
-    // Validate amount
     const amount = parseFloat(paymentData.amount);
     if (amount <= 0 || amount > 1000000) {
       return { success: false, message: "Amount must be between 0.01 and 1,000,000" };
     }
 
-    // Validate currency
     if (!SUPPORTED_CURRENCIES.includes(paymentData.currency)) {
       return { success: false, message: `Unsupported currency. Supported currencies: ${SUPPORTED_CURRENCIES.join(', ')}` };
     }
 
-    // Validate provider
     if (!SUPPORTED_PROVIDERS.includes(paymentData.provider)) {
       return { success: false, message: `Unsupported provider. Supported providers: ${SUPPORTED_PROVIDERS.join(', ')}` };
     }
 
-    // Check user exists and is active
     const user = db.query("SELECT id, is_active FROM users WHERE id = ?", [userId]);
     if (user.length === 0 || !user[0][1]) {
       return { success: false, message: "User not found or account inactive" };
     }
 
-    // Insert transaction
     db.execute(`
       INSERT INTO transactions (user_id, amount, currency, provider, recipient_account, recipient_swift_code, status, notes)
       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
@@ -70,7 +59,6 @@ export async function createPayment(paymentData: {
 
     const transactionId = db.lastInsertRowId;
 
-    // Log security event
     logSecurityEvent({
       userId,
       action: "PAYMENT_CREATED",
@@ -96,7 +84,6 @@ export async function createPayment(paymentData: {
   }
 }
 
-// Get user transactions
 export async function getUserTransactions(userId: number, limit: number = 50, offset: number = 0): Promise<{ success: boolean; message: string; transactions?: any[] }> {
   try {
     const transactions = db.query(`
@@ -140,7 +127,6 @@ export async function getUserTransactions(userId: number, limit: number = 50, of
   }
 }
 
-// Get all transactions for admin/employee view
 export async function getAllTransactions(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; transactions?: any[] }> {
   try {
     const transactions = db.query(`
@@ -193,10 +179,8 @@ export async function getAllTransactions(limit: number = 100, offset: number = 0
   }
 }
 
-// Approve transaction (employee only)
 export async function approveTransaction(transactionId: number, employeeId: number, ipAddress: string): Promise<{ success: boolean; message: string }> {
   try {
-    // Check transaction exists and is pending
     const transaction = db.query(
       "SELECT id, user_id, status FROM transactions WHERE id = ?",
       [transactionId]
@@ -210,14 +194,12 @@ export async function approveTransaction(transactionId: number, employeeId: numb
       return { success: false, message: "Transaction is not pending" };
     }
 
-    // Update transaction
     db.execute(`
       UPDATE transactions 
       SET status = 'approved', processed_at = CURRENT_TIMESTAMP, processed_by = ? 
       WHERE id = ?
     `, [employeeId, transactionId]);
 
-    // Log security event
     logSecurityEvent({
       employeeId,
       action: "TRANSACTION_APPROVED",
@@ -239,10 +221,8 @@ export async function approveTransaction(transactionId: number, employeeId: numb
   }
 }
 
-// Deny transaction (employee only)
 export async function denyTransaction(transactionId: number, employeeId: number, reason: string, ipAddress: string): Promise<{ success: boolean; message: string }> {
   try {
-    // Check transaction exists and is pending
     const transaction = db.query(
       "SELECT id, user_id, status FROM transactions WHERE id = ?",
       [transactionId]
@@ -256,14 +236,12 @@ export async function denyTransaction(transactionId: number, employeeId: number,
       return { success: false, message: "Transaction is not pending" };
     }
 
-    // Update transaction
     db.execute(`
       UPDATE transactions 
       SET status = 'denied', processed_at = CURRENT_TIMESTAMP, processed_by = ?, notes = COALESCE(notes, '') || ' | Denied: ' || ? 
       WHERE id = ?
     `, [employeeId, reason, transactionId]);
 
-    // Log security event
     logSecurityEvent({
       employeeId,
       action: "TRANSACTION_DENIED",
@@ -285,7 +263,6 @@ export async function denyTransaction(transactionId: number, employeeId: number,
   }
 }
 
-// Get transaction statistics for admin dashboard
 export async function getTransactionStatistics(): Promise<{ success: boolean; message: string; statistics?: any }> {
   try {
     const stats = db.query(`

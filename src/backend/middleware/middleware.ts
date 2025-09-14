@@ -1,7 +1,6 @@
-import { verifyToken, logSecurityEvent } from "./auth.ts";
-import { db } from "./database.ts";
+import { verifyToken, logSecurityEvent } from "../auth/auth.ts";
+import { db } from "../database/init.ts";
 
-// JWT Authentication middleware
 export async function authenticateToken(ctx: any, next: () => Promise<void>) {
   const authHeader = ctx.request.headers.get("Authorization");
   
@@ -20,12 +19,10 @@ export async function authenticateToken(ctx: any, next: () => Promise<void>) {
     return;
   }
 
-  // Add user info to context
   ctx.state.user = decoded;
   await next();
 }
 
-// User authentication middleware
 export async function authenticateUser(ctx: any, next: () => Promise<void>) {
   await authenticateToken(ctx, async () => {
     if (ctx.state.user.userType !== 'user') {
@@ -37,7 +34,6 @@ export async function authenticateUser(ctx: any, next: () => Promise<void>) {
   });
 }
 
-// Employee authentication middleware
 export async function authenticateEmployee(ctx: any, next: () => Promise<void>) {
   await authenticateToken(ctx, async () => {
     if (ctx.state.user.userType !== 'employee') {
@@ -49,28 +45,24 @@ export async function authenticateEmployee(ctx: any, next: () => Promise<void>) 
   });
 }
 
-// Rate limiting middleware
 export async function rateLimit(ctx: any, next: () => Promise<void>) {
   const ip = ctx.request.ip || "unknown";
   const endpoint = ctx.request.url.pathname;
   const now = new Date();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 100; // Max requests per window
+  const windowMs = 15 * 60 * 1000;
+  const maxRequests = 100;
 
   try {
-    // Clean old rate limit records
     db.execute(
       "DELETE FROM rate_limits WHERE last_request < datetime('now', '-15 minutes')"
     );
 
-    // Get current rate limit record
     const record = db.query(
       "SELECT request_count, first_request FROM rate_limits WHERE ip_address = ? AND endpoint = ?",
       [ip, endpoint]
     );
 
     if (record.length === 0) {
-      // First request in window
       db.execute(
         "INSERT INTO rate_limits (ip_address, endpoint, request_count, first_request, last_request) VALUES (?, ?, 1, ?, ?)",
         [ip, endpoint, now.toISOString(), now.toISOString()]
@@ -84,7 +76,6 @@ export async function rateLimit(ctx: any, next: () => Promise<void>) {
     const windowStart = new Date(now.getTime() - windowMs);
 
     if (firstRequestTime < windowStart) {
-      // Reset window
       db.execute(
         "UPDATE rate_limits SET request_count = 1, first_request = ?, last_request = ? WHERE ip_address = ? AND endpoint = ?",
         [now.toISOString(), now.toISOString(), ip, endpoint]
@@ -94,7 +85,6 @@ export async function rateLimit(ctx: any, next: () => Promise<void>) {
     }
 
     if (requestCount >= maxRequests) {
-      // Rate limit exceeded
       logSecurityEvent({
         action: "RATE_LIMIT_EXCEEDED",
         ipAddress: ip,
@@ -111,7 +101,6 @@ export async function rateLimit(ctx: any, next: () => Promise<void>) {
       return;
     }
 
-    // Increment request count
     db.execute(
       "UPDATE rate_limits SET request_count = request_count + 1, last_request = ? WHERE ip_address = ? AND endpoint = ?",
       [now.toISOString(), ip, endpoint]
@@ -120,11 +109,10 @@ export async function rateLimit(ctx: any, next: () => Promise<void>) {
     await next();
   } catch (error) {
     console.error("Rate limiting error:", error);
-    await next(); // Continue on error
+    await next();
   }
 }
 
-// CSRF protection middleware
 export async function csrfProtection(ctx: any, next: () => Promise<void>) {
   if (ctx.request.method === "GET" || ctx.request.method === "HEAD" || ctx.request.method === "OPTIONS") {
     await next();
@@ -140,7 +128,6 @@ export async function csrfProtection(ctx: any, next: () => Promise<void>) {
   }
 
   try {
-    // Check if CSRF token exists and is valid
     const tokenRecord = db.query(
       "SELECT user_id, employee_id, expires_at, is_used FROM csrf_tokens WHERE token = ?",
       [csrfToken]
@@ -172,7 +159,6 @@ export async function csrfProtection(ctx: any, next: () => Promise<void>) {
         severity: "warning"
       });
 
-      // Delete expired/used token
       db.execute("DELETE FROM csrf_tokens WHERE token = ?", [csrfToken]);
 
       ctx.response.status = 403;
@@ -180,7 +166,6 @@ export async function csrfProtection(ctx: any, next: () => Promise<void>) {
       return;
     }
 
-    // Mark token as used
     db.execute("UPDATE csrf_tokens SET is_used = 1 WHERE token = ?", [csrfToken]);
 
     await next();
@@ -191,10 +176,9 @@ export async function csrfProtection(ctx: any, next: () => Promise<void>) {
   }
 }
 
-// Generate CSRF token
 export function generateCSRFToken(userId?: number, employeeId?: number): string {
   const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   db.execute(
     "INSERT INTO csrf_tokens (token, user_id, employee_id, expires_at) VALUES (?, ?, ?, ?)",
@@ -204,7 +188,6 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
   return token;
 }
 
-// Request logging middleware
 export async function logRequests(ctx: any, next: () => Promise<void>) {
   const start = Date.now();
   const ip = ctx.request.ip || "unknown";
@@ -216,7 +199,6 @@ export async function logRequests(ctx: any, next: () => Promise<void>) {
     const duration = Date.now() - start;
     const status = ctx.response.status;
     
-    // Log successful requests
     if (status >= 200 && status < 400) {
       logSecurityEvent({
         action: "REQUEST_SUCCESS",
@@ -226,7 +208,6 @@ export async function logRequests(ctx: any, next: () => Promise<void>) {
         userAgent
       });
     } else if (status >= 400) {
-      // Log error requests
       logSecurityEvent({
         action: "REQUEST_ERROR",
         ipAddress: ip,

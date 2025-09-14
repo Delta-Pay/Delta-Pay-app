@@ -1,8 +1,6 @@
-import { db } from "./database.ts";
+import { db } from "../database/init.ts";
 
-// Database utility functions with parameterized queries
 export class DatabaseUtils {
-  // Generic query executor with parameterized queries
   static async executeQuery(query: string, params: any[] = []): Promise<any[]> {
     try {
       return db.query(query, params);
@@ -12,7 +10,6 @@ export class DatabaseUtils {
     }
   }
 
-  // Execute insert query and return last insert ID
   static async executeInsert(query: string, params: any[] = []): Promise<number> {
     try {
       db.execute(query, params);
@@ -23,34 +20,28 @@ export class DatabaseUtils {
     }
   }
 
-  // Execute update/delete query and return affected rows count
   static async executeUpdate(query: string, params: any[] = []): Promise<number> {
     try {
       db.execute(query, params);
-      // SQLite doesn't return affected rows count directly, so we estimate
-      return 1; // This is a limitation of the current SQLite wrapper
+      return 1;
     } catch (error) {
       console.error("Database update error:", error);
       throw new Error(`Database update failed: ${error.message}`);
     }
   }
 
-  // Begin transaction
   static beginTransaction(): void {
     db.execute("BEGIN TRANSACTION");
   }
 
-  // Commit transaction
   static commitTransaction(): void {
     db.execute("COMMIT");
   }
 
-  // Rollback transaction
   static rollbackTransaction(): void {
     db.execute("ROLLBACK");
   }
 
-  // Execute multiple queries in a transaction
   static async executeTransaction(queries: { query: string; params: any[] }[]): Promise<void> {
     try {
       this.beginTransaction();
@@ -66,19 +57,16 @@ export class DatabaseUtils {
     }
   }
 
-  // Sanitize input to prevent SQL injection (additional layer of protection)
   static sanitizeInput(input: string): string {
     if (typeof input !== 'string') return input;
     
-    // Remove potentially dangerous characters
     return input
-      .replace(/['";\\]/g, '') // Remove quotes, semicolons, and backslashes
-      .replace(/--/g, '') // Remove SQL comments
-      .replace(/\/\*|\*\//g, '') // Remove block comments
+      .replace(/['";\\]/g, '')
+      .replace(/--/g, '')
+      .replace(/\/\*|\*\//g, '')
       .trim();
   }
 
-  // Validate and sanitize object properties
   static sanitizeObject(obj: Record<string, any>, allowedFields: string[]): Record<string, any> {
     const sanitized: Record<string, any> = {};
     
@@ -99,13 +87,11 @@ export class DatabaseUtils {
     return sanitized;
   }
 
-  // Pagination helper
   static getPaginationParams(page: number = 1, limit: number = 10): { offset: number; limit: number } {
     const offset = (page - 1) * limit;
     return { offset, limit };
   }
 
-  // Date range helper for queries
   static getDateRangeFilter(startDate?: string, endDate?: string, dateColumn: string = 'created_at'): string {
     let conditions = [];
     
@@ -120,7 +106,6 @@ export class DatabaseUtils {
     return conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   }
 
-  // Search helper for LIKE queries
   static getSearchCondition(searchTerm: string, columns: string[]): string {
     if (!searchTerm || !columns.length) return '';
     
@@ -128,7 +113,6 @@ export class DatabaseUtils {
     return `(${conditions.join(' OR ')})`;
   }
 
-  // Order by helper
   static getOrderByClause(sortBy: string = 'created_at', sortOrder: 'ASC' | 'DESC' = 'DESC', allowedColumns: string[] = ['created_at']): string {
     if (!allowedColumns.includes(sortBy)) {
       sortBy = 'created_at';
@@ -138,7 +122,6 @@ export class DatabaseUtils {
     return `ORDER BY ${sortBy} ${order}`;
   }
 
-  // Count total records for pagination
   static async countTotal(table: string, conditions: string = ''): Promise<number> {
     try {
       const query = `SELECT COUNT(*) as total FROM ${table} ${conditions}`;
@@ -150,10 +133,8 @@ export class DatabaseUtils {
     }
   }
 
-  // Backup database (simple export)
   static async backupDatabase(backupPath: string): Promise<void> {
     try {
-      // This is a simple backup - in production, use proper backup tools
       const tables = db.query("SELECT name FROM sqlite_master WHERE type='table'");
       
       for (const [tableName] of tables) {
@@ -167,7 +148,6 @@ export class DatabaseUtils {
     }
   }
 
-  // Health check for database
   static async healthCheck(): Promise<{ healthy: boolean; message: string }> {
     try {
       const result = db.query("SELECT 1 as test");
@@ -180,18 +160,12 @@ export class DatabaseUtils {
     }
   }
 
-  // Clean up expired records
   static async cleanupExpiredRecords(): Promise<void> {
     try {
       const now = new Date().toISOString();
       
-      // Clean up expired CSRF tokens
       db.execute("DELETE FROM csrf_tokens WHERE expires_at < ?", [now]);
-      
-      // Clean up expired session tokens
       db.execute("DELETE FROM session_tokens WHERE expires_at < ? OR is_revoked = 1", [now]);
-      
-      // Clean up old rate limit records
       db.execute("DELETE FROM rate_limits WHERE last_request < datetime('now', '-24 hours')");
       
       console.log("Expired records cleanup completed");
@@ -201,7 +175,6 @@ export class DatabaseUtils {
     }
   }
 
-  // Get table schema
   static getTableSchema(tableName: string): any[] {
     try {
       return db.query(`PRAGMA table_info(${tableName})`);
@@ -210,7 +183,6 @@ export class DatabaseUtils {
     }
   }
 
-  // Validate foreign key constraint
   static validateForeignKey(table: string, column: string, value: any): boolean {
     try {
       const result = db.query(`SELECT 1 FROM ${table} WHERE ${column} = ? LIMIT 1`, [value]);
@@ -221,7 +193,6 @@ export class DatabaseUtils {
   }
 }
 
-// Export utility functions
 export const sanitizeInput = DatabaseUtils.sanitizeInput.bind(DatabaseUtils);
 export const sanitizeObject = DatabaseUtils.sanitizeObject.bind(DatabaseUtils);
 export const getPaginationParams = DatabaseUtils.getPaginationParams.bind(DatabaseUtils);
