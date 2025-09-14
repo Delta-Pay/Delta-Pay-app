@@ -93,3 +93,4 @@ yarn-error.log
 .vscode/settings.json
 
 AGENTS.md
+delta_pay.db
