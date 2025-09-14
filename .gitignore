@@ -94,3 +94,4 @@ yarn-error.log
 .fleet/
 .vscode/settings.json
 
+AGENTS.md

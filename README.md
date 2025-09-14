@@ -45,7 +45,7 @@ Delta pay is a mockup of an international payment solution. It features multiple
 
 ## Backend Technologies
 
-- Deno - API runtime
+- Deno - API runtime (port 3623 for main app)
 - Argon2 - Password hashing/salting
 - Regular Expressions (RegEx) - Input whitelisting
 - Parameterised queries - [SQL injection]
