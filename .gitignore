@@ -23,7 +23,6 @@ build/
 coverage/
 .nyc_output/
 
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -71,7 +70,6 @@ coverage/
 *.sublime-project
 *.sublime-workspace
 
-.vscode/
 .history/
 AGENT.md
 .env.backup

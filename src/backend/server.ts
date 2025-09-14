@@ -332,7 +332,7 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000);
 
-const port = 8000;
+const port = 3623;
 console.log(`Delta Pay API Server running on http://localhost:${port}`);
 console.log("Database initialized and ready");
 console.log("Default admin employee: username=admin, password=admin123");

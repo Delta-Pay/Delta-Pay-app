@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Backend Server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/backend/server.ts",
+      "runtimeArgs": [
+        "run",
+        "--allow-net",
+        "--allow-read",
+        "--allow-write",
+        "--inspect-brk"
+      ],
+      "runtimeExecutable": "deno",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Frontend",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/src/frontend",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Full Stack",
+      "configurations": ["Debug Backend Server", "Debug Frontend"],
+      "presentation": {
+        "hidden": false,
+        "order": 1
+      },
+      "stopAll": true
+    }
+  ]
+}
