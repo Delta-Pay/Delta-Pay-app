@@ -1,4 +1,4 @@
-import { users, employees, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
+import { users, employees, securityLogs, sessionTokens, csrfTokens, rateLimits, getNextUserId, getNextEmployeeId, getNextLogId } from "../database/init.ts";
 import { create, verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
 import { crypto } from "https://deno.land/std@0.200.0/crypto/mod.ts";
 const JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
@@ -147,7 +147,7 @@ export async function registerUser(userData: {
     const passwordHash = await hashPassword(userData.password);
 
     const newUser = {
-      id: users.length + 1,
+      id: getNextUserId(),
       full_name: userData.fullName,
       id_number: userData.idNumber,
       account_number: userData.accountNumber,
@@ -183,12 +183,9 @@ export async function registerUser(userData: {
 
 export async function loginUser(username: string, password: string, ipAddress: string): Promise<{ success: boolean; message: string; token?: string; user?: any }> {
   try {
-    const user = db.query(
-      "SELECT id, username, password_hash, full_name, account_number, failed_login_attempts, account_locked_until FROM users WHERE username = ? AND is_active = 1",
-      [username]
-    );
+    const userRecord = users.find(u => u.username === username && u.is_active);
 
-    if (user.length === 0) {
+    if (!userRecord) {
       logSecurityEvent({
         action: "LOGIN_FAILED_USER_NOT_FOUND",
         ipAddress,
@@ -198,12 +195,12 @@ export async function loginUser(username: string, password: string, ipAddress: s
       return { success: false, message: "Invalid credentials" };
     }
 
-    const userData = user[0];
+    const userData = userRecord;
     const now = new Date();
 
-    if (userData[5] && new Date(userData[5]) > now) {
+    if (userData.account_locked_until && new Date(userData.account_locked_until) > now) {
       logSecurityEvent({
-        userId: userData[0],
+        userId: userData.id,
         action: "LOGIN_FAILED_ACCOUNT_LOCKED",
         ipAddress,
         details: "Login attempt on locked account",
@@ -212,24 +209,19 @@ export async function loginUser(username: string, password: string, ipAddress: s
       return { success: false, message: "Account is temporarily locked. Please try again later." };
     }
 
-    const isPasswordValid = await verifyPassword(password, userData[2]);
+    const isPasswordValid = await verifyPassword(password, userData.password_hash);
 
     if (!isPasswordValid) {
-      const failedAttempts = userData[4] + 1;
-      db.execute(
-        "UPDATE users SET failed_login_attempts = ?, last_login_attempt = ? WHERE id = ?",
-        [failedAttempts, now.toISOString(), userData[0]]
-      );
+      const failedAttempts = userData.failed_login_attempts + 1;
+      userData.failed_login_attempts = failedAttempts;
+      userData.last_login_attempt = now.toISOString();
 
       if (failedAttempts >= 5) {
         const lockUntil = new Date(now.getTime() + 30 * 60 * 1000);
-        db.execute(
-          "UPDATE users SET account_locked_until = ? WHERE id = ?",
-          [lockUntil.toISOString(), userData[0]]
-        );
+        userData.account_locked_until = lockUntil.toISOString();
 
         logSecurityEvent({
-          userId: userData[0],
+          userId: userData.id,
           action: "ACCOUNT_LOCKED",
           ipAddress,
           details: `Account locked after ${failedAttempts} failed attempts`,
@@ -238,7 +230,7 @@ export async function loginUser(username: string, password: string, ipAddress: s
       }
 
       logSecurityEvent({
-        userId: userData[0],
+        userId: userData.id,
         action: "LOGIN_FAILED_INVALID_PASSWORD",
         ipAddress,
         details: "Invalid password provided",
@@ -248,15 +240,14 @@ export async function loginUser(username: string, password: string, ipAddress: s
       return { success: false, message: "Invalid credentials" };
     }
 
-    db.execute(
-      "UPDATE users SET failed_login_attempts = 0, last_login_attempt = ?, account_locked_until = NULL WHERE id = ?",
-      [now.toISOString(), userData[0]]
-    );
+    userData.failed_login_attempts = 0;
+    userData.last_login_attempt = now.toISOString();
+    userData.account_locked_until = undefined;
 
-    const token = await generateToken(userData[0], 'user');
+    const token = await generateToken(userData.id, 'user');
 
     logSecurityEvent({
-      userId: userData[0],
+      userId: userData.id,
       action: "LOGIN_SUCCESS",
       ipAddress,
       details: "User logged in successfully",
@@ -268,10 +259,10 @@ export async function loginUser(username: string, password: string, ipAddress: s
       message: "Login successful",
       token,
       user: {
-        id: userData[0],
-        username: userData[1],
-        fullName: userData[3],
-        accountNumber: userData[4]
+        id: userData.id,
+        username: userData.username,
+        fullName: userData.full_name,
+        accountNumber: userData.account_number
       }
     };
   } catch (error) {
@@ -287,12 +278,9 @@ export async function loginUser(username: string, password: string, ipAddress: s
 
 export async function loginEmployee(username: string, password: string, ipAddress: string): Promise<{ success: boolean; message: string; token?: string; employee?: any }> {
   try {
-    const employee = db.query(
-      "SELECT id, username, password_hash, full_name, employee_id, failed_login_attempts, account_locked_until FROM employees WHERE username = ? AND is_active = 1",
-      [username]
-    );
+    const employeeRecord = employees.find(e => e.username === username && e.is_active);
 
-    if (employee.length === 0) {
+    if (!employeeRecord) {
       logSecurityEvent({
         action: "EMPLOYEE_LOGIN_FAILED_USER_NOT_FOUND",
         ipAddress,
@@ -302,12 +290,12 @@ export async function loginEmployee(username: string, password: string, ipAddres
       return { success: false, message: "Invalid credentials" };
     }
 
-    const employeeData = employee[0];
+    const employeeData = employeeRecord;
     const now = new Date();
 
-    if (employeeData[5] && new Date(employeeData[5]) > now) {
+    if (employeeData.account_locked_until && new Date(employeeData.account_locked_until) > now) {
       logSecurityEvent({
-        employeeId: employeeData[0],
+        employeeId: employeeData.id,
         action: "EMPLOYEE_LOGIN_FAILED_ACCOUNT_LOCKED",
         ipAddress,
         details: "Employee login attempt on locked account",
@@ -316,24 +304,19 @@ export async function loginEmployee(username: string, password: string, ipAddres
       return { success: false, message: "Account is temporarily locked. Please try again later." };
     }
 
-    const isPasswordValid = await verifyPassword(password, employeeData[2]);
+    const isPasswordValid = await verifyPassword(password, employeeData.password_hash);
 
     if (!isPasswordValid) {
-      const failedAttempts = employeeData[4] + 1;
-      db.execute(
-        "UPDATE employees SET failed_login_attempts = ?, last_login_attempt = ? WHERE id = ?",
-        [failedAttempts, now.toISOString(), employeeData[0]]
-      );
+      const failedAttempts = employeeData.failed_login_attempts + 1;
+      employeeData.failed_login_attempts = failedAttempts;
+      employeeData.last_login_attempt = now.toISOString();
 
       if (failedAttempts >= 5) {
         const lockUntil = new Date(now.getTime() + 30 * 60 * 1000);
-        db.execute(
-          "UPDATE employees SET account_locked_until = ? WHERE id = ?",
-          [lockUntil.toISOString(), employeeData[0]]
-        );
+        employeeData.account_locked_until = lockUntil.toISOString();
 
         logSecurityEvent({
-          employeeId: employeeData[0],
+          employeeId: employeeData.id,
           action: "EMPLOYEE_ACCOUNT_LOCKED",
           ipAddress,
           details: `Employee account locked after ${failedAttempts} failed attempts`,
@@ -342,7 +325,7 @@ export async function loginEmployee(username: string, password: string, ipAddres
       }
 
       logSecurityEvent({
-        employeeId: employeeData[0],
+        employeeId: employeeData.id,
         action: "EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD",
         ipAddress,
         details: "Invalid password provided for employee",
@@ -352,15 +335,14 @@ export async function loginEmployee(username: string, password: string, ipAddres
       return { success: false, message: "Invalid credentials" };
     }
 
-    db.execute(
-      "UPDATE employees SET failed_login_attempts = 0, last_login_attempt = ?, account_locked_until = NULL WHERE id = ?",
-      [now.toISOString(), employeeData[0]]
-    );
+    employeeData.failed_login_attempts = 0;
+    employeeData.last_login_attempt = now.toISOString();
+    employeeData.account_locked_until = undefined;
 
-    const token = await generateToken(employeeData[0], 'employee');
+    const token = await generateToken(employeeData.id, 'employee');
 
     logSecurityEvent({
-      employeeId: employeeData[0],
+      employeeId: employeeData.id,
       action: "EMPLOYEE_LOGIN_SUCCESS",
       ipAddress,
       details: "Employee logged in successfully",
@@ -372,10 +354,10 @@ export async function loginEmployee(username: string, password: string, ipAddres
       message: "Login successful",
       token,
       employee: {
-        id: employeeData[0],
-        username: employeeData[1],
-        fullName: employeeData[3],
-        employeeId: employeeData[4]
+        id: employeeData.id,
+        username: employeeData.username,
+        fullName: employeeData.full_name,
+        employeeId: employeeData.employee_id
       }
     };
   } catch (error) {
@@ -393,12 +375,15 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
   const timestamp = Date.now().toString();
   const random = Math.random().toString(36).substring(2);
   const payload = userId ? `user_${userId}_${timestamp}_${random}` : `employee_${employeeId}_${timestamp}_${random}`;
-  
-  db.execute(`
-    INSERT INTO csrf_tokens (token, user_id, employee_id, expires_at)
-    VALUES (?, ?, ?, ?)
-  `, [payload, userId || null, employeeId || null, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()]);
-  
+
+  csrfTokens.push({
+    token: payload,
+    user_id: userId || null,
+    employee_id: employeeId || null,
+    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    is_used: false
+  });
+
   return payload;
 }
 
@@ -411,16 +396,15 @@ export function logSecurityEvent(event: {
   severity?: string;
   userAgent?: string;
 }) {
-  db.execute(`
-    INSERT INTO security_logs (user_id, employee_id, action, ip_address, details, severity, user_agent)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [
-    event.userId || null,
-    event.employeeId || null,
-    event.action,
-    event.ipAddress,
-    event.details || null,
-    event.severity || 'info',
-    event.userAgent || null
-  ]);
+  securityLogs.push({
+    id: getNextLogId(),
+    user_id: event.userId || undefined,
+    employee_id: event.employeeId || undefined,
+    action: event.action,
+    ip_address: event.ipAddress,
+    details: event.details || undefined,
+    severity: event.severity || 'info',
+    user_agent: event.userAgent || undefined,
+    timestamp: new Date().toISOString()
+  });
 }

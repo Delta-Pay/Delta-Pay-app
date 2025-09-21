@@ -150,11 +150,20 @@ export class DatabaseUtils {
 
   static async healthCheck(): Promise<{ healthy: boolean; message: string }> {
     try {
-      const result = db.query("SELECT 1 as test");
-      if (result.length > 0 && result[0][0] === 1) {
-        return { healthy: true, message: "Database connection healthy" };
+      const arrayChecks = [
+        Array.isArray(users),
+        Array.isArray(employees),
+        Array.isArray(transactions),
+        Array.isArray(securityLogs),
+        Array.isArray(sessionTokens),
+        Array.isArray(csrfTokens),
+        Array.isArray(rateLimits)
+      ];
+
+      if (arrayChecks.every(check => check === true)) {
+        return { healthy: true, message: "In-memory database healthy" };
       }
-      return { healthy: false, message: "Database connection failed" };
+      return { healthy: false, message: "In-memory database arrays not accessible" };
     } catch (error) {
       return { healthy: false, message: `Database health check failed: ${error.message}` };
     }
@@ -162,12 +171,28 @@ export class DatabaseUtils {
 
   static async cleanupExpiredRecords(): Promise<void> {
     try {
-      const now = new Date().toISOString();
-      
-      db.execute("DELETE FROM csrf_tokens WHERE expires_at < ?", [now]);
-      db.execute("DELETE FROM session_tokens WHERE expires_at < ? OR is_revoked = 1", [now]);
-      db.execute("DELETE FROM rate_limits WHERE last_request < datetime('now', '-24 hours')");
-      
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      for (let i = csrfTokens.length - 1; i >= 0; i--) {
+        if (new Date(csrfTokens[i].expires_at) < now) {
+          csrfTokens.splice(i, 1);
+        }
+      }
+
+      for (let i = sessionTokens.length - 1; i >= 0; i--) {
+        const token = sessionTokens[i];
+        if (new Date(token.expires_at) < now || token.is_revoked) {
+          sessionTokens.splice(i, 1);
+        }
+      }
+
+      for (let i = rateLimits.length - 1; i >= 0; i--) {
+        if (new Date(rateLimits[i].last_request) < twentyFourHoursAgo) {
+          rateLimits.splice(i, 1);
+        }
+      }
+
       console.log("Expired records cleanup completed");
     } catch (error) {
       console.error("Cleanup error:", error);

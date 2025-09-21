@@ -1,0 +1,111 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, #AB92BF 0%, #655A7C 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 1rem 2rem;
+  border-bottom: 2px solid #655A7C;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.logo-text {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #AB92BF;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.options-container {
+  display: flex;
+  gap: 3rem;
+  max-width: 800px;
+  width: 100%;
+}
+
+.option-button {
+  flex: 1;
+  padding: 3rem 2rem;
+  border: none;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 2px solid transparent;
+}
+
+.option-button:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  border-color: #8da8c7ff;
+}
+
+.payment-option:hover {
+  background: linear-gradient(135deg, rgba(206, 249, 242, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%);
+}
+
+.backend-option:hover {
+  background: linear-gradient(135deg, rgba(141, 168, 199, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%);
+}
+
+.option-content h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #655A7C;
+  font-weight: 600;
+}
+
+.option-content p {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .options-container {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .option-button {
+    padding: 2rem 1.5rem;
+  }
+
+  .option-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .logo-text {
+    font-size: 1.5rem;
+  }
+}

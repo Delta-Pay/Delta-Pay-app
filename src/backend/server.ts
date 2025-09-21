@@ -1,4 +1,4 @@
-import { Application, Router } from "https://deno.land/x/oak@v12.6.1/mod.ts";
+import { Application, Router, send } from "https://deno.land/x/oak@v12.6.1/mod.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 
 import { initializeDatabase, seedDefaultEmployee } from "./database/init.ts";
@@ -50,11 +50,29 @@ app.use(oakCors({
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 
-router.get("/", (ctx) => {
+router.get("/", async (ctx) => {
+  await send(ctx, "index.html", {
+    root: `${Deno.cwd()}/src/frontend/public`,
+  });
+});
+
+router.get("/styles/:file", async (ctx) => {
+  await send(ctx, ctx.params.file, {
+    root: `${Deno.cwd()}/src/frontend/styles`,
+  });
+});
+
+router.get("/js/:file", async (ctx) => {
+  await send(ctx, ctx.params.file, {
+    root: `${Deno.cwd()}/src/frontend/js`,
+  });
+});
+
+router.get("/api", (ctx) => {
   ctx.response.body = { message: "Delta Pay API Server" };
 });
 
-router.get("/health", async (ctx) => {
+router.get("/api/health", async (ctx) => {
   const dbHealth = await DatabaseUtils.healthCheck();
   ctx.response.body = { 
     status: dbHealth.healthy ? "healthy" : "unhealthy", 
@@ -63,7 +81,7 @@ router.get("/health", async (ctx) => {
   };
 });
 
-router.post("/auth/register", async (ctx) => {
+router.post("/api/auth/register", async (ctx) => {
   try {
     const body = await ctx.request.body.json();
     const ip = ctx.request.ip || "unknown";
@@ -77,7 +95,7 @@ router.post("/auth/register", async (ctx) => {
   }
 });
 
-router.post("/auth/login", async (ctx) => {
+router.post("/api/auth/login", async (ctx) => {
   try {
     const body = await ctx.request.body.json();
     const ip = ctx.request.ip || "unknown";
@@ -91,7 +109,7 @@ router.post("/auth/login", async (ctx) => {
   }
 });
 
-router.post("/auth/employee-login", async (ctx) => {
+router.post("/api/auth/employee-login", async (ctx) => {
   try {
     const body = await ctx.request.body.json();
     const ip = ctx.request.ip || "unknown";
@@ -105,7 +123,7 @@ router.post("/auth/employee-login", async (ctx) => {
   }
 });
 
-router.get("/auth/csrf-token", authenticateToken, async (ctx) => {
+router.get("/api/auth/csrf-token", authenticateToken, async (ctx) => {
   try {
     const { userId, userType } = ctx.state.user;
     const token = generateCSRFToken(userType === 'user' ? userId : undefined, userType === 'employee' ? userId : undefined);
@@ -117,7 +135,7 @@ router.get("/auth/csrf-token", authenticateToken, async (ctx) => {
   }
 });
 
-router.get("/user/transactions", authenticateUser, async (ctx) => {
+router.get("/api/user/transactions", authenticateUser, async (ctx) => {
   try {
     const userId = ctx.state.user.userId;
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
@@ -133,7 +151,7 @@ router.get("/user/transactions", authenticateUser, async (ctx) => {
   }
 });
 
-router.post("/user/payments", authenticateUser, csrfProtection, async (ctx) => {
+router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) => {
   try {
     const userId = ctx.state.user.userId;
     const body = await ctx.request.body.json();
@@ -148,7 +166,7 @@ router.post("/user/payments", authenticateUser, csrfProtection, async (ctx) => {
   }
 });
 
-router.get("/admin/transactions", authenticateEmployee, async (ctx) => {
+router.get("/api/admin/transactions", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -163,7 +181,7 @@ router.get("/admin/transactions", authenticateEmployee, async (ctx) => {
   }
 });
 
-router.put("/admin/transactions/:id/approve", authenticateEmployee, csrfProtection, async (ctx) => {
+router.put("/api/admin/transactions/:id/approve", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
     const transactionId = parseInt(ctx.params.id);
     const employeeId = ctx.state.user.userId;
@@ -178,7 +196,7 @@ router.put("/admin/transactions/:id/approve", authenticateEmployee, csrfProtecti
   }
 });
 
-router.put("/admin/transactions/:id/deny", authenticateEmployee, csrfProtection, async (ctx) => {
+router.put("/api/admin/transactions/:id/deny", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
     const transactionId = parseInt(ctx.params.id);
     const employeeId = ctx.state.user.userId;
@@ -194,7 +212,7 @@ router.put("/admin/transactions/:id/deny", authenticateEmployee, csrfProtection,
   }
 });
 
-router.get("/admin/security-logs", authenticateEmployee, async (ctx) => {
+router.get("/api/admin/security-logs", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -210,7 +228,7 @@ router.get("/admin/security-logs", authenticateEmployee, async (ctx) => {
   }
 });
 
-router.get("/admin/users", authenticateEmployee, async (ctx) => {
+router.get("/api/admin/users", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -225,7 +243,7 @@ router.get("/admin/users", authenticateEmployee, async (ctx) => {
   }
 });
 
-router.get("/admin/employees", authenticateEmployee, async (ctx) => {
+router.get("/api/admin/employees", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -240,7 +258,7 @@ router.get("/admin/employees", authenticateEmployee, async (ctx) => {
   }
 });
 
-router.put("/admin/users/:id/toggle", authenticateEmployee, csrfProtection, async (ctx) => {
+router.put("/api/admin/users/:id/toggle", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
     const userId = parseInt(ctx.params.id);
     const employeeId = ctx.state.user.userId;
@@ -256,7 +274,7 @@ router.put("/admin/users/:id/toggle", authenticateEmployee, csrfProtection, asyn
   }
 });
 
-router.get("/admin/statistics", authenticateEmployee, async (ctx) => {
+router.get("/api/admin/statistics", authenticateEmployee, async (ctx) => {
   try {
     const result = await getSystemStatistics();
     ctx.response.status = result.success ? 200 : 400;
@@ -267,7 +285,7 @@ router.get("/admin/statistics", authenticateEmployee, async (ctx) => {
   }
 });
 
-router.get("/admin/failed-login-report", authenticateEmployee, async (ctx) => {
+router.get("/api/admin/failed-login-report", authenticateEmployee, async (ctx) => {
   try {
     const hours = parseInt(ctx.request.url.searchParams.get("hours") || "24");
     const result = await getFailedLoginAttemptsReport(hours);
@@ -279,7 +297,7 @@ router.get("/admin/failed-login-report", authenticateEmployee, async (ctx) => {
   }
 });
 
-router.post("/admin/cleanup-logs", authenticateEmployee, csrfProtection, async (ctx) => {
+router.post("/api/admin/cleanup-logs", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
     const employeeId = ctx.state.user.userId;
     const body = await ctx.request.body.json();
@@ -295,7 +313,7 @@ router.post("/admin/cleanup-logs", authenticateEmployee, csrfProtection, async (
   }
 });
 
-router.get("/statistics/transactions", async (ctx) => {
+router.get("/api/statistics/transactions", async (ctx) => {
   try {
     const result = await getTransactionStatistics();
     ctx.response.status = result.success ? 200 : 400;
@@ -305,6 +323,9 @@ router.get("/statistics/transactions", async (ctx) => {
     ctx.response.body = { success: false, message: "Server error" };
   }
 });
+
+app.use(router.routes());
+app.use(router.allowedMethods());
 
 app.use(async (ctx, next) => {
   try {
@@ -320,9 +341,6 @@ app.use(async (ctx) => {
   ctx.response.status = 404;
   ctx.response.body = { success: false, message: "Endpoint not found" };
 });
-
-app.use(router.routes());
-app.use(router.allowedMethods());
 
 setInterval(async () => {
   try {

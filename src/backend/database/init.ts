@@ -61,10 +61,28 @@ let securityLogs: SecurityLog[] = [];
 let sessionTokens: any[] = [];
 let csrfTokens: any[] = [];
 let rateLimits: any[] = [];
-let userIdCounter = 1;
-let employeeIdCounter = 1;
-let transactionIdCounter = 1;
-let logIdCounter = 1;
+const counters = {
+  userId: 1,
+  employeeId: 1,
+  transactionId: 1,
+  logId: 1
+};
+
+export function getNextUserId(): number {
+  return counters.userId++;
+}
+
+export function getNextEmployeeId(): number {
+  return counters.employeeId++;
+}
+
+export function getNextTransactionId(): number {
+  return counters.transactionId++;
+}
+
+export function getNextLogId(): number {
+  return counters.logId++;
+}
 
 export function initializeDatabase() {
   console.log("Database initialized successfully (in-memory)");
@@ -72,11 +90,11 @@ export function initializeDatabase() {
 
 export async function seedDefaultEmployee() {
   const existingAdmin = employees.find(emp => emp.username === "admin");
-  
+
   if (!existingAdmin) {
     const passwordHash = await hashPassword("admin123");
     employees.push({
-      id: employeeIdCounter++,
+      id: getNextEmployeeId(),
       username: "admin",
       password_hash: passwordHash,
       full_name: "System Administrator",
@@ -85,9 +103,9 @@ export async function seedDefaultEmployee() {
       is_active: true,
       failed_login_attempts: 0
     });
-    
+
     console.log("Default admin employee created");
   }
 }
 
-export { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits, userIdCounter, employeeIdCounter, transactionIdCounter, logIdCounter };
+export { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits };
