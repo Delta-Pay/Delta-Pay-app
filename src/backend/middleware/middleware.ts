@@ -1,7 +1,8 @@
 import { verifyToken, logSecurityEvent } from "../auth/auth.ts";
 import { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
+import { Context } from "https://deno.land/x/oak@v12.6.1/mod.ts";
 
-export async function authenticateToken(ctx: any, next: () => Promise<void>) {
+export async function authenticateToken(ctx: Context, next: () => Promise<unknown>) {
   const authHeader = ctx.request.headers.get("Authorization");
   
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -23,7 +24,7 @@ export async function authenticateToken(ctx: any, next: () => Promise<void>) {
   await next();
 }
 
-export async function authenticateUser(ctx: any, next: () => Promise<void>) {
+export async function authenticateUser(ctx: Context, next: () => Promise<unknown>) {
   await authenticateToken(ctx, async () => {
     if (ctx.state.user.userType !== 'user') {
       ctx.response.status = 403;
@@ -34,7 +35,7 @@ export async function authenticateUser(ctx: any, next: () => Promise<void>) {
   });
 }
 
-export async function authenticateEmployee(ctx: any, next: () => Promise<void>) {
+export async function authenticateEmployee(ctx: Context, next: () => Promise<unknown>) {
   await authenticateToken(ctx, async () => {
     if (ctx.state.user.userType !== 'employee') {
       ctx.response.status = 403;
@@ -45,7 +46,7 @@ export async function authenticateEmployee(ctx: any, next: () => Promise<void>) 
   });
 }
 
-export async function rateLimit(ctx: any, next: () => Promise<void>) {
+export async function rateLimit(ctx: Context, next: () => Promise<unknown>) {
   const ip = ctx.request.ip || "unknown";
   const endpoint = ctx.request.url.pathname;
   const now = new Date();
@@ -114,7 +115,7 @@ export async function rateLimit(ctx: any, next: () => Promise<void>) {
   }
 }
 
-export async function csrfProtection(ctx: any, next: () => Promise<void>) {
+export async function csrfProtection(ctx: Context, next: () => Promise<unknown>) {
   if (ctx.request.method === "GET" || ctx.request.method === "HEAD" || ctx.request.method === "OPTIONS") {
     await next();
     return;
@@ -191,7 +192,7 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
   return token;
 }
 
-export async function logRequests(ctx: any, next: () => Promise<void>) {
+export async function logRequests(ctx: Context, next: () => Promise<unknown>) {
   const start = Date.now();
   const ip = ctx.request.ip || "unknown";
   const userAgent = ctx.request.headers.get("User-Agent") || "unknown";
@@ -221,11 +222,12 @@ export async function logRequests(ctx: any, next: () => Promise<void>) {
     }
   } catch (error) {
     const duration = Date.now() - start;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     logSecurityEvent({
       action: "REQUEST_EXCEPTION",
       ipAddress: ip,
-      details: `${ctx.request.method} ${ctx.request.url.pathname} - Exception: ${error.message} (${duration}ms)`,
+      details: `${ctx.request.method} ${ctx.request.url.pathname} - Exception: ${errorMessage} (${duration}ms)`,
       severity: "error",
       userAgent
     });

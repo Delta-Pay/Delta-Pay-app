@@ -1,8 +1,8 @@
-import { Application, Router, send } from "https://deno.land/x/oak@v12.6.1/mod.ts";
+import { Application, Router, send, Context } from "https://deno.land/x/oak@v12.6.1/mod.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 
 import { initializeDatabase, seedDefaultEmployee } from "./database/init.ts";
-import { registerUser, loginUser, loginEmployee, generateCSRFToken } from "./auth/auth.ts";
+import { registerUser, loginUser, loginEmployee, generateCSRFToken, logSecurityEvent } from "./auth/auth.ts";
 import { createPayment, getUserTransactions, getAllTransactions, approveTransaction, denyTransaction, getTransactionStatistics } from "./payments/payments.ts";
 import { 
   getSecurityLogs, 
@@ -23,6 +23,9 @@ import {
   logRequests 
 } from "./middleware/middleware.ts";
 import { DatabaseUtils } from "./utils/database.ts";
+
+// Type definitions for middleware
+type MiddlewareFunction = (ctx: Context, next: () => Promise<unknown>) => Promise<void>;
 
 const app = new Application();
 const router = new Router();
@@ -68,6 +71,31 @@ router.get("/js/:file", async (ctx) => {
   });
 });
 
+// Routes for HTML pages
+router.get("/select-account", async (ctx) => {
+  await send(ctx, "SelectAccount.html", {
+    root: `${Deno.cwd()}/src/frontend/public`,
+  });
+});
+
+router.get("/make-payment", async (ctx) => {
+  await send(ctx, "MakePayment.html", {
+    root: `${Deno.cwd()}/src/frontend/public`,
+  });
+});
+
+router.get("/view-payments", async (ctx) => {
+  await send(ctx, "ViewPayments.html", {
+    root: `${Deno.cwd()}/src/frontend/public`,
+  });
+});
+
+router.get("/security-logs", async (ctx) => {
+  await send(ctx, "SecurityLogs.html", {
+    root: `${Deno.cwd()}/src/frontend/public`,
+  });
+});
+
 router.get("/api", (ctx) => {
   ctx.response.body = { message: "Delta Pay API Server" };
 });
@@ -83,7 +111,7 @@ router.get("/api/health", async (ctx) => {
 
 router.post("/api/auth/register", async (ctx) => {
   try {
-    const body = await ctx.request.body.json();
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
     const result = await registerUser(body, ip);
@@ -97,7 +125,7 @@ router.post("/api/auth/register", async (ctx) => {
 
 router.post("/api/auth/login", async (ctx) => {
   try {
-    const body = await ctx.request.body.json();
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
     const result = await loginUser(body.username, body.password, ip);
@@ -111,7 +139,7 @@ router.post("/api/auth/login", async (ctx) => {
 
 router.post("/api/auth/employee-login", async (ctx) => {
   try {
-    const body = await ctx.request.body.json();
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
     const result = await loginEmployee(body.username, body.password, ip);
@@ -154,7 +182,7 @@ router.get("/api/user/transactions", authenticateUser, async (ctx) => {
 router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) => {
   try {
     const userId = ctx.state.user.userId;
-    const body = await ctx.request.body.json();
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
     const result = await createPayment(body, userId, ip);
@@ -200,7 +228,7 @@ router.put("/api/admin/transactions/:id/deny", authenticateEmployee, csrfProtect
   try {
     const transactionId = parseInt(ctx.params.id);
     const employeeId = ctx.state.user.userId;
-    const body = await ctx.request.body.json();
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
     const result = await denyTransaction(transactionId, employeeId, body.reason, ip);
@@ -262,7 +290,7 @@ router.put("/api/admin/users/:id/toggle", authenticateEmployee, csrfProtection, 
   try {
     const userId = parseInt(ctx.params.id);
     const employeeId = ctx.state.user.userId;
-    const body = await ctx.request.body.json();
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
     const result = await toggleUserAccount(userId, body.lock, employeeId, ip, body.reason);
@@ -300,7 +328,7 @@ router.get("/api/admin/failed-login-report", authenticateEmployee, async (ctx) =
 router.post("/api/admin/cleanup-logs", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
     const employeeId = ctx.state.user.userId;
-    const body = await ctx.request.body.json();
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     const daysToKeep = body.daysToKeep || 90;
     
@@ -321,6 +349,31 @@ router.get("/api/statistics/transactions", async (ctx) => {
   } catch (error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
+  }
+});
+
+// Frontend security logging endpoint
+router.post("/api/security/log", async (ctx) => {
+  try {
+    const body = await ctx.request.body({ type: "json" }).value;
+    const ip = ctx.request.ip || "unknown";
+
+    // #COMPLETION_DRIVE: Assuming frontend provides valid event data
+    // #SUGGEST_VERIFY: Add input validation for required fields
+    logSecurityEvent({
+      action: body.eventType || 'FRONTEND_EVENT',
+      ipAddress: ip,
+      details: JSON.stringify(body.details || {}),
+      severity: 'info',
+      userAgent: body.userAgent || ctx.request.headers.get("user-agent") || undefined
+    });
+
+    ctx.response.status = 200;
+    ctx.response.body = { success: true, message: "Security event logged successfully" };
+  } catch (error) {
+    console.error("Security logging error:", error);
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, message: "Failed to log security event" };
   }
 });
 
