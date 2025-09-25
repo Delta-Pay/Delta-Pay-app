@@ -1,44 +1,262 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeltaΔPay - International Payment Solution</title>
-    <link rel="stylesheet" href="styles/main.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeltaΔPay - Make Payment</title>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
     <header class="header">
-        <div class="logo">
-            <svg viewBox="0 0 120 120">
-                <line x1="9" y1="102" x2="62" y2="17" stroke="#AB92BF" stroke-width="5"/>
-                <line x1="11" y1="102" x2="108" y2="102" stroke="#AB92BF" stroke-width="2.5"/>
-                <line x1="64" y1="14" x2="112" y2="101" stroke="#AB92BF" stroke-width="10"/>
-            </svg>
-        </div>
-        <div class="logo-container">
-            <span class="logo-text">DeltaΔPay</span>
-        </div>
-        <div class="tagline">Secure Payment Gateway</div>
+      <div class="logo">
+        <svg viewBox="0 0 120 120">
+          <line
+            x1="9"
+            y1="102"
+            x2="62"
+            y2="17"
+            stroke="#AB92BF"
+            stroke-width="5"
+          />
+          <line
+            x1="11"
+            y1="102"
+            x2="108"
+            y2="102"
+            stroke="#AB92BF"
+            stroke-width="2.5"
+          />
+          <line
+            x1="64"
+            y1="14"
+            x2="112"
+            y2="101"
+            stroke="#AB92BF"
+            stroke-width="10"
+          />
+        </svg>
+      </div>
+      <div class="logo-container">
+        <span class="logo-text">DeltaΔPay</span>
+      </div>
+      <div class="tagline">Secure Payment Gateway</div>
+      <div class="user-icon" id="userIcon">U</div>
     </header>
 
     <main class="main-container">
-        <div class="options-container">
-            <button class="option-button payment-option" onclick="navigateToPayment()">
-                <div class="option-content">
-                    <h2>Payment View</h2>
-                    <p>Make international payments</p>
-                </div>
-            </button>
-
-            <button class="option-button backend-option" onclick="navigateToBackend()">
-                <div class="option-content">
-                    <h2>Backend View</h2>
-                    <p>Administrative dashboard</p>
-                </div>
-            </button>
+      <div class="payment-gateway-container">
+        <div class="payment-gateway-header">
+          <h1 class="gateway-title">DeltaΔPay Secure Gateway</h1>
+          <p class="gateway-subtitle">
+            Complete your international payment securely
+          </p>
         </div>
+
+        <form class="payment-gateway-form" id="paymentForm">
+          <!-- User Authentication Section -->
+          <div class="payment-section">
+            <div class="section-header">
+              <div class="section-icon">🔐</div>
+              <h3>User Authentication</h3>
+            </div>
+            <div class="section-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Username</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="username"
+                    name="username"
+                    placeholder="Enter your username"
+                    readonly
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Account Number</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="accountNumber"
+                    name="accountNumber"
+                    placeholder="Account number"
+                    readonly
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input
+                  type="password"
+                  class="form-input"
+                  id="userPassword"
+                  name="userPassword"
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Details Section -->
+          <div class="payment-section">
+            <div class="section-header">
+              <div class="section-icon">💰</div>
+              <h3>Payment Details</h3>
+            </div>
+            <div class="section-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Amount</label>
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="amount"
+                    name="amount"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0.01"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Currency</label>
+                  <select
+                    class="form-input"
+                    id="currency"
+                    name="currency"
+                    required
+                  >
+                    <option value="">Select Currency</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                    <option value="ZAR">ZAR - South African Rand</option>
+                    <option value="AUD">AUD - Australian Dollar</option>
+                    <option value="CAD">CAD - Canadian Dollar</option>
+                    <option value="JPY">JPY - Japanese Yen</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Information Section -->
+          <div class="payment-section">
+            <div class="section-header">
+              <div class="section-icon">💳</div>
+              <h3>Card Information</h3>
+            </div>
+            <div class="section-content">
+              <div class="form-group">
+                <label class="form-label">Card Number</label>
+                <input
+                  type="text"
+                  class="form-input censored"
+                  id="cardNumber"
+                  name="cardNumber"
+                  placeholder="1234 5678 9012 3456"
+                  maxlength="19"
+                  required
+                />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Expiry Date</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="expiryDate"
+                    name="expiryDate"
+                    placeholder="MM/YY"
+                    maxlength="5"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CVV</label>
+                  <input
+                    type="text"
+                    class="form-input censored"
+                    id="cvv"
+                    name="cvv"
+                    placeholder="123"
+                    maxlength="3"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cardholder Name</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  id="cardholderName"
+                  name="cardholderName"
+                  placeholder="Enter cardholder name"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Recipient Information Section -->
+          <div class="payment-section">
+            <div class="section-header">
+              <div class="section-icon">🏦</div>
+              <h3>Recipient Information</h3>
+            </div>
+            <div class="section-content">
+              <div class="form-group">
+                <label class="form-label">Recipient Account Number</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  id="recipientAccount"
+                  name="recipientAccount"
+                  placeholder="Enter recipient account number"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">SWIFT/BIC Code</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  id="swiftCode"
+                  name="swiftCode"
+                  placeholder="Enter SWIFT/BIC code"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="payment-submit-section">
+            <button type="submit" class="submit-button">
+              <span class="button-text">Process Payment</span>
+              <span class="button-icon">→</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
 
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+      <div class="success-modal">
+        <div class="tick-animation"></div>
+        <h2 class="success-title">Payment Sent!</h2>
+        <p class="success-message">
+          Your international payment has been processed successfully.
+        </p>
+        <button class="close-modal-button" onclick="closeSuccessModal()">
+          Continue
+        </button>
+      </div>
+    </div>
+
     <script src="js/main.js"></script>
-</body>
+  </body>
 </html>

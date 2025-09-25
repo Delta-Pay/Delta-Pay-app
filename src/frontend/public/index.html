@@ -1,44 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DeltaΔPay - International Payment Solution</title>
-    <link rel="stylesheet" href="styles/main.css">
-</head>
-<body>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
     <header class="header">
-        <div class="logo">
-            <svg viewBox="0 0 120 120">
-                <line x1="9" y1="102" x2="62" y2="17" stroke="#AB92BF" stroke-width="5"/>
-                <line x1="11" y1="102" x2="108" y2="102" stroke="#AB92BF" stroke-width="2.5"/>
-                <line x1="64" y1="14" x2="112" y2="101" stroke="#AB92BF" stroke-width="10"/>
-            </svg>
-        </div>
-        <div class="logo-container">
-            <span class="logo-text">DeltaΔPay</span>
-        </div>
-        <div class="tagline">Secure Payment Gateway</div>
+      <div class="logo">
+        <svg viewBox="0 0 120 120">
+          <line
+            x1="9"
+            y1="102"
+            x2="62"
+            y2="17"
+            stroke="#AB92BF"
+            stroke-width="5"
+          />
+          <line
+            x1="11"
+            y1="102"
+            x2="108"
+            y2="102"
+            stroke="#AB92BF"
+            stroke-width="2.5"
+          />
+          <line
+            x1="64"
+            y1="14"
+            x2="112"
+            y2="101"
+            stroke="#AB92BF"
+            stroke-width="10"
+          />
+        </svg>
+      </div>
+      <div class="logo-container">
+        <span class="logo-text">DeltaΔPay</span>
+      </div>
+      <div class="tagline">Secure Payment Gateway</div>
     </header>
 
     <main class="main-container">
-        <div class="options-container">
-            <button class="option-button payment-option" id="payment-option">
-                <div class="option-content">
-                    <h2>Payment View</h2>
-                    <p>Make international payments</p>
-                </div>
-            </button>
+      <div class="options-container">
+        <button class="option-button payment-option" id="payment-option">
+          <div class="option-content">
+            <h2>Payment View</h2>
+            <p>Make international payments</p>
+          </div>
+        </button>
 
-
-            <button class="option-button backend-option" id="backend-option">
-                <div class="option-content">
-                    <h2>Backend View</h2>
-                    <p>Administrative dashboard</p>
-                </div>
-            </button>
-        </div>
+        <button class="option-button backend-option" id="backend-option">
+          <div class="option-content">
+            <h2>Backend View</h2>
+            <p>Administrative dashboard</p>
+          </div>
+        </button>
+      </div>
     </main>
+
+    <!-- Account Selection Popup -->
+    <div id="accountSelectionModal" class="account-modal-overlay">
+      <div class="account-modal">
+        <div class="account-modal-header">
+          <h3>Select Your Account</h3>
+          <p>Choose your user account to access the payment system</p>
+        </div>
+        <div class="account-modal-body">
+          <div class="account-grid">
+            <div class="account-card" onclick="selectUserFromPopup('john')">
+              <div class="account-icon">J</div>
+              <div class="account-details">
+                <h4>John Smith</h4>
+                <p>ID: 8501011234567</p>
+                <p class="account-number">Account: ****1234</p>
+              </div>
+            </div>
+
+            <div class="account-card" onclick="selectUserFromPopup('sarah')">
+              <div class="account-icon">S</div>
+              <div class="account-details">
+                <h4>Sarah Johnson</h4>
+                <p>ID: 9203022345678</p>
+                <p class="account-number">Account: ****5678</p>
+              </div>
+            </div>
+
+            <div class="account-card" onclick="selectUserFromPopup('mike')">
+              <div class="account-icon">M</div>
+              <div class="account-details">
+                <h4>Mike Wilson</h4>
+                <p>ID: 8804033456789</p>
+                <p class="account-number">Account: ****9012</p>
+              </div>
+            </div>
+
+            <div class="account-card" onclick="selectUserFromPopup('emma')">
+              <div class="account-icon">E</div>
+              <div class="account-details">
+                <h4>Emma Davis</h4>
+                <p>ID: 9505044567890</p>
+                <p class="account-number">Account: ****3456</p>
+              </div>
+            </div>
+
+            <div class="account-card" onclick="selectUserFromPopup('david')">
+              <div class="account-icon">D</div>
+              <div class="account-details">
+                <h4>David Brown</h4>
+                <p>ID: 9006055678901</p>
+                <p class="account-number">Account: ****7890</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="account-modal-footer">
+          <button class="btn-cancel" onclick="closeAccountModal()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="js/main.js"></script>
-</body>
+  </body>
 </html>

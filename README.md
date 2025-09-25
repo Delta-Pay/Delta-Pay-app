@@ -19,9 +19,10 @@ Delta pay is a mockup of an international payment solution. It features multiple
 
 ### Payment page
 - The top right of the page is a user icon with the letter of the person's name.
-- When going from the landing page to this page, ask the user to select one of the accounts
+- When going from the landing page to this page, ask the user to select one of the users accounts. Not bank account (of the 5 users). (this needs to happen on the landing page actually)
+- once the user has select a user account to use ask them for a password. the password will use the same hashing anjd salting that was stated in the backend security features. Please also note that it needs to be a custom popup not a browser popup. 
 - Once the account is selected, show the page. 
-- general payment inputs with censoring for card inputs and more. Everything a normal payment gateway should have. 
+- general payment inputs with censoring for card inputs and more. Everything a normal payment gateway should have. IT needs to enter card info 
 - Clean slow animations to not overload the user, but give a strong, modern, secure look
 - Once the submit button is clicked, a clean prompt emerges with a tick animation saying payment sent.
 
