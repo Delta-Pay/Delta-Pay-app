@@ -53,7 +53,6 @@ export interface Transaction {
   currency: string;
   provider: string;
   recipient_account: string;
-  recipient_swift_code: string;
   status: string;
   created_at: string;
   processed_at?: string;

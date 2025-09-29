@@ -722,7 +722,7 @@ async function processSecurePayment(paymentData) {
     const body = {
       amount: Number(paymentData.amount).toFixed(2),
       currency: String(paymentData.currency || '').toUpperCase(),
-      provider: 'SWIFT',
+      provider: 'WIRE',
       recipientAccount: RECIPIENT_ACCOUNT,
       notes: `Payment processing fee - Reference: ${paymentData.reference}`
     };
@@ -1131,7 +1131,6 @@ function renderTransactions(rows) {
       <td>${amountFmt}</td>
       <td>${tx.provider}</td>
       <td>${tx.recipientAccount}</td>
-  <td>${tx.recipientSwiftCode || '-'}</td>
       <td>${tx.status}</td>
       <td>${tx.processedByFullName || '-'}</td>
       <td>

@@ -22,7 +22,6 @@ const VALIDATION_PATTERNS = {
   accountNumber: /^[0-9]{10,20}$/,
   username: /^[a-zA-Z0-9_]{3,20}$/,
   password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-  swiftCode: /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
   accountNumberRecipient: /^[A-Z0-9]{8,30}$/
 };
 

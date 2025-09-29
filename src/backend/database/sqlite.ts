@@ -53,7 +53,6 @@ export class SQLiteDB {
           currency TEXT NOT NULL,
           provider TEXT NOT NULL,
           recipient_account TEXT NOT NULL,
-          recipient_swift_code TEXT NOT NULL,
           status TEXT DEFAULT 'pending',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           processed_at DATETIME,

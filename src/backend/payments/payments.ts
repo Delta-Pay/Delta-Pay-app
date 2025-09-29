@@ -1,4 +1,3 @@
-// README.md: "They will next be prompted for the account information and SWIFT code" --> Code: SWIFT code entry removed per user request; backend now treats swiftCode as optional and stores an empty value.
 import { logSecurityEvent, validateInput } from "../auth/auth.ts";
 import { addTransaction, employees, getUserById, transactions, users } from "../database/init.ts";
 
@@ -7,22 +6,21 @@ const PAYMENT_VALIDATION_PATTERNS = {
   currency: /^[A-Z]{3}$/,
   provider: /^[A-Z\s]{2,20}$/,
   recipientAccount: /^[A-Z0-9]{8,30}$/,
-  // swiftCode intentionally omitted from validation per user request
+  // No swift code field in validation
 };
 
 const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'ZAR', 'AUD', 'CAD', 'CHF', 'JPY'];
-const SUPPORTED_PROVIDERS = ['SWIFT', 'SEPA', 'ACH', 'WIRE'];
+const SUPPORTED_PROVIDERS = ['SEPA', 'ACH', 'WIRE'];
 
 export function createPayment(paymentData: {
   amount: string;
   currency: string;
   provider: string;
   recipientAccount: string;
-  swiftCode?: string;
   notes?: string;
 }, userId: number, ipAddress: string): { success: boolean; message: string; transactionId?: number } {
   try {
-  // Validate only required fields; SWIFT code optional per user request
+  // Validate only required fields
     const toValidate = {
       amount: paymentData.amount,
       currency: paymentData.currency,
@@ -58,7 +56,6 @@ export function createPayment(paymentData: {
       currency: paymentData.currency,
       provider: paymentData.provider,
       recipient_account: paymentData.recipientAccount,
-      recipient_swift_code: paymentData.swiftCode || "",
       status: 'pending',
       created_at: new Date().toISOString(),
       notes: paymentData.notes || undefined
@@ -68,7 +65,7 @@ export function createPayment(paymentData: {
       user_id: userId,
       action: "PAYMENT_CREATED",
       ip_address: ipAddress,
-  details: `Payment created: ${amount} ${paymentData.currency} to ${paymentData.recipientAccount} via ${paymentData.provider}${paymentData.swiftCode ? ' (SWIFT ' + paymentData.swiftCode + ')' : ''}`,
+  details: `Payment created: ${amount} ${paymentData.currency} to ${paymentData.recipientAccount} via ${paymentData.provider}`,
       severity: "info",
       timestamp: new Date().toISOString()
     });
@@ -91,20 +88,19 @@ export function createPayment(paymentData: {
   }
 }
 
-export function getUserTransactions(userId: number, limit: number = 50, offset: number = 0): { success: boolean; message: string; transactions?: Array<{ id: number; amount: number; currency: string; provider: string; recipientAccount: string; recipientSwiftCode: string; status: string; createdAt: string; processedAt?: string; notes?: string }>} {
+export function getUserTransactions(userId: number, limit: number = 50, offset: number = 0): { success: boolean; message: string; transactions?: Array<{ id: number; amount: number; currency: string; provider: string; recipientAccount: string; status: string; createdAt: string; processedAt?: string; notes?: string }> } {
   try {
     const userTransactions = transactions
       .filter(t => t.user_id === userId)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(offset, offset + limit);
 
-    const formattedTransactions = userTransactions.map(transaction => ({
+  const formattedTransactions = userTransactions.map(transaction => ({
       id: transaction.id,
       amount: transaction.amount,
       currency: transaction.currency,
       provider: transaction.provider,
       recipientAccount: transaction.recipient_account,
-      recipientSwiftCode: transaction.recipient_swift_code,
       status: transaction.status,
       createdAt: transaction.created_at,
       processedAt: transaction.processed_at,
@@ -121,7 +117,7 @@ export function getUserTransactions(userId: number, limit: number = 50, offset: 
   }
 }
 
-export function getAllTransactions(limit: number = 100, offset: number = 0): { success: boolean; message: string; transactions?: Array<{ id: number; amount: number; currency: string; provider: string; recipientAccount: string; recipientSwiftCode: string; status: string; createdAt: string; processedAt?: string; notes?: string; userUsername: string; userFullName: string; processedByUsername: string | null; processedByFullName: string | null }> } {
+export function getAllTransactions(limit: number = 100, offset: number = 0): { success: boolean; message: string; transactions?: Array<{ id: number; amount: number; currency: string; provider: string; recipientAccount: string; status: string; createdAt: string; processedAt?: string; notes?: string; userUsername: string; userFullName: string; processedByUsername: string | null; processedByFullName: string | null }> } {
   try {
     const sortedTransactions = transactions
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -131,13 +127,12 @@ export function getAllTransactions(limit: number = 100, offset: number = 0): { s
       const user = users.find(u => u.id === transaction.user_id);
       const employee = employees.find(e => e.id === transaction.processed_by);
 
-      return {
+  return {
         id: transaction.id,
         amount: transaction.amount,
         currency: transaction.currency,
         provider: transaction.provider,
         recipientAccount: transaction.recipient_account,
-        recipientSwiftCode: transaction.recipient_swift_code,
         status: transaction.status,
         createdAt: transaction.created_at,
         processedAt: transaction.processed_at,
