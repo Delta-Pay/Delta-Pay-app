@@ -1,10 +1,3 @@
-<!-- // README.md: Payment page should feel like a real gateway with clean animations and a success tick. Terms content is not mandated. -->
-<!-- // CHANGE: Detailed terms content previously shown on page -->
-<!-- // NOW: Terms text hidden; a single required checkbox is presented per user request. -->
-<!-- // CHANGE: Non-essential text inputs (amount, currency, card data, address) -->
-<!-- // NOW: Rendered as plain text displays; only CVV remains an editable input. -->
-<!-- // CHANGE: CVV field was password-masked -->
-<!-- // NOW: CVV is visible (type=text) and defaults to 123 for demo purposes. -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -59,7 +52,6 @@
         </div>
 
         <form class="payment-gateway-form" id="paymentForm">
-          <!-- Account Information Section -->
           <div class="payment-section">
             <div class="section-header">
               <h3>Account Information</h3>
@@ -76,7 +68,6 @@
             </div>
           </div>
 
-          <!-- Payment Details Section -->
           <div class="payment-section">
             <div class="section-header">
               <h3>Payment Details</h3>
@@ -99,7 +90,6 @@
             </div>
           </div>
 
-          <!-- Card Information Section -->
           <div class="payment-section">
             <div class="section-header">
               <h3>Payment Method</h3>
@@ -140,7 +130,6 @@
             </div>
           </div>
 
-          <!-- Terms and Conditions Section (checkbox only per user request) -->
           <div class="payment-section">
             <div class="section-header">
               <h3>Agreement</h3>
@@ -156,7 +145,6 @@
             </div>
           </div>
 
-          <!-- Submit Button -->
           <div class="payment-submit-section">
             <button type="submit" class="submit-button" id="processPaymentBtn" disabled>
               <div class="button-content">
@@ -177,7 +165,6 @@
       </div>
     </main>
 
-    <!-- Password Authentication Modal -->
     <div class="modal-overlay" id="passwordModal">
       <div class="auth-modal">
         <div class="auth-header">
@@ -208,7 +195,6 @@
       </div>
     </div>
 
-    <!-- Success Modal -->
     <div class="modal-overlay" id="successModal">
       <div class="success-modal">
         <div class="success-animation">

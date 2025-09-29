@@ -23,14 +23,11 @@ import {
 import { approveTransaction, createPayment, denyTransaction, getAllTransactions, getTransactionStatistics, getUserTransactions } from "./payments/payments.ts";
 import { DatabaseUtils } from "./utils/database.ts";
 
-// Type definitions for middleware
 type MiddlewareFunction = (ctx: Context, next: () => Promise<unknown>) => Promise<void>;
 
-// Oak HTTP server hosts API and static routes for the app
 const app = new Application();
 const router = new Router();
 
-// In-memory DB is sufficient for demo scope; swap to persistent DB for production
 initializeDatabase();
 await seedDefaultEmployee();
 await seedExampleUsers();
@@ -39,7 +36,6 @@ app.use(logRequests);
 app.use(rateLimit);
 
 app.use(async (ctx, next) => {
-  // CSP allows Google Fonts for Inter in development; self-host fonts for production if preferred
   ctx.response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; form-action 'self';");
   ctx.response.headers.set("X-Frame-Options", "DENY");
   ctx.response.headers.set("X-Content-Type-Options", "nosniff");
@@ -49,21 +45,18 @@ app.use(async (ctx, next) => {
   await next();
 });
 
-// Add Deno server origin (3623) to default CORS allowlist for local hosting; override via CORS_ORIGINS env in deployment
 const corsOrigins = (Deno.env.get('CORS_ORIGINS') || 'http://localhost:3000,http://localhost:5173,http://localhost:3623')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
 
 app.use(oakCors({
-  // CORS origins are configurable via env; restrict in production
   origin: corsOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 
-// Serve static assets from src/frontend/public and related folders
 router.get("/", async (ctx) => {
   await send(ctx, "index.html", {
     root: `${Deno.cwd()}/src/frontend/public`,
@@ -82,7 +75,6 @@ router.get("/js/:file", async (ctx) => {
   });
 });
 
-// Routes for HTML pages
 router.get("/select-account", async (ctx) => {
   await send(ctx, "SelectAccount.html", {
     root: `${Deno.cwd()}/src/frontend/public`,
@@ -116,7 +108,6 @@ router.get("/api/users/all", async (ctx) => {
     const { getUsers } = await import("./database/init.ts");
     const users = getUsers();
 
-  // Expose non-sensitive fields only
     const sanitizedUsers = users.map(user => ({
       id: user.id,
       full_name: user.full_name,
@@ -153,7 +144,6 @@ router.get("/api/users/all", async (ctx) => {
 
 router.get("/api/health", async (ctx) => {
   const dbHealth = await DatabaseUtils.healthCheck();
-  // Basic health check reflecting DB readiness and service timestamp
   ctx.response.body = { 
     status: dbHealth.healthy ? "healthy" : "unhealthy", 
     timestamp: new Date().toISOString(),
@@ -245,7 +235,6 @@ router.get("/api/user/transactions", authenticateUser, async (ctx) => {
   }
 });
 
-// Require CSRF token for user payment creation; frontend fetches via /api/auth/csrf-token after login
 router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) => {
   try {
     const userId = ctx.state.user.userId;
@@ -261,7 +250,6 @@ router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) 
   }
 });
 
-// README.md: Admin must log in to view transactions --> Code: Public access to list transactions, per user request
 router.get("/api/admin/transactions", async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
@@ -398,7 +386,6 @@ router.post("/api/admin/cleanup-logs", authenticateEmployee, csrfProtection, asy
     const employeeId = ctx.state.user.userId;
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-  // Retention defaults to 90 days; clamp between 7 and 365
   let daysToKeep = Number(body.daysToKeep || 90);
   if (!Number.isFinite(daysToKeep)) daysToKeep = 90;
   daysToKeep = Math.min(365, Math.max(7, Math.floor(daysToKeep)));
@@ -423,13 +410,11 @@ router.get("/api/statistics/transactions", async (ctx) => {
   }
 });
 
-// Frontend security logging endpoint
 router.post("/api/security/log", async (ctx) => {
   try {
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
 
-    // Validate incoming event data
     const eventType = typeof body.eventType === 'string' && body.eventType.length <= 64 ? body.eventType : 'FRONTEND_EVENT';
     const detailsObj = (body && typeof body.details === 'object' && body.details !== null) ? body.details : {};
     const safeDetails = JSON.stringify(detailsObj).slice(0, 2000);
@@ -470,7 +455,6 @@ app.use((ctx) => {
   ctx.response.body = { success: false, message: "Endpoint not found" };
 });
 
-// Periodic cleanup; interval can be tuned based on load. Cleared on shutdown.
 const cleanupInterval = setInterval(async () => {
   try {
     await DatabaseUtils.cleanupExpiredRecords();
@@ -480,13 +464,11 @@ const cleanupInterval = setInterval(async () => {
   }
 }, 60 * 60 * 1000);
 
-// Attempt to clear interval on process signals (best-effort in Deno)
 try {
   Deno.addSignalListener('SIGTERM', () => clearInterval(cleanupInterval));
   Deno.addSignalListener('SIGINT', () => clearInterval(cleanupInterval));
-} catch (_) { /* signal handling not available */ }
+} catch (_) {;}
 
-// Read port from env var PORT with fallback
 const port = Number(Deno.env.get('PORT') || 3623);
 console.log(`Delta Pay API Server running on http://localhost:${port}`);
 console.log("Database initialized and ready");

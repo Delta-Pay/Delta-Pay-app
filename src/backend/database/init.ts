@@ -72,7 +72,6 @@ export interface SecurityLog {
   severity: string;
 }
 
-// In-memory storage
 let users: User[] = [];
 let employees: Employee[] = [];
 let transactions: Transaction[] = [];
@@ -283,15 +282,18 @@ export async function seedExampleUsers() {
           is_active: true,
           failed_login_attempts: 0
         });
-      }
 
-      console.log("Example users created in memory");
-    }
-  } catch (error) {
-    console.error("Error seeding example users:", error);
-  }
-}
+        type SessionToken = { token: string; userId: number; userType: "user" | "employee"; expires_at: string; is_revoked: boolean };
+        type CSRFToken = { token: string; expires_at: string; is_used?: boolean; user_id?: number | null; employee_id?: number | null; userId?: number; employeeId?: number };
+        type RateLimit = { ip_address: string; endpoint: string; request_count: number; first_request: string; last_request: string };
 
+        const users: User[] = [];
+        const employees: Employee[] = [];
+        const transactions: Transaction[] = [];
+        const securityLogs: SecurityLog[] = [];
+        const sessionTokens: SessionToken[] = [];
+        const csrfTokens: CSRFToken[] = [];
+        const rateLimits: RateLimit[] = [];
 export function getUsers(): User[] {
   return users.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }

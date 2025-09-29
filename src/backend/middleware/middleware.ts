@@ -3,7 +3,6 @@ import { logSecurityEvent, verifyToken } from "../auth/auth.ts";
 import { csrfTokens, rateLimits } from "../database/init.ts";
 
 export async function authenticateToken(ctx: Context, next: () => Promise<unknown>) {
-  // Expect JWT via Authorization: Bearer header
   const authHeader = ctx.request.headers.get("Authorization");
   
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -48,7 +47,6 @@ export async function authenticateEmployee(ctx: Context, next: () => Promise<unk
 }
 
 export async function rateLimit(ctx: Context, next: () => Promise<unknown>) {
-  // Simple in-memory sliding window; replace with Redis for multi-instance scale
   const ip = ctx.request.ip || "unknown";
   const endpoint = ctx.request.url.pathname;
   const now = new Date();
@@ -118,7 +116,6 @@ export async function rateLimit(ctx: Context, next: () => Promise<unknown>) {
 }
 
 export async function csrfProtection(ctx: Context, next: () => Promise<unknown>) {
-  // Enforce CSRF via header-only token; tokens are single-use and expire
   if (ctx.request.method === "GET" || ctx.request.method === "HEAD" || ctx.request.method === "OPTIONS") {
     await next();
     return;
@@ -181,7 +178,6 @@ export async function csrfProtection(ctx: Context, next: () => Promise<unknown>)
 }
 
 export function generateCSRFToken(userId?: number, employeeId?: number): string {
-  // CSRF tokens valid for 2h
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
@@ -197,7 +193,6 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
 }
 
 export async function logRequests(ctx: Context, next: () => Promise<unknown>) {
-  // Structured logs to security table
   const start = Date.now();
   const ip = ctx.request.ip || "unknown";
   const userAgent = ctx.request.headers.get("User-Agent") || "unknown";

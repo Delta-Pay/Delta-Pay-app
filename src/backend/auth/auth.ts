@@ -4,7 +4,6 @@ import { addSecurityLog, addUser, csrfTokens, getEmployeeByUsername, getUserByUs
 
 const JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
 
-// Create a CryptoKey for HMAC signing from the string secret
 async function getJwtKey(): Promise<CryptoKey> {
   const enc = new TextEncoder();
   return await crypto.subtle.importKey(
@@ -99,7 +98,6 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   }
 }
 
-// Types for auth flows
 interface RegisterUserInput {
   fullName: string;
   idNumber: string;
@@ -125,7 +123,6 @@ export async function registerUser(userData: RegisterUserInput, ip: string): Pro
       return { success: false, message: "Missing required fields" };
     }
 
-    // Basic validation
     const validation = validateInput(
       { fullName, idNumber, accountNumber, username, password },
       VALIDATION_PATTERNS,
@@ -202,7 +199,6 @@ export async function loginUser(username: string, password: string, ip: string):
       return { success: false, message: "Invalid credentials" };
     }
 
-    // Basic lockout: after 5 failed attempts, lock for 2 minutes
     const now = Date.now();
     if (user.account_locked_until && new Date(user.account_locked_until).getTime() > now) {
       return { success: false, message: "Account temporarily locked. Please try again later." };
@@ -369,7 +365,6 @@ export async function verifyToken(token: string): Promise<Record<string, unknown
 
 export async function authenticateUserPassword(username: string, password: string, ip: string): Promise<LoginResult> {
   try {
-    // Validate user with basic lockout for repeated failures
     const user = getUserByUsername(username);
     if (!user || !user.is_active) {
       logSecurityEvent({
@@ -416,7 +411,6 @@ export async function authenticateUserPassword(username: string, password: strin
       timestamp: new Date().toISOString()
     });
 
-    // Issue a JWT and CSRF token for subsequent operations
     const token = await issueJwtForUser(user, "user");
     sessionTokens.push({
       token,

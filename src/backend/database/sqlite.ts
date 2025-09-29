@@ -1,4 +1,3 @@
-// Stub for a potential SQLite-backed implementation; current app uses in-memory storage.
 export class SQLiteDB {
   private dbPath: string;
   
@@ -8,7 +7,6 @@ export class SQLiteDB {
 
   initializeDatabase(): void {
     try {
-      // Create users table
       const _createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +42,6 @@ export class SQLiteDB {
         )
       `;
 
-      // Create transactions table
   const _createTransactionsTable = `
         CREATE TABLE IF NOT EXISTS transactions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,7 +59,6 @@ export class SQLiteDB {
         )
       `;
 
-      // Create security logs table
   const _createSecurityLogsTable = `
         CREATE TABLE IF NOT EXISTS security_logs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +82,6 @@ export class SQLiteDB {
 
   seedDefaultData(): void {
     try {
-      // Add example users with complete card data
   const _users = [
         {
           full_name: "John Smith",

@@ -6,7 +6,6 @@ const PAYMENT_VALIDATION_PATTERNS = {
   currency: /^[A-Z]{3}$/,
   provider: /^[A-Z\s]{2,20}$/,
   recipientAccount: /^[A-Z0-9]{8,30}$/,
-  // No swift code field in validation
 };
 
 const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'ZAR', 'AUD', 'CAD', 'CHF', 'JPY'];
@@ -20,7 +19,6 @@ export function createPayment(paymentData: {
   notes?: string;
 }, userId: number, ipAddress: string): { success: boolean; message: string; transactionId?: number } {
   try {
-  // Validate only required fields
     const toValidate = {
       amount: paymentData.amount,
       currency: paymentData.currency,
