@@ -7,6 +7,22 @@ export interface User {
   account_number: string;
   username: string;
   password_hash: string;
+  email: string;
+  phone_number: string;
+  date_of_birth: string;
+  nationality: string;
+  address_line_1: string;
+  address_line_2?: string;
+  city: string;
+  state_province: string;
+  postal_code: string;
+  country: string;
+  account_balance: number;
+  currency: string;
+  account_type: string;
+  preferred_language: string;
+  occupation: string;
+  annual_income: number;
   created_at: string;
   is_active: boolean;
   failed_login_attempts: number;
@@ -137,7 +153,7 @@ export async function seedExampleUsers() {
           id_number: "8804033456789",
           account_number: "3456789012345678",
           username: "mikew",
-          password: "mike789"
+          password: "mike789
         },
         {
           full_name: "Emma Davis",

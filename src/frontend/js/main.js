@@ -38,10 +38,47 @@ function navigateToViewPayments() {
 
 function navigateToMakePayment() {
   try {
-    window.location.href = '/make-payment';
+    if (typeof window !== "undefined" && window.location) {
+      window.location.href = '/make-payment';
+    } else {
+      console.error("Cannot navigate - window.location not available");
+    }
   } catch (error) {
     console.error('Navigation error:', error);
-    window.location.href = '/MakePayment.html';
+    try {
+      if (typeof window !== "undefined" && window.location) {
+        window.location.href = '/MakePayment.html';
+      } else {
+        console.error("Cannot navigate - window.location not available");
+      }
+    } catch (navError) {
+      console.error("Fallback navigation failed:", navError);
+    }
+  }
+}
+
+function navigateToPayment() {
+  try {
+    if (typeof document === "undefined") {
+      throw new Error("Document object not available");
+    }
+
+    if (typeof window !== "undefined" && window.location) {
+      window.location.href = "/select-account";
+    } else {
+      console.error("Cannot navigate - window.location not available");
+    }
+  } catch (error) {
+    console.error("Error navigating to payment:", error);
+    try {
+      if (typeof window !== "undefined" && window.location) {
+        window.location.href = "/select-account";
+      } else {
+        console.error("Cannot navigate - window.location not available");
+      }
+    } catch (navError) {
+      console.error("Fallback navigation failed:", navError);
+    }
   }
 }
 
@@ -134,30 +171,78 @@ function selectUserFromPopup(username) {
   }
 }
 
-function initializePaymentPage() {
+async function initializePaymentPage() {
   try {
+    await loadUsers();
+
+    populateUsersOnPaymentPage();
+
     const selectedUserData = JSON.parse(sessionStorage.getItem('selectedUser') || '{}');
 
-    if (!selectedUserData.username) {
-      throw new Error('No user selected');
-    }
+    if (selectedUserData.username) {
+      const userIcon = document.getElementById('userIcon');
+      if (userIcon) {
+        userIcon.textContent = selectedUserData.letter || 'U';
+      }
 
-    const userIcon = document.getElementById('userIcon');
-    if (userIcon) {
-      userIcon.textContent = selectedUserData.letter || 'U';
+      logSecurityEvent('PAYMENT_PAGE_INITIALIZED', {
+        username: selectedUserData.username,
+        timestamp: new Date().toISOString()
+      });
     }
-
-    logSecurityEvent('PAYMENT_PAGE_INITIALIZED', {
-      username: selectedUserData.username,
-      timestamp: new Date().toISOString()
-    });
 
   } catch (error) {
     console.error('Error initializing payment page:', error);
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 2000);
   }
+}
+
+function populateUsersOnPaymentPage() {
+  const usersList = document.getElementById('usersList');
+  if (!usersList || users.length === 0) return;
+
+  usersList.innerHTML = '';
+
+  users.forEach(user => {
+    const userCard = document.createElement('div');
+    userCard.className = 'user-card';
+    userCard.onclick = () => selectUserOnPaymentPage(user);
+
+    userCard.innerHTML = `
+      <div class="user-card-header">
+        <div class="user-avatar">${user.letter}</div>
+        <div class="user-card-info">
+          <h4>${user.full_name}</h4>
+        </div>
+      </div>
+      <div class="user-card-details">
+        <p>ID: ${user.id_number}</p>
+        <p>Account: ****${user.account_number}</p>
+      </div>
+    `;
+
+    usersList.appendChild(userCard);
+  });
+}
+
+function selectUserOnPaymentPage(user) {
+  document.querySelectorAll('.user-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+
+  event.currentTarget.classList.add('selected');
+
+  sessionStorage.setItem('selectedUser', JSON.stringify(user));
+
+  const userIcon = document.getElementById('userIcon');
+  if (userIcon) {
+    userIcon.textContent = user.letter || 'U';
+  }
+
+  logSecurityEvent('USER_SELECTED_ON_PAYMENT_PAGE', {
+    username: user.username,
+    fullName: user.full_name,
+    timestamp: new Date().toISOString()
+  });
 }
 
 async function handlePaymentSubmit(event) {
@@ -334,9 +419,12 @@ if (typeof window !== 'undefined') {
   window.navigateToSelectAccount = navigateToSelectAccount;
   window.navigateToViewPayments = navigateToViewPayments;
   window.navigateToMakePayment = navigateToMakePayment;
+  window.navigateToPayment = navigateToPayment;
   window.navigateToSecurityLogs = navigateToSecurityLogs;
   window.closeAccountModal = closeAccountModal;
   window.selectUserFromPopup = selectUserFromPopup;
   window.initializePaymentPage = initializePaymentPage;
+  window.populateUsersOnPaymentPage = populateUsersOnPaymentPage;
+  window.selectUserOnPaymentPage = selectUserOnPaymentPage;
   window.closeSuccessModal = closeSuccessModal;
 }

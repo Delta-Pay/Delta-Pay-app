@@ -46,6 +46,7 @@
     <main class="main-container">
       <div class="payment-gateway-container">
         <div class="payment-gateway-header">
+          <button id="backBtn" class="btn-back" onclick="window.location.href='/'">Back</button>
           <h1 class="gateway-title">DeltaΔPay Secure Gateway</h1>
           <p class="gateway-subtitle">
             Complete your international payment securely
@@ -53,6 +54,22 @@
         </div>
 
         <form class="payment-gateway-form" id="paymentForm">
+          <!-- User Selection Section -->
+          <div class="payment-section">
+            <div class="section-header">
+              <div class="section-icon">👥</div>
+              <h3>Select User</h3>
+            </div>
+            <div class="section-content">
+              <div class="form-group">
+                <label class="form-label">Available Users</label>
+                <div id="usersList" class="users-list">
+                  <!-- Users will be loaded here from our in-memory database -->
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- User Authentication Section -->
           <div class="payment-section">
             <div class="section-header">
