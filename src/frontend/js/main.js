@@ -300,7 +300,6 @@ function closePasswordModal() {
 async function handlePasswordAuthentication(event) {
   event.preventDefault();
 
-  // Lockout after excessive attempts
   const key = `pwdAttempts:${selectedUser?.username || 'unknown'}`;
   const attemptsRaw = sessionStorage.getItem(key);
   const attempts = attemptsRaw ? JSON.parse(attemptsRaw) : { count: 0, until: 0 };
@@ -346,12 +345,9 @@ async function handlePasswordAuthentication(event) {
     if (result.success) {
       sessionStorage.setItem(key, JSON.stringify({ count: 0, until: 0 }));
       authenticatedUser = result.user;
-      
-      // Store auth token if provided for API calls
       if (result.token) {
         sessionStorage.setItem('authToken', result.token);
       }
-      // Store CSRF token for secure requests
       if (result.csrfToken) {
         csrfToken = result.csrfToken;
         sessionStorage.setItem('csrfToken', csrfToken);
@@ -375,8 +371,6 @@ async function handlePasswordAuthentication(event) {
   } catch (error) {
     console.error('Authentication error:', error);
     alert('Authentication failed. Please try again.');
-    
-    // Log security event for authentication error
     logSecurityEvent('PASSWORD_AUTH_SYSTEM_ERROR', {
       username: selectedUser?.username || 'unknown',
       error: error.message || 'Unknown error',
@@ -1021,14 +1015,13 @@ async function handleEmployeeLogin(e) {
       alert('Invalid employee credentials');
       return;
     }
-    // Retrieve CSRF for employee ops
     const token = data.token;
     let csrf = null;
     try {
       const csrfRes = await fetch('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${token}` } });
       const csrfData = await csrfRes.json();
-      if (csrfData.success) csrf = csrfData.csrfToken;
-  } catch (_) { /* CSRF retrieval may fail; handled by enforcement below */ }
+    if (csrfData.success) csrf = csrfData.csrfToken;
+  } catch (_) {;}
     employeeAuth = { token, csrfToken: csrf, employee: data.employee };
     sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
     updateAdminAuthStatus();
@@ -1160,9 +1153,7 @@ async function approveTransactionAdmin(id) {
         const csrfData = await csrfRes.json();
         if (csrfData.success) employeeAuth.csrfToken = csrfData.csrfToken;
         sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
-      } catch (_) {
-        // CSRF acquisition failed
-      }
+  } catch (_) {;}
     }
     if (!employeeAuth.csrfToken) {
       showToast && showToast('Secure token missing. Please retry login.', 'error');
@@ -1190,9 +1181,7 @@ async function denyTransactionAdmin(id, reason) {
         const csrfData = await csrfRes.json();
         if (csrfData.success) employeeAuth.csrfToken = csrfData.csrfToken;
         sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
-      } catch (_) {
-        // CSRF acquisition failed
-      }
+  } catch (_) {;}
     }
     if (!employeeAuth.csrfToken) {
       showToast && showToast('Secure token missing. Please retry login.', 'error');

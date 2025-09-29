@@ -165,7 +165,6 @@ export function approveTransaction(transactionId: number, employeeId: number, ip
       return { success: false, message: "Transaction is not pending" };
     }
 
-    // Update transaction in memory
     transactions[transactionIndex] = {
       ...transaction,
       status: 'approved',
@@ -209,7 +208,6 @@ export function denyTransaction(transactionId: number, employeeId: number, reaso
       return { success: false, message: "Transaction is not pending" };
     }
 
-    // Update transaction in memory
     transactions[transactionIndex] = {
       ...transaction,
       status: 'denied',
