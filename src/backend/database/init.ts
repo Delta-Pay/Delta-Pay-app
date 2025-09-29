@@ -2,83 +2,86 @@ import { hashPassword } from "../auth/auth.ts";
 
 export interface User {
   id: number;
-  full_name: string;
-  id_number: string;
-  account_number: string;
+  "full_name": string;
+  "id_number": string;
+  "account_number": string;
   username: string;
-  password_hash: string;
+  "password_hash": string;
   email: string;
-  phone_number: string;
-  date_of_birth: string;
+  "phone_number": string;
+  "date_of_birth": string;
   nationality: string;
-  address_line_1: string;
-  address_line_2?: string;
+  "address_line_1": string;
+  "address_line_2"?: string;
   city: string;
-  state_province: string;
-  postal_code: string;
+  "state_province": string;
+  "postal_code": string;
   country: string;
-  account_balance: number;
+  "account_balance": number;
   currency: string;
-  account_type: string;
-  preferred_language: string;
+  "account_type": string;
+  "preferred_language": string;
   occupation: string;
-  annual_income: number;
-  card_number: string;
-  card_expiry: string;
-  card_holder_name: string;
-  created_at: string;
-  is_active: boolean;
-  failed_login_attempts: number;
-  last_login_attempt?: string;
-  account_locked_until?: string;
+  "annual_income": number;
+  "card_number": string;
+  "card_expiry": string;
+  "card_holder_name": string;
+  "created_at": string;
+  "is_active": boolean;
+  "failed_login_attempts": number;
+  "last_login_attempt"?: string;
+  "account_locked_until"?: string;
 }
 
 export interface Employee {
   id: number;
   username: string;
-  password_hash: string;
-  full_name: string;
-  employee_id: string;
-  created_at: string;
-  is_active: boolean;
-  failed_login_attempts: number;
-  last_login_attempt?: string;
-  account_locked_until?: string;
+  "password_hash": string;
+  "full_name": string;
+  "employee_id": string;
+  "created_at": string;
+  "is_active": boolean;
+  "failed_login_attempts": number;
+  "last_login_attempt"?: string;
+  "account_locked_until"?: string;
 }
 
 export interface Transaction {
   id: number;
-  user_id: number;
+  "user_id": number;
   amount: number;
   currency: string;
   provider: string;
-  recipient_account: string;
+  "recipient_account": string;
   status: string;
-  created_at: string;
-  processed_at?: string;
-  processed_by?: number;
+  "created_at": string;
+  "processed_at"?: string;
+  "processed_by"?: number;
   notes?: string;
 }
 
 export interface SecurityLog {
   id: number;
-  user_id?: number;
-  employee_id?: number;
+  "user_id"?: number;
+  "employee_id"?: number;
   action: string;
-  ip_address: string;
-  user_agent?: string;
+  "ip_address": string;
+  "user_agent"?: string;
   details?: string;
   timestamp: string;
   severity: string;
 }
 
-let users: User[] = [];
-let employees: Employee[] = [];
-let transactions: Transaction[] = [];
-let securityLogs: SecurityLog[] = [];
-let sessionTokens: any[] = [];
-let csrfTokens: any[] = [];
-let rateLimits: any[] = [];
+const users: User[] = [];
+const employees: Employee[] = [];
+const transactions: Transaction[] = [];
+const securityLogs: SecurityLog[] = [];
+type SessionToken = { token: string; userId: number; userType: "user" | "employee"; "expires_at": string; "is_revoked": boolean };
+type CSRFToken = { token: string; "expires_at": string; "is_used"?: boolean; "user_id"?: number | null; "employee_id"?: number | null };
+type RateLimit = { "ip_address": string; endpoint: string; "request_count": number; "first_request": string; "last_request": string };
+const sessionTokens: SessionToken[] = [];
+const csrfTokens: CSRFToken[] = [];
+const rateLimits: RateLimit[] = [];
 
 const counters = {
   userId: 1,
@@ -282,18 +285,13 @@ export async function seedExampleUsers() {
           is_active: true,
           failed_login_attempts: 0
         });
+      }
+    }
+  } catch (error) {
+    console.error("Error seeding example users:", error);
+  }
+}
 
-        type SessionToken = { token: string; userId: number; userType: "user" | "employee"; expires_at: string; is_revoked: boolean };
-        type CSRFToken = { token: string; expires_at: string; is_used?: boolean; user_id?: number | null; employee_id?: number | null; userId?: number; employeeId?: number };
-        type RateLimit = { ip_address: string; endpoint: string; request_count: number; first_request: string; last_request: string };
-
-        const users: User[] = [];
-        const employees: Employee[] = [];
-        const transactions: Transaction[] = [];
-        const securityLogs: SecurityLog[] = [];
-        const sessionTokens: SessionToken[] = [];
-        const csrfTokens: CSRFToken[] = [];
-        const rateLimits: RateLimit[] = [];
 export function getUsers(): User[] {
   return users.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
