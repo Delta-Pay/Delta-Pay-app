@@ -53,7 +53,7 @@
     <main class="main-container">
       <div class="payment-gateway-container">
         <div class="payment-gateway-header">
-          <button id="backBtn" class="btn-back" onclick="window.location.href='/'">Back</button>
+          <button id="backBtn" class="btn-back">Back</button>
           <h1 class="gateway-title">DeltaΔPay Secure Gateway</h1>
           <p class="gateway-subtitle">Complete your international payment securely</p>
         </div>
@@ -197,7 +197,7 @@
             />
           </div>
           <div class="auth-buttons">
-            <button type="button" class="auth-btn cancel-btn" onclick="closePasswordModal()">
+            <button type="button" class="auth-btn cancel-btn" id="cancelPasswordBtn">
               Cancel
             </button>
             <button type="submit" class="auth-btn authenticate-btn">
@@ -229,7 +229,7 @@
         <p class="success-message">
           Your payment has been securely processed and will be reviewed by our team before final transmission.
         </p>
-        <button class="close-modal-button" onclick="closeSuccessModal()">
+  <button class="close-modal-button" id="closeSuccessBtn">
           Return to Dashboard
         </button>
       </div>

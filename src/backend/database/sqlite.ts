@@ -1,4 +1,4 @@
-// #COMPLETION_DRIVE: Assuming SQLite package is available for persistent storage // #SUGGEST_VERIFY: Add proper error handling for database connection failures
+// Stub for a potential SQLite-backed implementation; current app uses in-memory storage.
 export class SQLiteDB {
   private dbPath: string;
   
@@ -6,10 +6,10 @@ export class SQLiteDB {
     this.dbPath = dbPath;
   }
 
-  async initializeDatabase(): Promise<void> {
+  initializeDatabase(): void {
     try {
       // Create users table
-      const createUsersTable = `
+      const _createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           full_name TEXT NOT NULL,
@@ -45,7 +45,7 @@ export class SQLiteDB {
       `;
 
       // Create transactions table
-      const createTransactionsTable = `
+  const _createTransactionsTable = `
         CREATE TABLE IF NOT EXISTS transactions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           user_id INTEGER NOT NULL,
@@ -64,7 +64,7 @@ export class SQLiteDB {
       `;
 
       // Create security logs table
-      const createSecurityLogsTable = `
+  const _createSecurityLogsTable = `
         CREATE TABLE IF NOT EXISTS security_logs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           user_id INTEGER,
@@ -85,10 +85,10 @@ export class SQLiteDB {
     }
   }
 
-  async seedDefaultData(): Promise<void> {
+  seedDefaultData(): void {
     try {
       // Add example users with complete card data
-      const users = [
+  const _users = [
         {
           full_name: "John Smith",
           id_number: "8501011234567",

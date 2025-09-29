@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- #COMPLETION_DRIVE: Assuming admin transactions and logs are separate pages (logs at /security-logs) -->
+    <!-- Admin transactions and logs are separate pages (logs at /security-logs) -->
     <!-- #SUGGEST_VERIFY: If a single combined admin dashboard is desired, merge logs UI into this page -->
     <header class="header">
         <div class="logo">
@@ -32,7 +32,7 @@
                     <button id="refreshTransactionsBtn" class="option-button" style="padding: 0.75rem 1rem; min-width: 140px;">
                         <div class="option-content"><h2 style="font-size: 1rem; margin: 0;">Refresh</h2></div>
                     </button>
-                    <button id="goToLogsBtn" class="option-button backend-option" style="padding: 0.75rem 1rem; min-width: 180px;" onclick="navigateToSecurityLogs()">
+                    <button id="goToLogsBtn" class="option-button backend-option" style="padding: 0.75rem 1rem; min-width: 180px;">
                         <div class="option-content"><h2 style="font-size: 1rem; margin: 0;">View Security Logs</h2></div>
                     </button>
                 </div>
@@ -73,7 +73,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Employee Login</h3>
-                <button class="modal-close" onclick="closeEmployeeLoginModal()">×</button>
+                <button class="modal-close" id="employeeLoginClose">×</button>
             </div>
             <form id="employeeLoginForm" class="modal-content">
                 <div class="form-group">
@@ -98,7 +98,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Provide Denial Reason</h3>
-                <button class="modal-close" onclick="closeDenyModal()">×</button>
+                <button class="modal-close" id="denyClose">×</button>
             </div>
             <form id="denyForm" class="modal-content">
                 <input type="hidden" id="denyTransactionId" />

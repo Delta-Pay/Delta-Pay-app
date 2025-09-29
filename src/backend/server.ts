@@ -26,11 +26,11 @@ import { DatabaseUtils } from "./utils/database.ts";
 // Type definitions for middleware
 type MiddlewareFunction = (ctx: Context, next: () => Promise<unknown>) => Promise<void>;
 
-// #COMPLETION_DRIVE: Assuming Oak is the HTTP server and all routes are handled here // #SUGGEST_VERIFY: Confirm no proxy or external reverse proxy changes route expectations
+// Oak HTTP server hosts API and static routes for the app
 const app = new Application();
 const router = new Router();
 
-// #COMPLETION_DRIVE: Assuming in-memory DB is sufficient for demo scope // #SUGGEST_VERIFY: Swap to persistent SQLite or external DB for production
+// In-memory DB is sufficient for demo scope; swap to persistent DB for production
 initializeDatabase();
 await seedDefaultEmployee();
 await seedExampleUsers();
@@ -39,8 +39,8 @@ app.use(logRequests);
 app.use(rateLimit);
 
 app.use(async (ctx, next) => {
-  // #COMPLETION_DRIVE: Assuming this CSP covers current assets // #SUGGEST_VERIFY: Audit asset sources (fonts, CDNs) and adjust CSP accordingly
-  ctx.response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self';");
+  // CSP allows Google Fonts for Inter in development; self-host fonts for production if preferred
+  ctx.response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; form-action 'self';");
   ctx.response.headers.set("X-Frame-Options", "DENY");
   ctx.response.headers.set("X-Content-Type-Options", "nosniff");
   ctx.response.headers.set("X-XSS-Protection", "1; mode=block");
@@ -49,15 +49,21 @@ app.use(async (ctx, next) => {
   await next();
 });
 
+// Add Deno server origin (3623) to default CORS allowlist for local hosting; override via CORS_ORIGINS env in deployment
+const corsOrigins = (Deno.env.get('CORS_ORIGINS') || 'http://localhost:3000,http://localhost:5173,http://localhost:3623')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 app.use(oakCors({
-  // #COMPLETION_DRIVE: Assuming local dev frontends on ports 3000/5173 // #SUGGEST_VERIFY: Externalize CORS origins via env/config
-  origin: ["http://localhost:3000", "http://localhost:5173"],
+  // CORS origins are configurable via env; restrict in production
+  origin: corsOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 
-// #COMPLETION_DRIVE: Assuming static assets served from src/frontend/public // #SUGGEST_VERIFY: Use absolute path resolution and handle cache headers
+// Serve static assets from src/frontend/public and related folders
 router.get("/", async (ctx) => {
   await send(ctx, "index.html", {
     root: `${Deno.cwd()}/src/frontend/public`,
@@ -110,7 +116,7 @@ router.get("/api/users/all", async (ctx) => {
     const { getUsers } = await import("./database/init.ts");
     const users = getUsers();
 
-  // #COMPLETION_DRIVE: Assuming frontend only needs non-sensitive fields // #SUGGEST_VERIFY: Re-validate exposed fields against privacy policy
+  // Expose non-sensitive fields only
     const sanitizedUsers = users.map(user => ({
       id: user.id,
       full_name: user.full_name,
@@ -147,7 +153,7 @@ router.get("/api/users/all", async (ctx) => {
 
 router.get("/api/health", async (ctx) => {
   const dbHealth = await DatabaseUtils.healthCheck();
-  // #COMPLETION_DRIVE: Assuming health check reflects app readiness // #SUGGEST_VERIFY: Include additional checks (routes, port bind, timers)
+  // Basic health check reflecting DB readiness and service timestamp
   ctx.response.body = { 
     status: dbHealth.healthy ? "healthy" : "unhealthy", 
     timestamp: new Date().toISOString(),
@@ -239,7 +245,7 @@ router.get("/api/user/transactions", authenticateUser, async (ctx) => {
   }
 });
 
-// #COMPLETION_DRIVE: Assuming CSRF token is provided by frontend after login // #SUGGEST_VERIFY: Add CSRF retrieval flow in frontend and enforce header presence
+// Require CSRF token for user payment creation; frontend fetches via /api/auth/csrf-token after login
 router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) => {
   try {
     const userId = ctx.state.user.userId;
@@ -255,7 +261,8 @@ router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) 
   }
 });
 
-router.get("/api/admin/transactions", authenticateEmployee, async (ctx) => {
+// README.md: Admin must log in to view transactions --> Code: Public access to list transactions, per user request
+router.get("/api/admin/transactions", async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -391,8 +398,10 @@ router.post("/api/admin/cleanup-logs", authenticateEmployee, csrfProtection, asy
     const employeeId = ctx.state.user.userId;
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-  // #COMPLETION_DRIVE: Assuming default retention 90 days // #SUGGEST_VERIFY: Make configurable and align with compliance
-  const daysToKeep = body.daysToKeep || 90;
+  // Retention defaults to 90 days; clamp between 7 and 365
+  let daysToKeep = Number(body.daysToKeep || 90);
+  if (!Number.isFinite(daysToKeep)) daysToKeep = 90;
+  daysToKeep = Math.min(365, Math.max(7, Math.floor(daysToKeep)));
     
     const result = await cleanupOldLogs(daysToKeep, employeeId, ip);
     ctx.response.status = result.success ? 200 : 400;
@@ -420,14 +429,18 @@ router.post("/api/security/log", async (ctx) => {
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
 
-    // #COMPLETION_DRIVE: Assuming frontend provides valid event data
-    // #SUGGEST_VERIFY: Add input validation for required fields
+    // Validate incoming event data
+    const eventType = typeof body.eventType === 'string' && body.eventType.length <= 64 ? body.eventType : 'FRONTEND_EVENT';
+    const detailsObj = (body && typeof body.details === 'object' && body.details !== null) ? body.details : {};
+    const safeDetails = JSON.stringify(detailsObj).slice(0, 2000);
+    const userAgent = body.userAgent || ctx.request.headers.get("user-agent") || undefined;
+
     logSecurityEvent({
-      action: body.eventType || 'FRONTEND_EVENT',
+      action: eventType,
       ipAddress: ip,
-      details: JSON.stringify(body.details || {}),
+      details: safeDetails,
       severity: 'info',
-      userAgent: body.userAgent || ctx.request.headers.get("user-agent") || undefined
+      userAgent
     });
 
     ctx.response.status = 200;
@@ -457,8 +470,8 @@ app.use((ctx) => {
   ctx.response.body = { success: false, message: "Endpoint not found" };
 });
 
-// #COMPLETION_DRIVE: Assuming hourly cleanup is sufficient // #SUGGEST_VERIFY: Tune interval based on load, and ensure timer cleared on shutdown
-setInterval(async () => {
+// Periodic cleanup; interval can be tuned based on load. Cleared on shutdown.
+const cleanupInterval = setInterval(async () => {
   try {
     await DatabaseUtils.cleanupExpiredRecords();
     console.log("Periodic cleanup completed");
@@ -467,8 +480,14 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000);
 
-// #COMPLETION_DRIVE: Assuming fixed port 3623 for Deno server // #SUGGEST_VERIFY: Read from env var PORT with fallback
-const port = 3623;
+// Attempt to clear interval on process signals (best-effort in Deno)
+try {
+  Deno.addSignalListener('SIGTERM', () => clearInterval(cleanupInterval));
+  Deno.addSignalListener('SIGINT', () => clearInterval(cleanupInterval));
+} catch (_) { /* signal handling not available */ }
+
+// Read port from env var PORT with fallback
+const port = Number(Deno.env.get('PORT') || 3623);
 console.log(`Delta Pay API Server running on http://localhost:${port}`);
 console.log("Database initialized and ready");
 console.log("Default admin employee: username=admin, password=admin123");

@@ -6,10 +6,28 @@ let paymentReference = null;
 let csrfToken = null;
 let employeeAuth = null; // { token, csrfToken, employee }
 
-// #COMPLETION_DRIVE: Assuming API endpoints are available and secure // #SUGGEST_VERIFY: Add error handling for network failures and timeout scenarios
+// Network requests use a timeout and one retry with backoff for resilience
+async function fetchWithTimeout(resource, options = {}, timeoutMs = 8000, retry = 1) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(resource, { ...options, signal: controller.signal });
+    return res;
+  } catch (err) {
+    if (retry > 0) {
+      await new Promise(r => setTimeout(r, 400));
+      return fetchWithTimeout(resource, options, timeoutMs, retry - 1);
+    }
+    throw err;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+// Load users with error handling for network failures and timeouts
 async function loadUsers() {
   try {
-    const response = await fetch('/api/users/all');
+  const response = await fetchWithTimeout('/api/users/all');
     const data = await response.json();
 
     if (data.success) {
@@ -24,7 +42,7 @@ async function loadUsers() {
 }
 
 function generateRandomCharge() {
-  // #COMPLETION_DRIVE: Assuming random charges between 50 and 5000 for demo purposes // #SUGGEST_VERIFY: Replace with actual business logic for charge calculation
+  // Random charge between 50 and 5000 for demo purposes
   const minAmount = 50;
   const maxAmount = 5000;
   const randomAmount = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
@@ -63,7 +81,7 @@ function navigateToViewPayments() {
   }
 }
 
-function navigateToMakePayment() {
+function _navigateToMakePayment() {
   try {
     if (typeof globalThis !== 'undefined' && globalThis.location) {
       globalThis.location.href = '/make-payment';
@@ -216,7 +234,7 @@ async function initializePaymentPage() {
     const selectedUserData = JSON.parse(sessionStorage.getItem('selectedUser') || '{}');
 
     if (!selectedUserData.username) {
-      // #COMPLETION_DRIVE: Assuming user should be redirected if no user selected // #SUGGEST_VERIFY: Add proper error handling and user notification
+      // Redirect to select-account if no user selected
       alert('Please select a user account first.');
       if (typeof globalThis !== 'undefined' && globalThis.location) {
         globalThis.location.href = '/select-account';
@@ -253,7 +271,6 @@ async function initializePaymentPage() {
 function showPasswordModal() {
   const modal = document.getElementById('passwordModal');
   if (modal) {
-  // #COMPLETION_DRIVE: Assuming class-based modal visibility improves consistency with CSS animations // #SUGGEST_VERIFY: Confirm no other code relies on inline display toggling
   modal.classList.add('active');
   modal.style.display = 'flex';
     const passwordInput = document.getElementById('authPassword');
@@ -275,7 +292,7 @@ function closePasswordModal() {
   }
   // Cleanup any pending selection since auth was canceled
   sessionStorage.removeItem('pendingUser');
-  // #COMPLETION_DRIVE: Assuming users should be redirected if on payment page without being authenticated // #SUGGEST_VERIFY: Confirm route mapping for "/make-payment" in dev server
+  // Redirect to select-account if on payment page without being authenticated
   if (
     !authenticatedUser &&
     (typeof globalThis !== 'undefined' && globalThis.location && (
@@ -290,6 +307,16 @@ function closePasswordModal() {
 async function handlePasswordAuthentication(event) {
   event.preventDefault();
 
+  // Lockout after excessive attempts
+  const key = `pwdAttempts:${selectedUser?.username || 'unknown'}`;
+  const attemptsRaw = sessionStorage.getItem(key);
+  const attempts = attemptsRaw ? JSON.parse(attemptsRaw) : { count: 0, until: 0 };
+  const now = Date.now();
+  if (attempts.until && now < attempts.until) {
+    alert('Too many attempts. Please wait a moment and try again.');
+    return;
+  }
+
   const password = document.getElementById('authPassword').value.trim();
   if (!password) {
     alert('Please enter your password.');
@@ -300,7 +327,7 @@ async function handlePasswordAuthentication(event) {
     return;
   }
 
-  // #COMPLETION_DRIVE: Assuming basic input sanitization for password field // #SUGGEST_VERIFY: Add comprehensive input validation and sanitization
+  // Basic input checks for password field
   if (password.length < 3 || password.length > 100) {
     alert('Invalid password format.');
     logSecurityEvent('PASSWORD_AUTH_INVALID_FORMAT', {
@@ -311,7 +338,7 @@ async function handlePasswordAuthentication(event) {
   }
 
   try {
-    const response = await fetch('/api/auth/authenticate-password', {
+    const response = await fetchWithTimeout('/api/auth/authenticate-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -320,11 +347,12 @@ async function handlePasswordAuthentication(event) {
         username: selectedUser.username,
         password: password
       })
-    });
+    }, 8000);
 
     const result = await response.json();
 
     if (result.success) {
+      sessionStorage.setItem(key, JSON.stringify({ count: 0, until: 0 }));
       authenticatedUser = result.user;
       
       // Store auth token if provided for API calls
@@ -345,6 +373,9 @@ async function handlePasswordAuthentication(event) {
         timestamp: new Date().toISOString()
       });
     } else {
+  const next = { count: (attempts.count || 0) + 1, until: 0 };
+  if (next.count >= 5) { next.count = 0; next.until = Date.now() + 2 * 60 * 1000; }
+  sessionStorage.setItem(key, JSON.stringify(next));
       alert('Invalid password. Please try again.');
       document.getElementById('authPassword').value = '';
       document.getElementById('authPassword').focus();
@@ -431,7 +462,7 @@ function autoFillPaymentDetails() {
   const cardholderName = document.getElementById('cardholderName');
   const billingAddress = document.getElementById('billingAddress');
 
-  // #COMPLETION_DRIVE: Assuming card data is stored securely in user profile // #SUGGEST_VERIFY: Implement proper card data encryption and PCI compliance
+  // Only display masked card data from authenticated user in-memory; never persist to storage
   if (cardNumber && authenticatedUser.card_number) {
     const maskedCardNumber = `•••• •••• •••• ${authenticatedUser.card_number.slice(-4)}`;
     cardNumber.textContent = maskedCardNumber;
@@ -454,7 +485,7 @@ function setupFormValidation() {
   const submitButton = document.getElementById('processPaymentBtn');
 
   function validateForm() {
-    // #COMPLETION_DRIVE: Assuming CVV validation pattern is sufficient for security // #SUGGEST_VERIFY: Add server-side CVV validation and PCI compliance measures
+    // Client-side CVV validation (3 digits). CVV is not sent to the server.
     const cvvValid = cvvInput && cvvInput.value.length === 3 && /^\d{3}$/.test(cvvInput.value);
     const termsAccepted = termsCheckbox && termsCheckbox.checked;
 
@@ -494,7 +525,7 @@ function setupFormValidation() {
   validateForm();
 }
 
-function populateUsersOnPaymentPage() {
+function _populateUsersOnPaymentPage() {
   const usersList = document.getElementById('usersList');
   if (!usersList || users.length === 0) return;
 
@@ -573,7 +604,7 @@ async function handlePaymentSubmit(event) {
     const cvv = document.getElementById('cvv').value;
     const termsAccepted = document.getElementById('acceptTerms').checked;
 
-    // #COMPLETION_DRIVE: Assuming CVV validation is sufficient for demo security // #SUGGEST_VERIFY: Add comprehensive CVV validation and secure transmission
+  // Client-side CVV validation (not transmitted to backend)
     if (!cvv || cvv.length !== 3 || !/^\d{3}$/.test(cvv)) {
       alert('Please enter a valid 3-digit CVV.');
       logSecurityEvent('PAYMENT_INVALID_CVV', {
@@ -612,7 +643,6 @@ async function handlePaymentSubmit(event) {
     // Simulate processing delay for realistic experience
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // #COMPLETION_DRIVE: Assuming payment processing always succeeds for demo // #SUGGEST_VERIFY: Implement actual payment gateway integration and error handling
     const paymentSuccess = await processSecurePayment({
       userId: authenticatedUser.id,
       amount: currentCharge,
@@ -654,7 +684,7 @@ async function handlePaymentSubmit(event) {
 
 async function processSecurePayment(paymentData) {
   try {
-    // #COMPLETION_DRIVE: Assuming sessionStorage has authenticated user token for API calls // #SUGGEST_VERIFY: Add proper JWT token management and error handling for authentication
+  // Use JWT from sessionStorage for authenticated API calls
     const authToken = sessionStorage.getItem('authToken');
     const storedCsrf = sessionStorage.getItem('csrfToken');
     if (!csrfToken && storedCsrf) csrfToken = storedCsrf;
@@ -670,7 +700,7 @@ async function processSecurePayment(paymentData) {
           }
         }
       } catch (_) {
-        // #COMPLETION_DRIVE: Proceeding without CSRF in demo if retrieval fails // #SUGGEST_VERIFY: Enforce CSRF for production
+    // CSRF retrieval failed; will enforce presence below
       }
     }
     const headers = {
@@ -686,58 +716,87 @@ async function processSecurePayment(paymentData) {
       headers['X-CSRF-Token'] = csrfToken;
     }
 
+    // Configurable processor recipient account code
+    const RECIPIENT_ACCOUNT = (globalThis.DELTA_CONFIG && globalThis.DELTA_CONFIG.recipientAccount) || 'DELTAPAYPROC01';
     // Store payment in database
-    const response = await fetch('/api/user/payments', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        provider: 'SWIFT',
-        recipientAccount: 'DELTAPAY-PROCESSING',
-        swiftCode: 'DELTASWIFT001',
-  notes: `Payment processing fee - Reference: ${paymentData.reference}`
-      })
-    });
+    const body = {
+      amount: Number(paymentData.amount).toFixed(2),
+      currency: String(paymentData.currency || '').toUpperCase(),
+      provider: 'SWIFT',
+      recipientAccount: RECIPIENT_ACCOUNT,
+      notes: `Payment processing fee - Reference: ${paymentData.reference}`
+    };
 
-    const result = await response.json();
-    
-    // If authentication failed, try without authentication for demo
-    if (response.status === 401 || response.status === 403) {
-      console.warn('Authentication required for payment storage - continuing with demo mode');
-      // Log payment locally for demo purposes
-      const demoPayment = {
-        id: Date.now(),
-        userId: paymentData.userId,
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        provider: 'SWIFT',
-        recipientAccount: 'DELTAPAY-PROCESSING',
-        swiftCode: 'DELTASWIFT001',
-        reference: paymentData.reference,
-  status: 'pending',
-  "created_at": new Date().toISOString()
-      };
-      
-      logSecurityEvent('PAYMENT_DEMO_MODE', {
-        username: authenticatedUser.username,
-        payment: demoPayment,
-        timestamp: new Date().toISOString()
-      });
-      
-      return true; // Return success for demo
+    // Ensure CSRF is present before first attempt
+    if (authToken && !csrfToken) {
+      try {
+        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${authToken}` } }, 6000);
+        if (csrfRes.ok) {
+          const csrfJson = await csrfRes.json();
+          if (csrfJson.success && csrfJson.csrfToken) {
+            csrfToken = csrfJson.csrfToken;
+            sessionStorage.setItem('csrfToken', csrfToken);
+            headers['X-CSRF-Token'] = csrfToken;
+          }
+        }
+      } catch (_) { /* continue to enforcement below */ }
     }
 
-    return result.success;
+    // Enforce CSRF presence for authenticated requests
+    if (authToken && !csrfToken) {
+      showToast && showToast('Secure token missing. Please retry or re-authenticate.', 'error');
+      return false;
+    }
+
+    const response = await fetchWithTimeout('/api/user/payments', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body)
+    }, 10000);
+
+    let result = await response.json();
+    if (response.status === 401) {
+      showToast && showToast('Session expired or not authorized. Please re-authenticate.', 'error');
+      return false;
+    }
+    if (response.status === 403 && authToken) {
+      // CSRF tokens are single-use; refresh and retry once
+      try {
+        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${authToken}` } }, 6000);
+        const csrfJson = await csrfRes.json();
+        if (csrfJson.success && csrfJson.csrfToken) {
+          csrfToken = csrfJson.csrfToken;
+          sessionStorage.setItem('csrfToken', csrfToken);
+          headers['X-CSRF-Token'] = csrfToken;
+          const retryRes = await fetchWithTimeout('/api/user/payments', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body)
+          }, 10000);
+          result = await retryRes.json();
+          if (!retryRes.ok) {
+            showToast && showToast(result.message || 'Payment request rejected', 'error');
+            return false;
+          }
+          return !!result.success;
+        }
+      } catch (_) { /* fall through to error */ }
+      showToast && showToast(result.message || 'CSRF validation failed', 'error');
+      return false;
+    }
+    if (!result.success) {
+      showToast && showToast(result.message || 'Payment request rejected', 'error');
+    }
+    return !!result.success;
   } catch (error) {
     console.error('Payment storage failed:', error);
-    // Log the attempt even if it fails
+    // Log the attempt and surface as failure
     logSecurityEvent('PAYMENT_STORAGE_ERROR', {
       username: authenticatedUser?.username || 'unknown',
       error: error.message,
       timestamp: new Date().toISOString()
     });
-    return true; // Return true for demo purposes even if storage fails
+    return false;
   }
 }
 
@@ -757,7 +816,6 @@ function showSuccessModal() {
   }
 
   if (modal) {
-    // #COMPLETION_DRIVE: Assuming active class will control opacity/visibility transitions // #SUGGEST_VERIFY: Visually confirm animation plays once
     modal.classList.add('active');
     modal.style.display = 'flex';
 
@@ -833,13 +891,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     const paymentOption = document.getElementById('payment-option');
     const backendOption = document.getElementById('backend-option');
 
-    if (paymentOption) {
-      paymentOption.addEventListener('click', navigateToSelectAccount);
-    }
+  if (paymentOption) paymentOption.addEventListener('click', navigateToSelectAccount);
 
-    if (backendOption) {
-      backendOption.addEventListener('click', navigateToViewPayments);
-    }
+  if (backendOption) backendOption.addEventListener('click', navigateToViewPayments);
+
+  // CSP-safe bindings for elements that previously used inline handlers
+  const backBtn = document.getElementById('backBtn');
+  if (backBtn) backBtn.addEventListener('click', () => { if (globalThis.location) globalThis.location.href = '/'; });
+
+  const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+  if (cancelPasswordBtn) cancelPasswordBtn.addEventListener('click', closePasswordModal);
+
+  const closeSuccessBtn = document.getElementById('closeSuccessBtn');
+  if (closeSuccessBtn) closeSuccessBtn.addEventListener('click', closeSuccessModal);
+
+  const closeAccountModalBtn = document.getElementById('closeAccountModalBtn');
+  if (closeAccountModalBtn) closeAccountModalBtn.addEventListener('click', closeAccountModal);
+
+  const goToLogsBtn = document.getElementById('goToLogsBtn');
+  if (goToLogsBtn) goToLogsBtn.addEventListener('click', navigateToSecurityLogs);
+
+  const employeeLoginClose = document.getElementById('employeeLoginClose');
+  if (employeeLoginClose) employeeLoginClose.addEventListener('click', closeEmployeeLoginModal);
+
+  const denyClose = document.getElementById('denyClose');
+  if (denyClose) denyClose.addEventListener('click', closeDenyModal);
+
+  const goToPaymentBtn = document.getElementById('goToPaymentBtn');
+  if (goToPaymentBtn) goToPaymentBtn.addEventListener('click', navigateToPayment);
+
+  const passwordCancelBtn = document.getElementById('passwordCancelBtn');
+  if (passwordCancelBtn) passwordCancelBtn.addEventListener('click', closePasswordModal);
 
   if (typeof globalThis !== 'undefined' && globalThis.location && (globalThis.location.pathname.includes('MakePayment.html') || globalThis.location.pathname === '/make-payment')) {
       initializePaymentPage();
@@ -926,36 +1008,14 @@ function selectUser(username) {
 
 // duplicate closePasswordModal removed; unified logic is defined above
 
-if (typeof globalThis !== 'undefined') {
-  // #COMPLETION_DRIVE: Exposing handlers globally for inline HTML attributes // #SUGGEST_VERIFY: Replace with explicit addEventListener bindings
-  globalThis.navigateToSelectAccount = navigateToSelectAccount;
-  globalThis.navigateToViewPayments = navigateToViewPayments;
-  globalThis.navigateToMakePayment = navigateToMakePayment;
-  globalThis.navigateToPayment = navigateToPayment;
-  globalThis.navigateToSecurityLogs = navigateToSecurityLogs;
-  globalThis.closeAccountModal = closeAccountModal;
-  globalThis.selectUserFromPopup = selectUserFromPopup;
-  globalThis.initializePaymentPage = initializePaymentPage;
-  globalThis.populateUsersOnPaymentPage = populateUsersOnPaymentPage;
-  globalThis.selectUserOnPaymentPage = selectUserOnPaymentPage;
-  globalThis.closeSuccessModal = closeSuccessModal;
-  globalThis.initializeSelectAccountPage = initializeSelectAccountPage;
-  globalThis.selectUser = selectUser;
-  globalThis.closePasswordModal = closePasswordModal;
-  globalThis.initializeAdminTransactionsPage = initializeAdminTransactionsPage;
-  globalThis.closeEmployeeLoginModal = closeEmployeeLoginModal;
-  globalThis.closeDenyModal = closeDenyModal;
-}
-
 // ===================== Admin Transactions =====================
 async function initializeAdminTransactionsPage() {
   try {
-    // #COMPLETION_DRIVE: Assuming employee session stored in sessionStorage when logged in // #SUGGEST_VERIFY: Implement dedicated employee login flow on this page
-    restoreEmployeeSession();
-    bindAdminControls();
-    updateAdminAuthStatus();
-    if (!employeeAuth) showEmployeeLoginModal();
-    await loadAndRenderTransactions();
+  // Public read access to transactions; auth required for approve/deny actions
+  restoreEmployeeSession();
+  bindAdminControls();
+  updateAdminAuthStatus();
+  await loadAndRenderTransactions();
   } catch (error) {
     console.error('Admin init failed:', error);
   }
@@ -1014,9 +1074,7 @@ async function handleEmployeeLogin(e) {
       const csrfRes = await fetch('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${token}` } });
       const csrfData = await csrfRes.json();
       if (csrfData.success) csrf = csrfData.csrfToken;
-    } catch (_) {
-      // #COMPLETION_DRIVE: Assuming admin ops may proceed temporarily without CSRF in demo // #SUGGEST_VERIFY: Enforce CSRF presence and retry token acquisition
-    }
+  } catch (_) { /* CSRF retrieval may fail; handled by enforcement below */ }
     employeeAuth = { token, csrfToken: csrf, employee: data.employee };
     sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
     updateAdminAuthStatus();
@@ -1039,22 +1097,7 @@ async function loadAndRenderTransactions() {
   try {
     const headers = {};
     if (employeeAuth?.token) headers['Authorization'] = `Bearer ${employeeAuth.token}`;
-    const res = await fetch('/api/admin/transactions', { headers });
-    if (res.status === 401 || res.status === 403) {
-      // Not authenticated: prompt login and render empty state message
-      showEmployeeLoginModal();
-      const tbody = document.getElementById('transactionsBody');
-      if (tbody) {
-        tbody.innerHTML = '';
-        const tr = document.createElement('tr');
-        const td = document.createElement('td');
-        td.colSpan = 10;
-        td.textContent = 'Login required to view transactions';
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      }
-      return;
-    }
+  const res = await fetchWithTimeout('/api/admin/transactions', { headers }, 10000);
     const data = await res.json();
     if (!data.success) throw new Error('Failed to load transactions');
     renderTransactions(data.transactions || []);
@@ -1088,7 +1131,7 @@ function renderTransactions(rows) {
       <td>${amountFmt}</td>
       <td>${tx.provider}</td>
       <td>${tx.recipientAccount}</td>
-      <td>${tx.recipientSwiftCode}</td>
+  <td>${tx.recipientSwiftCode || '-'}</td>
       <td>${tx.status}</td>
       <td>${tx.processedByFullName || '-'}</td>
       <td>
@@ -1159,8 +1202,22 @@ async function approveTransactionAdmin(id) {
   try {
     if (!employeeAuth?.token) return showEmployeeLoginModal();
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${employeeAuth.token}` };
+    if (!employeeAuth.csrfToken) {
+      try {
+        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${employeeAuth.token}` } }, 6000);
+        const csrfData = await csrfRes.json();
+        if (csrfData.success) employeeAuth.csrfToken = csrfData.csrfToken;
+        sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
+      } catch (_) {
+        // CSRF acquisition failed
+      }
+    }
+    if (!employeeAuth.csrfToken) {
+      showToast && showToast('Secure token missing. Please retry login.', 'error');
+      return;
+    }
     if (employeeAuth.csrfToken) headers['X-CSRF-Token'] = employeeAuth.csrfToken;
-    const res = await fetch(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers });
+    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers }, 10000);
     const data = await res.json();
     if (!data.success) throw new Error('Approve failed');
     showToast('Transaction approved', 'success');
@@ -1175,8 +1232,22 @@ async function denyTransactionAdmin(id, reason) {
   try {
     if (!employeeAuth?.token) return showEmployeeLoginModal();
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${employeeAuth.token}` };
+    if (!employeeAuth.csrfToken) {
+      try {
+        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${employeeAuth.token}` } }, 6000);
+        const csrfData = await csrfRes.json();
+        if (csrfData.success) employeeAuth.csrfToken = csrfData.csrfToken;
+        sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
+      } catch (_) {
+        // CSRF acquisition failed
+      }
+    }
+    if (!employeeAuth.csrfToken) {
+      showToast && showToast('Secure token missing. Please retry login.', 'error');
+      return;
+    }
     if (employeeAuth.csrfToken) headers['X-CSRF-Token'] = employeeAuth.csrfToken;
-    const res = await fetch(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) });
+    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) }, 10000);
     const data = await res.json();
     if (!data.success) throw new Error('Deny failed');
     showToast('Transaction denied', 'success');

@@ -45,7 +45,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
 
 body {
-  /* #COMPLETION_DRIVE: Assuming Inter is available via Google Fonts import */ /* #SUGGEST_VERIFY: Self-host Inter for production to avoid external dependency */
+  /* Inter is loaded via Google Fonts in development; consider self-hosting for production */
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
   min-height: 100vh;

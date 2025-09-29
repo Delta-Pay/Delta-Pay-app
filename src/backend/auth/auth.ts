@@ -203,10 +203,26 @@ export async function loginUser(username: string, password: string, ip: string):
       return { success: false, message: "Invalid credentials" };
     }
 
+    // Basic lockout: after 5 failed attempts, lock for 2 minutes
+    const now = Date.now();
+    if (user.account_locked_until && new Date(user.account_locked_until).getTime() > now) {
+      return { success: false, message: "Account temporarily locked. Please try again later." };
+    }
+
     const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
+      const next = (user.failed_login_attempts || 0) + 1;
+      user.failed_login_attempts = next;
+      user.last_login_attempt = new Date().toISOString();
+      if (next >= 5) {
+        user.account_locked_until = new Date(now + 2 * 60 * 1000).toISOString();
+        user.failed_login_attempts = 0;
+      }
       return { success: false, message: "Invalid credentials" };
     }
+
+    user.failed_login_attempts = 0;
+    user.account_locked_until = undefined;
 
   const token = await issueJwtForUser(user, "user");
 
@@ -241,10 +257,25 @@ export async function loginEmployee(username: string, password: string, ip: stri
       return { success: false, message: "Invalid credentials" };
     }
 
+    const now = Date.now();
+    if (employee.account_locked_until && new Date(employee.account_locked_until).getTime() > now) {
+      return { success: false, message: "Account temporarily locked. Please try again later." };
+    }
+
     const isValidPassword = await verifyPassword(password, employee.password_hash);
     if (!isValidPassword) {
+      const next = (employee.failed_login_attempts || 0) + 1;
+      employee.failed_login_attempts = next;
+      employee.last_login_attempt = new Date().toISOString();
+      if (next >= 5) {
+        employee.account_locked_until = new Date(now + 2 * 60 * 1000).toISOString();
+        employee.failed_login_attempts = 0;
+      }
       return { success: false, message: "Invalid credentials" };
     }
+
+    employee.failed_login_attempts = 0;
+    employee.account_locked_until = undefined;
 
   const token = await issueJwtForUser(employee as unknown as User, "employee");
 
@@ -339,7 +370,7 @@ export async function verifyToken(token: string): Promise<Record<string, unknown
 
 export async function authenticateUserPassword(username: string, password: string, ip: string): Promise<LoginResult> {
   try {
-    // #COMPLETION_DRIVE: Assuming user exists and password validation is required for payment flow // #SUGGEST_VERIFY: Add rate limiting and account lockout for failed authentication attempts
+    // Validate user with basic lockout for repeated failures
     const user = getUserByUsername(username);
     if (!user || !user.is_active) {
       logSecurityEvent({
@@ -352,6 +383,11 @@ export async function authenticateUserPassword(username: string, password: strin
       return { success: false, message: "Invalid credentials" };
     }
 
+    const now = Date.now();
+    if (user.account_locked_until && new Date(user.account_locked_until).getTime() > now) {
+      return { success: false, message: "Account temporarily locked. Please try again later." };
+    }
+
     const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
       logSecurityEvent({
@@ -362,6 +398,13 @@ export async function authenticateUserPassword(username: string, password: strin
         severity: 'warning',
         timestamp: new Date().toISOString()
       });
+      const next = (user.failed_login_attempts || 0) + 1;
+      user.failed_login_attempts = next;
+      user.last_login_attempt = new Date().toISOString();
+      if (next >= 5) {
+        user.account_locked_until = new Date(now + 2 * 60 * 1000).toISOString();
+        user.failed_login_attempts = 0;
+      }
       return { success: false, message: "Invalid credentials" };
     }
 
@@ -383,7 +426,7 @@ export async function authenticateUserPassword(username: string, password: strin
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       is_revoked: false,
     });
-    const csrfToken = generateCSRFToken(user.id, undefined);
+  const csrfToken = generateCSRFToken(user.id, undefined);
 
     return {
       success: true,

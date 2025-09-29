@@ -3,7 +3,7 @@ import { logSecurityEvent, verifyToken } from "../auth/auth.ts";
 import { csrfTokens, rateLimits } from "../database/init.ts";
 
 export async function authenticateToken(ctx: Context, next: () => Promise<unknown>) {
-  // #COMPLETION_DRIVE: Assuming JWT is provided via Authorization: Bearer header // #SUGGEST_VERIFY: Add cookie-based auth alternative and stricter parsing
+  // Expect JWT via Authorization: Bearer header
   const authHeader = ctx.request.headers.get("Authorization");
   
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -48,7 +48,7 @@ export async function authenticateEmployee(ctx: Context, next: () => Promise<unk
 }
 
 export async function rateLimit(ctx: Context, next: () => Promise<unknown>) {
-  // #COMPLETION_DRIVE: Assuming simple in-memory sliding window is acceptable for demo // #SUGGEST_VERIFY: Move to Redis-backed counter for scale and multi-instance
+  // Simple in-memory sliding window; replace with Redis for multi-instance scale
   const ip = ctx.request.ip || "unknown";
   const endpoint = ctx.request.url.pathname;
   const now = new Date();
@@ -118,13 +118,13 @@ export async function rateLimit(ctx: Context, next: () => Promise<unknown>) {
 }
 
 export async function csrfProtection(ctx: Context, next: () => Promise<unknown>) {
-  // #COMPLETION_DRIVE: Assuming token can arrive via header or query param // #SUGGEST_VERIFY: Enforce header-only and rotate token per session
+  // Enforce CSRF via header-only token; tokens are single-use and expire
   if (ctx.request.method === "GET" || ctx.request.method === "HEAD" || ctx.request.method === "OPTIONS") {
     await next();
     return;
   }
 
-  const csrfToken = ctx.request.headers.get("X-CSRF-Token") || ctx.request.url.searchParams.get("csrf_token");
+  const csrfToken = ctx.request.headers.get("X-CSRF-Token");
 
   if (!csrfToken) {
     ctx.response.status = 403;
@@ -148,9 +148,9 @@ export async function csrfProtection(ctx: Context, next: () => Promise<unknown>)
       return;
     }
 
-    const now = new Date();
+  const now = new Date();
 
-    if (tokenRecord.is_used || new Date(tokenRecord.expires_at) < now) {
+  if (tokenRecord.is_used || new Date(tokenRecord.expires_at) < now) {
       logSecurityEvent({
         userId: tokenRecord.user_id || undefined,
         employeeId: tokenRecord.employee_id || undefined,
@@ -170,7 +170,7 @@ export async function csrfProtection(ctx: Context, next: () => Promise<unknown>)
       return;
     }
 
-    tokenRecord.is_used = true;
+  tokenRecord.is_used = true;
 
     await next();
   } catch (error) {
@@ -181,9 +181,9 @@ export async function csrfProtection(ctx: Context, next: () => Promise<unknown>)
 }
 
 export function generateCSRFToken(userId?: number, employeeId?: number): string {
-  // #COMPLETION_DRIVE: Assuming 24h CSRF token validity is adequate // #SUGGEST_VERIFY: Shorten validity window and bind to session/IP
+  // CSRF tokens valid for 2h
   const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
   csrfTokens.push({
     token: token,
@@ -197,7 +197,7 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
 }
 
 export async function logRequests(ctx: Context, next: () => Promise<unknown>) {
-  // #COMPLETION_DRIVE: Assuming structured logs to security table is sufficient // #SUGGEST_VERIFY: Add rolling file logs or external SIEM integration
+  // Structured logs to security table
   const start = Date.now();
   const ip = ctx.request.ip || "unknown";
   const userAgent = ctx.request.headers.get("User-Agent") || "unknown";

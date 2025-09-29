@@ -1,28 +1,35 @@
-import { users, employees, transactions, securityLogs, addTransaction, getUserById } from "../database/init.ts";
-import { validateInput, logSecurityEvent } from "../auth/auth.ts";
+// README.md: "They will next be prompted for the account information and SWIFT code" --> Code: SWIFT code entry removed per user request; backend now treats swiftCode as optional and stores an empty value.
+import { logSecurityEvent, validateInput } from "../auth/auth.ts";
+import { addTransaction, employees, getUserById, transactions, users } from "../database/init.ts";
 
 const PAYMENT_VALIDATION_PATTERNS = {
   amount: /^\d+(\.\d{1,2})?$/,
   currency: /^[A-Z]{3}$/,
   provider: /^[A-Z\s]{2,20}$/,
   recipientAccount: /^[A-Z0-9]{8,30}$/,
-  swiftCode: /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/
+  // swiftCode intentionally omitted from validation per user request
 };
 
 const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'ZAR', 'AUD', 'CAD', 'CHF', 'JPY'];
 const SUPPORTED_PROVIDERS = ['SWIFT', 'SEPA', 'ACH', 'WIRE'];
 
-export async function createPayment(paymentData: {
+export function createPayment(paymentData: {
   amount: string;
   currency: string;
   provider: string;
   recipientAccount: string;
-  swiftCode: string;
+  swiftCode?: string;
   notes?: string;
-}, userId: number, ipAddress: string): Promise<{ success: boolean; message: string; transactionId?: number }> {
+}, userId: number, ipAddress: string): { success: boolean; message: string; transactionId?: number } {
   try {
-    // #COMPLETION_DRIVE: Assuming in-memory database validation for demo purposes // #SUGGEST_VERIFY: Add comprehensive input validation and sanitization
-    const validation = validateInput(paymentData, PAYMENT_VALIDATION_PATTERNS);
+  // Validate only required fields; SWIFT code optional per user request
+    const toValidate = {
+      amount: paymentData.amount,
+      currency: paymentData.currency,
+      provider: paymentData.provider,
+      recipientAccount: paymentData.recipientAccount
+    } as Record<string, string>;
+    const validation = validateInput(toValidate, PAYMENT_VALIDATION_PATTERNS);
     if (!validation.isValid) {
       return { success: false, message: `Validation errors: ${validation.errors.join(', ')}` };
     }
@@ -51,7 +58,7 @@ export async function createPayment(paymentData: {
       currency: paymentData.currency,
       provider: paymentData.provider,
       recipient_account: paymentData.recipientAccount,
-      recipient_swift_code: paymentData.swiftCode,
+      recipient_swift_code: paymentData.swiftCode || "",
       status: 'pending',
       created_at: new Date().toISOString(),
       notes: paymentData.notes || undefined
@@ -61,7 +68,7 @@ export async function createPayment(paymentData: {
       user_id: userId,
       action: "PAYMENT_CREATED",
       ip_address: ipAddress,
-      details: `Payment created: ${amount} ${paymentData.currency} to ${paymentData.recipientAccount} via ${paymentData.provider}`,
+  details: `Payment created: ${amount} ${paymentData.currency} to ${paymentData.recipientAccount} via ${paymentData.provider}${paymentData.swiftCode ? ' (SWIFT ' + paymentData.swiftCode + ')' : ''}`,
       severity: "info",
       timestamp: new Date().toISOString()
     });
@@ -76,7 +83,7 @@ export async function createPayment(paymentData: {
       user_id: userId,
       action: "PAYMENT_CREATION_FAILED",
       ip_address: ipAddress,
-      details: `Payment creation failed: ${error.message}`,
+      details: `Payment creation failed: ${error instanceof Error ? error.message : String(error)}`,
       severity: "error",
       timestamp: new Date().toISOString()
     });
@@ -84,7 +91,7 @@ export async function createPayment(paymentData: {
   }
 }
 
-export async function getUserTransactions(userId: number, limit: number = 50, offset: number = 0): Promise<{ success: boolean; message: string; transactions?: any[] }> {
+export function getUserTransactions(userId: number, limit: number = 50, offset: number = 0): { success: boolean; message: string; transactions?: Array<{ id: number; amount: number; currency: string; provider: string; recipientAccount: string; recipientSwiftCode: string; status: string; createdAt: string; processedAt?: string; notes?: string }>} {
   try {
     const userTransactions = transactions
       .filter(t => t.user_id === userId)
@@ -109,12 +116,12 @@ export async function getUserTransactions(userId: number, limit: number = 50, of
       message: "Transactions retrieved successfully",
       transactions: formattedTransactions
     };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve transactions" };
   }
 }
 
-export async function getAllTransactions(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; transactions?: any[] }> {
+export function getAllTransactions(limit: number = 100, offset: number = 0): { success: boolean; message: string; transactions?: Array<{ id: number; amount: number; currency: string; provider: string; recipientAccount: string; recipientSwiftCode: string; status: string; createdAt: string; processedAt?: string; notes?: string; userUsername: string; userFullName: string; processedByUsername: string | null; processedByFullName: string | null }> } {
   try {
     const sortedTransactions = transactions
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -147,12 +154,12 @@ export async function getAllTransactions(limit: number = 100, offset: number = 0
       message: "Transactions retrieved successfully",
       transactions: formattedTransactions
     };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve transactions" };
   }
 }
 
-export async function approveTransaction(transactionId: number, employeeId: number, ipAddress: string): Promise<{ success: boolean; message: string }> {
+export function approveTransaction(transactionId: number, employeeId: number, ipAddress: string): { success: boolean; message: string } {
   try {
     const transactionIndex = transactions.findIndex(t => t.id === transactionId);
 
@@ -188,7 +195,7 @@ export async function approveTransaction(transactionId: number, employeeId: numb
       employee_id: employeeId,
       action: "TRANSACTION_APPROVAL_FAILED",
       ip_address: ipAddress,
-      details: `Transaction approval failed: ${error.message}`,
+      details: `Transaction approval failed: ${error instanceof Error ? error.message : String(error)}`,
       severity: "error",
       timestamp: new Date().toISOString()
     });
@@ -196,7 +203,7 @@ export async function approveTransaction(transactionId: number, employeeId: numb
   }
 }
 
-export async function denyTransaction(transactionId: number, employeeId: number, reason: string, ipAddress: string): Promise<{ success: boolean; message: string }> {
+export function denyTransaction(transactionId: number, employeeId: number, reason: string, ipAddress: string): { success: boolean; message: string } {
   try {
     const transactionIndex = transactions.findIndex(t => t.id === transactionId);
 
@@ -233,7 +240,7 @@ export async function denyTransaction(transactionId: number, employeeId: number,
       employee_id: employeeId,
       action: "TRANSACTION_DENIAL_FAILED",
       ip_address: ipAddress,
-      details: `Transaction denial failed: ${error.message}`,
+      details: `Transaction denial failed: ${error instanceof Error ? error.message : String(error)}`,
       severity: "error",
       timestamp: new Date().toISOString()
     });
@@ -241,7 +248,7 @@ export async function denyTransaction(transactionId: number, employeeId: number,
   }
 }
 
-export async function getTransactionStatistics(): Promise<{ success: boolean; message: string; statistics?: any }> {
+export function getTransactionStatistics(): { success: boolean; message: string; statistics?: { totalTransactions: number; pendingCount: number; approvedCount: number; deniedCount: number; totalApprovedAmount: number; uniqueUsers: number } } {
   try {
     const totalTransactions = transactions.length;
     const pendingCount = transactions.filter(t => t.status === 'pending').length;
@@ -266,7 +273,7 @@ export async function getTransactionStatistics(): Promise<{ success: boolean; me
       message: "Statistics retrieved successfully",
       statistics
     };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve statistics" };
   }
 }
