@@ -191,7 +191,6 @@ body {
 }
 
 .option-button:hover {
-  transform: translateY(-8px);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
   border-color: #8da8c7ff;
 }
@@ -489,7 +488,6 @@ body {
 }
 
 .submit-button:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
 }
 
@@ -757,7 +755,6 @@ body {
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
 }
 
@@ -938,7 +935,6 @@ body {
 
 .btn-cancel:hover {
   background: #e0e0e0;
-  transform: translateY(-1px);
 }
 
 .btn-confirm {
@@ -967,7 +963,6 @@ body {
 }
 
 .btn-confirm:hover {
-  transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(171, 146, 191, 0.3);
 }
 
