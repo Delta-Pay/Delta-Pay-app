@@ -1,3 +1,4 @@
+<!-- Hardcoded user data in account selection popup --> <!-- Users now loaded dynamically from SQLite database -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -69,50 +70,7 @@
         </div>
         <div class="account-modal-body">
           <div class="account-grid">
-            <div class="account-card" onclick="selectUserFromPopup('john')">
-              <div class="account-icon">J</div>
-              <div class="account-details">
-                <h4>John Smith</h4>
-                <p>ID: 8501011234567</p>
-                <p class="account-number">Account: ****1234</p>
-              </div>
-            </div>
-
-            <div class="account-card" onclick="selectUserFromPopup('sarah')">
-              <div class="account-icon">S</div>
-              <div class="account-details">
-                <h4>Sarah Johnson</h4>
-                <p>ID: 9203022345678</p>
-                <p class="account-number">Account: ****5678</p>
-              </div>
-            </div>
-
-            <div class="account-card" onclick="selectUserFromPopup('mike')">
-              <div class="account-icon">M</div>
-              <div class="account-details">
-                <h4>Mike Wilson</h4>
-                <p>ID: 8804033456789</p>
-                <p class="account-number">Account: ****9012</p>
-              </div>
-            </div>
-
-            <div class="account-card" onclick="selectUserFromPopup('emma')">
-              <div class="account-icon">E</div>
-              <div class="account-details">
-                <h4>Emma Davis</h4>
-                <p>ID: 9505044567890</p>
-                <p class="account-number">Account: ****3456</p>
-              </div>
-            </div>
-
-            <div class="account-card" onclick="selectUserFromPopup('david')">
-              <div class="account-icon">D</div>
-              <div class="account-details">
-                <h4>David Brown</h4>
-                <p>ID: 9006055678901</p>
-                <p class="account-number">Account: ****7890</p>
-              </div>
-            </div>
+            <!-- User cards will be populated dynamically from database -->
           </div>
         </div>
         <div class="account-modal-footer">

@@ -1,6 +1,6 @@
 import { hashPassword } from "../auth/auth.ts";
 
-interface User {
+export interface User {
   id: number;
   full_name: string;
   id_number: string;
@@ -14,7 +14,7 @@ interface User {
   account_locked_until?: string;
 }
 
-interface Employee {
+export interface Employee {
   id: number;
   username: string;
   password_hash: string;
@@ -27,7 +27,7 @@ interface Employee {
   account_locked_until?: string;
 }
 
-interface Transaction {
+export interface Transaction {
   id: number;
   user_id: number;
   amount: number;
@@ -42,7 +42,7 @@ interface Transaction {
   notes?: string;
 }
 
-interface SecurityLog {
+export interface SecurityLog {
   id: number;
   user_id?: number;
   employee_id?: number;
@@ -54,6 +54,7 @@ interface SecurityLog {
   severity: string;
 }
 
+// In-memory storage
 let users: User[] = [];
 let employees: Employee[] = [];
 let transactions: Transaction[] = [];
@@ -61,6 +62,7 @@ let securityLogs: SecurityLog[] = [];
 let sessionTokens: any[] = [];
 let csrfTokens: any[] = [];
 let rateLimits: any[] = [];
+
 const counters = {
   userId: 1,
   employeeId: 1,
@@ -85,27 +87,135 @@ export function getNextLogId(): number {
 }
 
 export function initializeDatabase() {
-  console.log("Database initialized successfully (in-memory)");
+  console.log("In-memory database initialized successfully");
 }
 
 export async function seedDefaultEmployee() {
-  const existingAdmin = employees.find(emp => emp.username === "admin");
+  try {
+    const existingAdmin = employees.find(emp => emp.username === "admin");
 
-  if (!existingAdmin) {
-    const passwordHash = await hashPassword("admin123");
-    employees.push({
-      id: getNextEmployeeId(),
-      username: "admin",
-      password_hash: passwordHash,
-      full_name: "System Administrator",
-      employee_id: "EMP001",
-      created_at: new Date().toISOString(),
-      is_active: true,
-      failed_login_attempts: 0
-    });
+    if (!existingAdmin) {
+      const passwordHash = await hashPassword("admin123");
+      employees.push({
+        id: getNextEmployeeId(),
+        username: "admin",
+        password_hash: passwordHash,
+        full_name: "System Administrator",
+        employee_id: "EMP001",
+        created_at: new Date().toISOString(),
+        is_active: true,
+        failed_login_attempts: 0
+      });
 
-    console.log("Default admin employee created");
+      console.log("Default admin employee created");
+    }
+  } catch (error) {
+    console.error("Error seeding default employee:", error);
   }
+}
+
+export async function seedExampleUsers() {
+  try {
+    if (users.length === 0) {
+      const exampleUsers = [
+        {
+          full_name: "John Smith",
+          id_number: "8501011234567",
+          account_number: "1234567890123456",
+          username: "johnsmith",
+          password: "john123"
+        },
+        {
+          full_name: "Sarah Johnson",
+          id_number: "9203022345678",
+          account_number: "2345678901234567",
+          username: "sarahj",
+          password: "sarah456"
+        },
+        {
+          full_name: "Mike Wilson",
+          id_number: "8804033456789",
+          account_number: "3456789012345678",
+          username: "mikew",
+          password: "mike789"
+        },
+        {
+          full_name: "Emma Davis",
+          id_number: "9505044567890",
+          account_number: "4567890123456789",
+          username: "emmad",
+          password: "emma012"
+        },
+        {
+          full_name: "David Brown",
+          id_number: "9006055678901",
+          account_number: "5678901234567890",
+          username: "davidb",
+          password: "david345"
+        }
+      ];
+
+      for (const user of exampleUsers) {
+        const passwordHash = await hashPassword(user.password);
+
+        users.push({
+          id: getNextUserId(),
+          full_name: user.full_name,
+          id_number: user.id_number,
+          account_number: user.account_number,
+          username: user.username,
+          password_hash: passwordHash,
+          created_at: new Date().toISOString(),
+          is_active: true,
+          failed_login_attempts: 0
+        });
+      }
+
+      console.log("Example users created in memory");
+    }
+  } catch (error) {
+    console.error("Error seeding example users:", error);
+  }
+}
+
+export function getUsers(): User[] {
+  return users.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function getUserByUsername(username: string): User | null {
+  return users.find(user => user.username === username) || null;
+}
+
+export function getUserById(id: number): User | null {
+  return users.find(user => user.id === id) || null;
+}
+
+export function addUser(user: Omit<User, 'id'>): User {
+  const newUser = { ...user, id: getNextUserId() };
+  users.push(newUser);
+  return newUser;
+}
+
+export function addEmployee(employee: Omit<Employee, 'id'>): Employee {
+  const newEmployee = { ...employee, id: getNextEmployeeId() };
+  employees.push(newEmployee);
+  return newEmployee;
+}
+
+export function addTransaction(transaction: Omit<Transaction, 'id'>): Transaction {
+  const newTransaction = { ...transaction, id: getNextTransactionId() };
+  transactions.push(newTransaction);
+  return newTransaction;
+}
+
+export function addSecurityLog(log: Omit<SecurityLog, 'id'>): SecurityLog {
+  const newLog = { ...log, id: getNextLogId() };
+  securityLogs.push(newLog);
+  return newLog;
+}
+
+export function getEmployeeByUsername(username: string): Employee | null {
+  return employees.find(emp => emp.username === username) || null;
 }
 
 export { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits };

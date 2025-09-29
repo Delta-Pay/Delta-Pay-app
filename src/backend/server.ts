@@ -1,7 +1,7 @@
 import { Application, Router, send, Context } from "https://deno.land/x/oak@v12.6.1/mod.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 
-import { initializeDatabase, seedDefaultEmployee } from "./database/init.ts";
+import { initializeDatabase, seedDefaultEmployee, seedExampleUsers } from "./database/init.ts";
 import { registerUser, loginUser, loginEmployee, generateCSRFToken, logSecurityEvent } from "./auth/auth.ts";
 import { createPayment, getUserTransactions, getAllTransactions, approveTransaction, denyTransaction, getTransactionStatistics } from "./payments/payments.ts";
 import { 
@@ -32,6 +32,7 @@ const router = new Router();
 
 initializeDatabase();
 await seedDefaultEmployee();
+await seedExampleUsers();
 
 app.use(logRequests);
 app.use(rateLimit);
@@ -98,6 +99,27 @@ router.get("/security-logs", async (ctx) => {
 
 router.get("/api", (ctx) => {
   ctx.response.body = { message: "Delta Pay API Server" };
+});
+
+router.get("/api/users/all", async (ctx) => {
+  try {
+    const { getUsers } = await import("./database/init.ts");
+    const users = getUsers();
+
+    const sanitizedUsers = users.map(user => ({
+      id: user.id,
+      full_name: user.full_name,
+      username: user.username,
+      account_number: user.account_number.slice(-4),
+      id_number: user.id_number,
+      letter: user.full_name.charAt(0).toUpperCase()
+    }));
+
+    ctx.response.body = { success: true, users: sanitizedUsers };
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, message: "Server error" };
+  }
 });
 
 router.get("/api/health", async (ctx) => {
