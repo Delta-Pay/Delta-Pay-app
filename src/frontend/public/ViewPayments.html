@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeltaΔPay - International Payment Solution</title>
+    <title>DeltaΔPay - Admin Transactions</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
+    <!-- #COMPLETION_DRIVE: Assuming admin transactions and logs are separate pages (logs at /security-logs) -->
+    <!-- #SUGGEST_VERIFY: If a single combined admin dashboard is desired, merge logs UI into this page -->
     <header class="header">
         <div class="logo">
             <svg viewBox="0 0 120 120">
@@ -18,26 +20,100 @@
         <div class="logo-container">
             <span class="logo-text">DeltaΔPay</span>
         </div>
-        <div class="tagline">Secure Payment Gateway</div>
+    <div class="tagline">Admin — Transactions</div>
     </header>
 
-    <main class="main-container">
-        <div class="options-container">
-            <button class="option-button payment-option" onclick="navigateToPayment()">
-                <div class="option-content">
-                    <h2>Payment View</h2>
-                    <p>Make international payments</p>
+    <main class="main-container" style="align-items: stretch;">
+        <div class="payment-container" style="max-width: 1100px; width: 100%;">
+            <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+            <div class="payment-header" style="margin-bottom: 1rem;">
+                <div class="payment-title">Pending Transactions</div>
+                <div class="form-row" style="gap: 0.5rem; align-items: center;">
+                    <button id="refreshTransactionsBtn" class="option-button" style="padding: 0.75rem 1rem; min-width: 140px;">
+                        <div class="option-content"><h2 style="font-size: 1rem; margin: 0;">Refresh</h2></div>
+                    </button>
+                    <button id="goToLogsBtn" class="option-button backend-option" style="padding: 0.75rem 1rem; min-width: 180px;" onclick="navigateToSecurityLogs()">
+                        <div class="option-content"><h2 style="font-size: 1rem; margin: 0;">View Security Logs</h2></div>
+                    </button>
                 </div>
-            </button>
+            </div>
 
-            <button class="option-button backend-option" onclick="navigateToBackend()">
-                <div class="option-content">
-                    <h2>Backend View</h2>
-                    <p>Administrative dashboard</p>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <div id="adminStatus" class="form-label" style="opacity: 0.9;">Status: <span id="adminAuthStatus">Not authenticated</span></div>
+            </div>
+
+            <div class="form-group">
+                <div style="overflow-x: auto;">
+                    <table id="transactionsTable" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 2px solid rgba(101,90,124,0.2);">
+                                <th class="form-label">ID</th>
+                                <th class="form-label">Date</th>
+                                <th class="form-label">User</th>
+                                <th class="form-label">Amount</th>
+                                <th class="form-label">Provider</th>
+                                <th class="form-label">Recipient</th>
+                                <th class="form-label">SWIFT</th>
+                                <th class="form-label">Status</th>
+                                <th class="form-label">Processed By</th>
+                                <th class="form-label">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsBody">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
                 </div>
-            </button>
+            </div>
         </div>
     </main>
+
+    <!-- Employee Login Modal -->
+    <div id="employeeLoginModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Employee Login</h3>
+                <button class="modal-close" onclick="closeEmployeeLoginModal()">×</button>
+            </div>
+            <form id="employeeLoginForm" class="modal-content">
+                <div class="form-group">
+                    <label class="form-label" for="employeeUsername">Username</label>
+                    <input id="employeeUsername" class="form-input" type="text" placeholder="Enter username" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="employeePassword">Password</label>
+                    <input id="employeePassword" class="form-input" type="password" placeholder="Enter password" required />
+                </div>
+                <button type="submit" class="submit-button ready" style="margin-top: 0.5rem;">
+                    <div class="button-content">
+                        <span class="button-text">Login</span>
+                    </div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deny Reason Modal -->
+    <div id="denyModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Provide Denial Reason</h3>
+                <button class="modal-close" onclick="closeDenyModal()">×</button>
+            </div>
+            <form id="denyForm" class="modal-content">
+                <input type="hidden" id="denyTransactionId" />
+                <div class="form-group">
+                    <label class="form-label" for="denyReason">Reason</label>
+                    <textarea id="denyReason" class="form-input" rows="3" placeholder="Enter reason" required></textarea>
+                </div>
+                <button type="submit" class="submit-button ready" style="margin-top: 0.5rem;">
+                    <div class="button-content">
+                        <span class="button-text">Submit</span>
+                    </div>
+                </button>
+            </form>
+        </div>
+    </div>
 
     <script src="js/main.js"></script>
 </body>

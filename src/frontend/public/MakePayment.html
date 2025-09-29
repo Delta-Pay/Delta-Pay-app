@@ -1,6 +1,10 @@
 <!-- // README.md: Payment page should feel like a real gateway with clean animations and a success tick. Terms content is not mandated. -->
 <!-- // CHANGE: Detailed terms content previously shown on page -->
 <!-- // NOW: Terms text hidden; a single required checkbox is presented per user request. -->
+<!-- // CHANGE: Non-essential text inputs (amount, currency, card data, address) -->
+<!-- // NOW: Rendered as plain text displays; only CVV remains an editable input. -->
+<!-- // CHANGE: CVV field was password-masked -->
+<!-- // NOW: CVV is visible (type=text) and defaults to 123 for demo purposes. -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -81,23 +85,11 @@
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Amount Due</label>
-                  <input
-                    type="text"
-                    class="form-input amount-display"
-                    id="amount"
-                    name="amount"
-                    readonly
-                  />
+                  <div id="amount" class="form-static amount-display"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Currency</label>
-                  <input
-                    type="text"
-                    class="form-input"
-                    id="currency"
-                    name="currency"
-                    readonly
-                  />
+                  <div id="currency" class="form-static"></div>
                 </div>
               </div>
               <div class="charge-description">
@@ -115,36 +107,22 @@
             <div class="section-content">
               <div class="form-group">
                 <label class="form-label">Card Number</label>
-                <input
-                  type="text"
-                  class="form-input secure-input"
-                  id="cardNumber"
-                  name="cardNumber"
-                  placeholder="•••• •••• •••• ••••"
-                  maxlength="19"
-                  readonly
-                />
+                <div id="cardNumber" class="form-static secure-input"></div>
               </div>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Expiry Date</label>
-                  <input
-                    type="text"
-                    class="form-input"
-                    id="expiryDate"
-                    name="expiryDate"
-                    placeholder="••/••"
-                    readonly
-                  />
+                  <div id="expiryDate" class="form-static"></div>
                 </div>
-                <div class="form-group">
+        <div class="form-group">
                   <label class="form-label">CVV *</label>
                   <input
-                    type="password"
+          type="text"
                     class="form-input cvv-input"
                     id="cvv"
                     name="cvv"
-                    placeholder="•••"
+          placeholder="123"
+          value="123"
                     maxlength="3"
                     required
                   />
@@ -152,23 +130,11 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Cardholder Name</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  id="cardholderName"
-                  name="cardholderName"
-                  readonly
-                />
+                <div id="cardholderName" class="form-static"></div>
               </div>
               <div class="form-group">
                 <label class="form-label">Billing Address</label>
-                <textarea
-                  class="form-input address-input"
-                  id="billingAddress"
-                  name="billingAddress"
-                  rows="3"
-                  readonly
-                ></textarea>
+                <div id="billingAddress" class="form-static address-input"></div>
               </div>
               <p class="security-note">* Only enter your CVV. All other details have been securely pre-filled.</p>
             </div>

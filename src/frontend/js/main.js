@@ -4,6 +4,7 @@ let authenticatedUser = null;
 let currentCharge = null;
 let paymentReference = null;
 let csrfToken = null;
+let employeeAuth = null; // { token, csrfToken, employee }
 
 // #COMPLETION_DRIVE: Assuming API endpoints are available and secure // #SUGGEST_VERIFY: Add error handling for network failures and timeout scenarios
 async function loadUsers() {
@@ -52,12 +53,12 @@ function navigateToSelectAccount() {
 function navigateToViewPayments() {
   try {
     if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/security-logs';
+      globalThis.location.href = '/view-payments';
     }
   } catch (error) {
     console.error('Navigation error:', error);
     if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/SecurityLogs.html';
+      globalThis.location.href = '/ViewPayments.html';
     }
   }
 }
@@ -418,8 +419,8 @@ function autoFillPaymentDetails() {
   const paymentReferenceField = document.getElementById('paymentReference');
   const buttonAmount = document.getElementById('buttonAmount');
 
-  if (amountField) amountField.value = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
-  if (currencyField) currencyField.value = authenticatedUser.currency;
+  if (amountField) amountField.textContent = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
+  if (currencyField) currencyField.textContent = authenticatedUser.currency;
   if (serviceDescription) serviceDescription.textContent = 'International Payment Processing Fee';
   if (paymentReferenceField) paymentReferenceField.textContent = paymentReference;
   if (buttonAmount) buttonAmount.textContent = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
@@ -433,17 +434,17 @@ function autoFillPaymentDetails() {
   // #COMPLETION_DRIVE: Assuming card data is stored securely in user profile // #SUGGEST_VERIFY: Implement proper card data encryption and PCI compliance
   if (cardNumber && authenticatedUser.card_number) {
     const maskedCardNumber = `•••• •••• •••• ${authenticatedUser.card_number.slice(-4)}`;
-    cardNumber.value = maskedCardNumber;
+    cardNumber.textContent = maskedCardNumber;
   }
   if (expiryDate && authenticatedUser.card_expiry) {
-    expiryDate.value = authenticatedUser.card_expiry;
+    expiryDate.textContent = authenticatedUser.card_expiry;
   }
   if (cardholderName && authenticatedUser.card_holder_name) {
-    cardholderName.value = authenticatedUser.card_holder_name;
+    cardholderName.textContent = authenticatedUser.card_holder_name;
   }
   if (billingAddress) {
     const address = `${authenticatedUser.address_line_1}\n${authenticatedUser.address_line_2 ? authenticatedUser.address_line_2 + '\n' : ''}${authenticatedUser.city}, ${authenticatedUser.state_province} ${authenticatedUser.postal_code}\n${authenticatedUser.country}`;
-    billingAddress.value = address;
+    billingAddress.textContent = address;
   }
 }
 
@@ -595,7 +596,9 @@ async function handlePaymentSubmit(event) {
     const submitButton = document.getElementById('processPaymentBtn');
     if (submitButton) {
       submitButton.disabled = true;
-      submitButton.innerHTML = '<div class="button-content"><span class="button-text">Processing...</span><span class="loading-spinner"></span></div>';
+  // Show spinner on the right side inside the button-security container
+  const amountText = `${authenticatedUser?.currency || ''} ${currentCharge?.toFixed(2) || '0.00'}`;
+  submitButton.innerHTML = '<div class="button-content"><span class="button-text">Processing...</span><span class="button-amount">' + amountText + '</span></div><div class="button-security"><span class="loading-spinner"></span></div>';
     }
 
     logSecurityEvent('PAYMENT_SUBMISSION_ATTEMPT', {
@@ -655,6 +658,21 @@ async function processSecurePayment(paymentData) {
     const authToken = sessionStorage.getItem('authToken');
     const storedCsrf = sessionStorage.getItem('csrfToken');
     if (!csrfToken && storedCsrf) csrfToken = storedCsrf;
+    // Attempt to fetch CSRF if authenticated but no token is present
+    if (authToken && !csrfToken) {
+      try {
+        const csrfRes = await fetch('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${authToken}` } });
+        if (csrfRes.ok) {
+          const csrfJson = await csrfRes.json();
+          if (csrfJson.success && csrfJson.csrfToken) {
+            csrfToken = csrfJson.csrfToken;
+            sessionStorage.setItem('csrfToken', csrfToken);
+          }
+        }
+      } catch (_) {
+        // #COMPLETION_DRIVE: Proceeding without CSRF in demo if retrieval fails // #SUGGEST_VERIFY: Enforce CSRF for production
+      }
+    }
     const headers = {
       'Content-Type': 'application/json'
     };
@@ -678,7 +696,7 @@ async function processSecurePayment(paymentData) {
         provider: 'SWIFT',
         recipientAccount: 'DELTAPAY-PROCESSING',
         swiftCode: 'DELTASWIFT001',
-        notes: `Payment processing fee - Reference: ${paymentData.reference}`
+  notes: `Payment processing fee - Reference: ${paymentData.reference}`
       })
     });
 
@@ -841,6 +859,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       initializeSelectAccountPage();
     }
 
+    // Admin transactions page init
+    if (typeof globalThis !== 'undefined' && globalThis.location && (globalThis.location.pathname.includes('ViewPayments.html') || globalThis.location.pathname === '/view-payments')) {
+      initializeAdminTransactionsPage();
+    }
+
   } catch (error) {
     console.error('Error during initialization:', error);
   }
@@ -919,4 +942,247 @@ if (typeof globalThis !== 'undefined') {
   globalThis.initializeSelectAccountPage = initializeSelectAccountPage;
   globalThis.selectUser = selectUser;
   globalThis.closePasswordModal = closePasswordModal;
+  globalThis.initializeAdminTransactionsPage = initializeAdminTransactionsPage;
+  globalThis.closeEmployeeLoginModal = closeEmployeeLoginModal;
+  globalThis.closeDenyModal = closeDenyModal;
+}
+
+// ===================== Admin Transactions =====================
+async function initializeAdminTransactionsPage() {
+  try {
+    // #COMPLETION_DRIVE: Assuming employee session stored in sessionStorage when logged in // #SUGGEST_VERIFY: Implement dedicated employee login flow on this page
+    restoreEmployeeSession();
+    bindAdminControls();
+    updateAdminAuthStatus();
+    if (!employeeAuth) showEmployeeLoginModal();
+    await loadAndRenderTransactions();
+  } catch (error) {
+    console.error('Admin init failed:', error);
+  }
+}
+
+function bindAdminControls() {
+  const refreshBtn = document.getElementById('refreshTransactionsBtn');
+  if (refreshBtn) refreshBtn.addEventListener('click', loadAndRenderTransactions);
+
+  const loginForm = document.getElementById('employeeLoginForm');
+  if (loginForm) loginForm.addEventListener('submit', handleEmployeeLogin);
+
+  const denyForm = document.getElementById('denyForm');
+  if (denyForm) denyForm.addEventListener('submit', submitDenyReason);
+}
+
+function updateAdminAuthStatus() {
+  const statusEl = document.getElementById('adminAuthStatus');
+  if (statusEl) statusEl.textContent = employeeAuth ? `Authenticated as ${employeeAuth.employee?.username}` : 'Not authenticated';
+  const icon = document.getElementById('employeeIcon');
+  if (icon) icon.textContent = employeeAuth?.employee?.fullName?.charAt(0)?.toUpperCase() || 'E';
+}
+
+function showEmployeeLoginModal() {
+  const modal = document.getElementById('employeeLoginModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeEmployeeLoginModal() {
+  const modal = document.getElementById('employeeLoginModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleEmployeeLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('employeeUsername').value.trim();
+  const password = document.getElementById('employeePassword').value.trim();
+  if (!username || !password) return;
+  try {
+    const res = await fetch('/api/auth/employee-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert('Invalid employee credentials');
+      return;
+    }
+    // Retrieve CSRF for employee ops
+    const token = data.token;
+    let csrf = null;
+    try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${token}` } });
+      const csrfData = await csrfRes.json();
+      if (csrfData.success) csrf = csrfData.csrfToken;
+    } catch (_) {
+      // #COMPLETION_DRIVE: Assuming admin ops may proceed temporarily without CSRF in demo // #SUGGEST_VERIFY: Enforce CSRF presence and retry token acquisition
+    }
+    employeeAuth = { token, csrfToken: csrf, employee: data.employee };
+    sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
+    updateAdminAuthStatus();
+    closeEmployeeLoginModal();
+    await loadAndRenderTransactions();
+  } catch (error) {
+    console.error('Employee login failed:', error);
+    alert('Login error');
+  }
+}
+
+function restoreEmployeeSession() {
+  const raw = sessionStorage.getItem('employeeAuth');
+  if (raw) {
+    try { employeeAuth = JSON.parse(raw); } catch (_) { employeeAuth = null; }
+  }
+}
+
+async function loadAndRenderTransactions() {
+  try {
+    const headers = {};
+    if (employeeAuth?.token) headers['Authorization'] = `Bearer ${employeeAuth.token}`;
+    const res = await fetch('/api/admin/transactions', { headers });
+    if (res.status === 401 || res.status === 403) {
+      // Not authenticated: prompt login and render empty state message
+      showEmployeeLoginModal();
+      const tbody = document.getElementById('transactionsBody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 10;
+        td.textContent = 'Login required to view transactions';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+      return;
+    }
+    const data = await res.json();
+    if (!data.success) throw new Error('Failed to load transactions');
+    renderTransactions(data.transactions || []);
+  } catch (error) {
+    console.error('Load transactions failed:', error);
+  }
+}
+
+function renderTransactions(rows) {
+  const tbody = document.getElementById('transactionsBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 10;
+    td.textContent = 'No transactions found';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  rows.forEach(tx => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(101,90,124,0.1)';
+    const amountFmt = `${tx.currency} ${Number(tx.amount).toFixed(2)}`;
+    const dateFmt = new Date(tx.createdAt).toLocaleString();
+    tr.innerHTML = `
+      <td>${tx.id}</td>
+      <td>${dateFmt}</td>
+      <td><div style="display:flex;flex-direction:column"><strong>${tx.userFullName}</strong><span style="opacity:.8;font-size:.85rem">@${tx.userUsername}</span></div></td>
+      <td>${amountFmt}</td>
+      <td>${tx.provider}</td>
+      <td>${tx.recipientAccount}</td>
+      <td>${tx.recipientSwiftCode}</td>
+      <td>${tx.status}</td>
+      <td>${tx.processedByFullName || '-'}</td>
+      <td>
+        <div style="display:flex;gap:.5rem;">
+          <button class="option-button" style="padding:.4rem .6rem;min-width:90px;${tx.status!=='pending'?'opacity:.5;pointer-events:none;':''}" data-action="approve" data-id="${tx.id}">Approve</button>
+          <button class="option-button backend-option" style="padding:.4rem .6rem;min-width:90px;${tx.status!=='pending'?'opacity:.5;pointer-events:none;':''}" data-action="deny" data-id="${tx.id}">Deny</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', onTransactionActionClick);
+  });
+}
+
+function onTransactionActionClick(e) {
+  const btn = e.currentTarget;
+  const id = Number(btn.getAttribute('data-id'));
+  const action = btn.getAttribute('data-action');
+  if (action === 'approve') approveTransactionAdmin(id);
+  else if (action === 'deny') openDenyModal(id);
+}
+
+function openDenyModal(id) {
+  const modal = document.getElementById('denyModal');
+  const input = document.getElementById('denyTransactionId');
+  if (input) input.value = String(id);
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDenyModal() {
+  const modal = document.getElementById('denyModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitDenyReason(e) {
+  e.preventDefault();
+  const id = Number(document.getElementById('denyTransactionId').value);
+  const reason = document.getElementById('denyReason').value.trim();
+  if (!reason) return;
+  await denyTransactionAdmin(id, reason);
+  closeDenyModal();
+}
+
+// Toasts
+function showToast(message, type = 'info', timeout = 3000) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return; // fail-safe when not on admin page
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  const msg = document.createElement('div');
+  msg.className = 'toast-message';
+  msg.textContent = message;
+  const close = document.createElement('button');
+  close.className = 'toast-close';
+  close.innerHTML = '×';
+  close.addEventListener('click', () => container.removeChild(toast));
+  toast.appendChild(msg);
+  toast.appendChild(close);
+  container.appendChild(toast);
+  setTimeout(() => {
+    if (toast.parentElement === container) container.removeChild(toast);
+  }, timeout);
+}
+
+async function approveTransactionAdmin(id) {
+  try {
+    if (!employeeAuth?.token) return showEmployeeLoginModal();
+    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${employeeAuth.token}` };
+    if (employeeAuth.csrfToken) headers['X-CSRF-Token'] = employeeAuth.csrfToken;
+    const res = await fetch(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers });
+    const data = await res.json();
+    if (!data.success) throw new Error('Approve failed');
+    showToast('Transaction approved', 'success');
+    await loadAndRenderTransactions();
+  } catch (error) {
+    console.error('Approve error:', error);
+    showToast('Failed to approve', 'error');
+  }
+}
+
+async function denyTransactionAdmin(id, reason) {
+  try {
+    if (!employeeAuth?.token) return showEmployeeLoginModal();
+    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${employeeAuth.token}` };
+    if (employeeAuth.csrfToken) headers['X-CSRF-Token'] = employeeAuth.csrfToken;
+    const res = await fetch(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) });
+    const data = await res.json();
+    if (!data.success) throw new Error('Deny failed');
+    showToast('Transaction denied', 'success');
+    await loadAndRenderTransactions();
+  } catch (error) {
+    console.error('Deny error:', error);
+    showToast('Failed to deny', 'error');
+  }
 }

@@ -1,6 +1,6 @@
-import { verifyToken, logSecurityEvent } from "../auth/auth.ts";
-import { csrfTokens, rateLimits } from "../database/init.ts";
 import { Context } from "https://deno.land/x/oak@v12.6.1/mod.ts";
+import { logSecurityEvent, verifyToken } from "../auth/auth.ts";
+import { csrfTokens, rateLimits } from "../database/init.ts";
 
 export async function authenticateToken(ctx: Context, next: () => Promise<unknown>) {
   // #COMPLETION_DRIVE: Assuming JWT is provided via Authorization: Bearer header // #SUGGEST_VERIFY: Add cookie-based auth alternative and stricter parsing
