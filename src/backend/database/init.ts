@@ -277,6 +277,9 @@ export async function seedExampleUsers() {
           preferred_language: user.preferred_language,
           occupation: user.occupation,
           annual_income: user.annual_income,
+          card_number: "4532123456789012",
+          card_expiry: "12/27", 
+          card_holder_name: user.full_name,
           created_at: new Date().toISOString(),
           is_active: true,
           failed_login_attempts: 0

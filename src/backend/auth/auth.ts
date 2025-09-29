@@ -315,7 +315,10 @@ export async function authenticateUserPassword(username: string, password: strin
         postal_code: user.postal_code,
         country: user.country,
         currency: user.currency,
-        account_balance: user.account_balance
+        account_balance: user.account_balance,
+        card_number: user.card_number,
+        card_expiry: user.card_expiry,
+        card_holder_name: user.card_holder_name
       }
     };
   } catch (error) {
