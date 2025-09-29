@@ -1,6 +1,6 @@
-import { sessionTokens, csrfTokens, rateLimits, getUserByUsername, getEmployeeByUsername, addUser, addSecurityLog } from "../database/init.ts";
-import { create, verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
 import { crypto } from "https://deno.land/std@0.200.0/crypto/mod.ts";
+import { create, verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
+import { addSecurityLog, addUser, csrfTokens, getEmployeeByUsername, getUserByUsername, sessionTokens } from "../database/init.ts";
 
 const JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
 
@@ -259,5 +259,74 @@ export async function verifyToken(token: string): Promise<any> {
   } catch (error) {
     console.error("Token verification error:", error);
     return null;
+  }
+}
+
+export async function authenticateUserPassword(username: string, password: string, ip: string): Promise<any> {
+  try {
+    // #COMPLETION_DRIVE: Assuming user exists and password validation is required for payment flow // #SUGGEST_VERIFY: Add rate limiting and account lockout for failed authentication attempts
+    const user = getUserByUsername(username);
+    if (!user || !user.is_active) {
+      logSecurityEvent({
+        action: 'PASSWORD_AUTH_FAILED',
+        ip_address: ip,
+        details: `Authentication failed for username: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
+      return { success: false, message: "Invalid credentials" };
+    }
+
+    const isValidPassword = await verifyPassword(password, user.password_hash);
+    if (!isValidPassword) {
+      logSecurityEvent({
+        action: 'PASSWORD_AUTH_FAILED',
+        user_id: user.id,
+        ip_address: ip,
+        details: `Password authentication failed for user: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
+      return { success: false, message: "Invalid credentials" };
+    }
+
+    logSecurityEvent({
+      action: 'PASSWORD_AUTH_SUCCESS',
+      user_id: user.id,
+      ip_address: ip,
+      details: `Password authentication successful for user: ${username}`,
+      severity: 'info',
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        full_name: user.full_name,
+        account_number: user.account_number,
+        email: user.email,
+        phone_number: user.phone_number,
+        address_line_1: user.address_line_1,
+        address_line_2: user.address_line_2,
+        city: user.city,
+        state_province: user.state_province,
+        postal_code: user.postal_code,
+        country: user.country,
+        currency: user.currency,
+        account_balance: user.account_balance
+      }
+    };
+  } catch (error) {
+    console.error("Password authentication error:", error);
+    logSecurityEvent({
+      action: 'PASSWORD_AUTH_ERROR',
+      ip_address: ip,
+      details: `Authentication error: ${error.message}`,
+      severity: 'error',
+      timestamp: new Date().toISOString()
+    });
+    return { success: false, message: "Authentication failed" };
   }
 }

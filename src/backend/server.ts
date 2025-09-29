@@ -2,7 +2,7 @@ import { Application, Router, send, Context } from "https://deno.land/x/oak@v12.
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 
 import { initializeDatabase, seedDefaultEmployee, seedExampleUsers } from "./database/init.ts";
-import { registerUser, loginUser, loginEmployee, generateCSRFToken, logSecurityEvent } from "./auth/auth.ts";
+import { registerUser, loginUser, loginEmployee, generateCSRFToken, logSecurityEvent, authenticateUserPassword } from "./auth/auth.ts";
 import { createPayment, getUserTransactions, getAllTransactions, approveTransaction, denyTransaction, getTransactionStatistics } from "./payments/payments.ts";
 import { 
   getSecurityLogs, 
@@ -181,8 +181,22 @@ router.post("/api/auth/employee-login", async (ctx) => {
   try {
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-    
+
     const result = await loginEmployee(body.username, body.password, ip);
+    ctx.response.status = result.success ? 200 : 401;
+    ctx.response.body = result;
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, message: "Server error" };
+  }
+});
+
+router.post("/api/auth/authenticate-password", async (ctx) => {
+  try {
+    const body = await ctx.request.body({ type: "json" }).value;
+    const ip = ctx.request.ip || "unknown";
+
+    const result = await authenticateUserPassword(body.username, body.password, ip);
     ctx.response.status = result.success ? 200 : 401;
     ctx.response.body = result;
   } catch (error) {

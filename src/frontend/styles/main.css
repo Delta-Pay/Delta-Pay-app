@@ -1291,6 +1291,13 @@ body {
   flex-shrink: 0;
 }
 
+.section-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  color: white;
+}
+
 .section-header h3 {
   font-size: 1.3rem;
   margin: 0;
@@ -1450,5 +1457,466 @@ body {
 
   .account-card {
     padding: 1rem;
+  }
+}
+
+/* Professional Payment Form Styles */
+.account-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.account-details h4 {
+  font-size: 1.2rem;
+  color: #655a7c;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.account-details p {
+  margin: 0.25rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.balance-amount {
+  color: #28a745;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.account-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.amount-display {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #655a7c;
+  text-align: center;
+}
+
+.charge-description {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  border-left: 4px solid #ab92bf;
+}
+
+.charge-description p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.secure-input {
+  background: #f8f9fa !important;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.cvv-input {
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.address-input {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.4;
+}
+
+.security-note {
+  font-size: 0.85rem;
+  color: #28a745;
+  font-style: italic;
+  margin: 0.5rem 0 0 0;
+  padding: 0.5rem;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
+}
+
+/* Terms and Conditions Styles */
+.terms-container {
+  max-width: 100%;
+}
+
+.terms-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.terms-scroll h4 {
+  color: #655a7c;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.terms-scroll ul {
+  padding-left: 1.5rem;
+  color: #666;
+}
+
+.terms-scroll li {
+  margin-bottom: 0.5rem;
+}
+
+.terms-agreement {
+  margin-bottom: 0;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.checkbox-container input[type="checkbox"] {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: #ab92bf;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkbox-label {
+  color: #666;
+  user-select: none;
+}
+
+/* Enhanced Submit Button */
+.submit-button.ready {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.submit-button.ready:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+}
+
+.button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.button-amount {
+  font-size: 1.3rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.button-security {
+  display: flex;
+  align-items: center;
+}
+
+.security-badge {
+  font-size: 1.5rem;
+}
+
+.security-badge-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  color: #8DA8C7;
+}
+
+.payment-security-notice {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 1rem;
+  text-align: center;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced Password Modal */
+.auth-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.modal-overlay[style*="flex"] .auth-modal {
+  transform: scale(1);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-header h3 {
+  color: #655a7c;
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.auth-header p {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.password-input {
+  text-align: center;
+  font-size: 1.1rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.auth-btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background: #f8f9fa;
+  color: #666;
+  border: 2px solid #e9ecef;
+}
+
+.cancel-btn:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.authenticate-btn {
+  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+  color: white;
+}
+
+.authenticate-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(171, 146, 191, 0.3);
+}
+
+/* Enhanced Success Modal */
+.success-animation {
+  margin-bottom: 2rem;
+}
+
+.checkmark-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #AB92BF 0%, #8DA8C7 100%);
+  border: 3px solid #655A7C;
+  margin: 0 auto;
+  position: relative;
+  transform: scale(0);
+  animation: scaleIn 0.6s ease-out forwards, pulse 2s ease-in-out 0.6s infinite;
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(171, 146, 191, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 20px rgba(171, 146, 191, 0);
+  }
+}
+
+.checkmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 35px;
+  height: 35px;
+}
+
+.checkmark svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: white;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.checkmark svg path {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: drawCheck 0.6s ease-out 0.3s forwards;
+}
+
+@keyframes drawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.success-details {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.success-details p {
+  margin: 0.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-approved {
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* Professional Icon Updates (removing emojis) */
+.section-icon.account-icon {
+  background: rgba(255, 255, 255, 0.2);
+  font-style: normal;
+}
+
+.section-icon.account-icon::before {
+  content: 'ACC';
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 0.7rem;
+}
+
+.section-icon.payment-icon::before {
+  content: '$';
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 1.8rem;
+}
+
+.section-icon.card-icon::before {
+  content: 'CARD';
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 0.6rem;
+}
+
+.section-icon.terms-icon::before {
+  content: 'TERMS';
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 0.5rem;
+}
+
+/* Mobile Responsiveness for New Components */
+@media (max-width: 480px) {
+  .account-display {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .button-content {
+    align-items: center;
+  }
+
+  .terms-scroll {
+    max-height: 150px;
+  }
+
+  .checkbox-container {
+    font-size: 0.8rem;
+  }
+
+  .auth-modal {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .success-modal {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
   }
 }

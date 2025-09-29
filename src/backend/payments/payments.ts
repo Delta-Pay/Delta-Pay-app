@@ -1,4 +1,4 @@
-import { users, employees, transactions, securityLogs } from "../database/init.ts";
+import { users, employees, transactions, securityLogs, addTransaction, getUserById } from "../database/init.ts";
 import { validateInput, logSecurityEvent } from "../auth/auth.ts";
 
 const PAYMENT_VALIDATION_PATTERNS = {
@@ -21,6 +21,7 @@ export async function createPayment(paymentData: {
   notes?: string;
 }, userId: number, ipAddress: string): Promise<{ success: boolean; message: string; transactionId?: number }> {
   try {
+    // #COMPLETION_DRIVE: Assuming in-memory database validation for demo purposes // #SUGGEST_VERIFY: Add comprehensive input validation and sanitization
     const validation = validateInput(paymentData, PAYMENT_VALIDATION_PATTERNS);
     if (!validation.isValid) {
       return { success: false, message: `Validation errors: ${validation.errors.join(', ')}` };
@@ -39,46 +40,45 @@ export async function createPayment(paymentData: {
       return { success: false, message: `Unsupported provider. Supported providers: ${SUPPORTED_PROVIDERS.join(', ')}` };
     }
 
-    const user = db.query("SELECT id, is_active FROM users WHERE id = ?", [userId]);
-    if (user.length === 0 || !user[0][1]) {
+    const user = getUserById(userId);
+    if (!user || !user.is_active) {
       return { success: false, message: "User not found or account inactive" };
     }
 
-    db.execute(`
-      INSERT INTO transactions (user_id, amount, currency, provider, recipient_account, recipient_swift_code, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
-    `, [
-      userId,
-      amount,
-      paymentData.currency,
-      paymentData.provider,
-      paymentData.recipientAccount,
-      paymentData.swiftCode,
-      paymentData.notes || null
-    ]);
-
-    const transactionId = db.lastInsertRowId;
-
-    logSecurityEvent({
-      userId,
-      action: "PAYMENT_CREATED",
-      ipAddress,
-      details: `Payment created: ${amount} ${paymentData.currency} to ${paymentData.recipientAccount} via ${paymentData.provider}`,
-      severity: "info"
+    const newTransaction = addTransaction({
+      user_id: userId,
+      amount: amount,
+      currency: paymentData.currency,
+      provider: paymentData.provider,
+      recipient_account: paymentData.recipientAccount,
+      recipient_swift_code: paymentData.swiftCode,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      notes: paymentData.notes || undefined
     });
 
-    return { 
-      success: true, 
-      message: "Payment transaction created successfully", 
-      transactionId 
+    logSecurityEvent({
+      user_id: userId,
+      action: "PAYMENT_CREATED",
+      ip_address: ipAddress,
+      details: `Payment created: ${amount} ${paymentData.currency} to ${paymentData.recipientAccount} via ${paymentData.provider}`,
+      severity: "info",
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      success: true,
+      message: "Payment transaction created successfully",
+      transactionId: newTransaction.id
     };
   } catch (error) {
     logSecurityEvent({
-      userId,
+      user_id: userId,
       action: "PAYMENT_CREATION_FAILED",
-      ipAddress,
+      ip_address: ipAddress,
       details: `Payment creation failed: ${error.message}`,
-      severity: "error"
+      severity: "error",
+      timestamp: new Date().toISOString()
     });
     return { success: false, message: "Failed to create payment transaction" };
   }
@@ -86,41 +86,28 @@ export async function createPayment(paymentData: {
 
 export async function getUserTransactions(userId: number, limit: number = 50, offset: number = 0): Promise<{ success: boolean; message: string; transactions?: any[] }> {
   try {
-    const transactions = db.query(`
-      SELECT 
-        id, 
-        amount, 
-        currency, 
-        provider, 
-        recipient_account,
-        recipient_swift_code,
-        status,
-        created_at,
-        processed_at,
-        notes
-      FROM transactions 
-      WHERE user_id = ? 
-      ORDER BY created_at DESC 
-      LIMIT ? OFFSET ?
-    `, [userId, limit, offset]);
+    const userTransactions = transactions
+      .filter(t => t.user_id === userId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(offset, offset + limit);
 
-    const formattedTransactions = transactions.map(transaction => ({
-      id: transaction[0],
-      amount: transaction[1],
-      currency: transaction[2],
-      provider: transaction[3],
-      recipientAccount: transaction[4],
-      recipientSwiftCode: transaction[5],
-      status: transaction[6],
-      createdAt: transaction[7],
-      processedAt: transaction[8],
-      notes: transaction[9]
+    const formattedTransactions = userTransactions.map(transaction => ({
+      id: transaction.id,
+      amount: transaction.amount,
+      currency: transaction.currency,
+      provider: transaction.provider,
+      recipientAccount: transaction.recipient_account,
+      recipientSwiftCode: transaction.recipient_swift_code,
+      status: transaction.status,
+      createdAt: transaction.created_at,
+      processedAt: transaction.processed_at,
+      notes: transaction.notes
     }));
 
-    return { 
-      success: true, 
-      message: "Transactions retrieved successfully", 
-      transactions: formattedTransactions 
+    return {
+      success: true,
+      message: "Transactions retrieved successfully",
+      transactions: formattedTransactions
     };
   } catch (error) {
     return { success: false, message: "Failed to retrieve transactions" };
@@ -129,50 +116,36 @@ export async function getUserTransactions(userId: number, limit: number = 50, of
 
 export async function getAllTransactions(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; transactions?: any[] }> {
   try {
-    const transactions = db.query(`
-      SELECT 
-        t.id,
-        t.amount,
-        t.currency,
-        t.provider,
-        t.recipient_account,
-        t.recipient_swift_code,
-        t.status,
-        t.created_at,
-        t.processed_at,
-        t.notes,
-        u.username as user_username,
-        u.full_name as user_full_name,
-        e.username as processed_by_username,
-        e.full_name as processed_by_full_name
-      FROM transactions t
-      LEFT JOIN users u ON t.user_id = u.id
-      LEFT JOIN employees e ON t.processed_by = e.id
-      ORDER BY t.created_at DESC 
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
+    const sortedTransactions = transactions
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(offset, offset + limit);
 
-    const formattedTransactions = transactions.map(transaction => ({
-      id: transaction[0],
-      amount: transaction[1],
-      currency: transaction[2],
-      provider: transaction[3],
-      recipientAccount: transaction[4],
-      recipientSwiftCode: transaction[5],
-      status: transaction[6],
-      createdAt: transaction[7],
-      processedAt: transaction[8],
-      notes: transaction[9],
-      userUsername: transaction[10],
-      userFullName: transaction[11],
-      processedByUsername: transaction[12],
-      processedByFullName: transaction[13]
-    }));
+    const formattedTransactions = sortedTransactions.map(transaction => {
+      const user = users.find(u => u.id === transaction.user_id);
+      const employee = employees.find(e => e.id === transaction.processed_by);
 
-    return { 
-      success: true, 
-      message: "Transactions retrieved successfully", 
-      transactions: formattedTransactions 
+      return {
+        id: transaction.id,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        provider: transaction.provider,
+        recipientAccount: transaction.recipient_account,
+        recipientSwiftCode: transaction.recipient_swift_code,
+        status: transaction.status,
+        createdAt: transaction.created_at,
+        processedAt: transaction.processed_at,
+        notes: transaction.notes,
+        userUsername: user?.username || 'Unknown',
+        userFullName: user?.full_name || 'Unknown User',
+        processedByUsername: employee?.username || null,
+        processedByFullName: employee?.full_name || null
+      };
+    });
+
+    return {
+      success: true,
+      message: "Transactions retrieved successfully",
+      transactions: formattedTransactions
     };
   } catch (error) {
     return { success: false, message: "Failed to retrieve transactions" };
@@ -181,41 +154,43 @@ export async function getAllTransactions(limit: number = 100, offset: number = 0
 
 export async function approveTransaction(transactionId: number, employeeId: number, ipAddress: string): Promise<{ success: boolean; message: string }> {
   try {
-    const transaction = db.query(
-      "SELECT id, user_id, status FROM transactions WHERE id = ?",
-      [transactionId]
-    );
+    const transactionIndex = transactions.findIndex(t => t.id === transactionId);
 
-    if (transaction.length === 0) {
+    if (transactionIndex === -1) {
       return { success: false, message: "Transaction not found" };
     }
 
-    if (transaction[0][2] !== 'pending') {
+    const transaction = transactions[transactionIndex];
+    if (transaction.status !== 'pending') {
       return { success: false, message: "Transaction is not pending" };
     }
 
-    db.execute(`
-      UPDATE transactions 
-      SET status = 'approved', processed_at = CURRENT_TIMESTAMP, processed_by = ? 
-      WHERE id = ?
-    `, [employeeId, transactionId]);
+    // Update transaction in memory
+    transactions[transactionIndex] = {
+      ...transaction,
+      status: 'approved',
+      processed_at: new Date().toISOString(),
+      processed_by: employeeId
+    };
 
     logSecurityEvent({
-      employeeId,
+      employee_id: employeeId,
       action: "TRANSACTION_APPROVED",
-      ipAddress,
+      ip_address: ipAddress,
       details: `Transaction ${transactionId} approved`,
-      severity: "info"
+      severity: "info",
+      timestamp: new Date().toISOString()
     });
 
     return { success: true, message: "Transaction approved successfully" };
   } catch (error) {
     logSecurityEvent({
-      employeeId,
+      employee_id: employeeId,
       action: "TRANSACTION_APPROVAL_FAILED",
-      ipAddress,
+      ip_address: ipAddress,
       details: `Transaction approval failed: ${error.message}`,
-      severity: "error"
+      severity: "error",
+      timestamp: new Date().toISOString()
     });
     return { success: false, message: "Failed to approve transaction" };
   }
@@ -223,41 +198,44 @@ export async function approveTransaction(transactionId: number, employeeId: numb
 
 export async function denyTransaction(transactionId: number, employeeId: number, reason: string, ipAddress: string): Promise<{ success: boolean; message: string }> {
   try {
-    const transaction = db.query(
-      "SELECT id, user_id, status FROM transactions WHERE id = ?",
-      [transactionId]
-    );
+    const transactionIndex = transactions.findIndex(t => t.id === transactionId);
 
-    if (transaction.length === 0) {
+    if (transactionIndex === -1) {
       return { success: false, message: "Transaction not found" };
     }
 
-    if (transaction[0][2] !== 'pending') {
+    const transaction = transactions[transactionIndex];
+    if (transaction.status !== 'pending') {
       return { success: false, message: "Transaction is not pending" };
     }
 
-    db.execute(`
-      UPDATE transactions 
-      SET status = 'denied', processed_at = CURRENT_TIMESTAMP, processed_by = ?, notes = COALESCE(notes, '') || ' | Denied: ' || ? 
-      WHERE id = ?
-    `, [employeeId, reason, transactionId]);
+    // Update transaction in memory
+    transactions[transactionIndex] = {
+      ...transaction,
+      status: 'denied',
+      processed_at: new Date().toISOString(),
+      processed_by: employeeId,
+      notes: (transaction.notes || '') + ` | Denied: ${reason}`
+    };
 
     logSecurityEvent({
-      employeeId,
+      employee_id: employeeId,
       action: "TRANSACTION_DENIED",
-      ipAddress,
+      ip_address: ipAddress,
       details: `Transaction ${transactionId} denied. Reason: ${reason}`,
-      severity: "warning"
+      severity: "warning",
+      timestamp: new Date().toISOString()
     });
 
     return { success: true, message: "Transaction denied successfully" };
   } catch (error) {
     logSecurityEvent({
-      employeeId,
+      employee_id: employeeId,
       action: "TRANSACTION_DENIAL_FAILED",
-      ipAddress,
+      ip_address: ipAddress,
       details: `Transaction denial failed: ${error.message}`,
-      severity: "error"
+      severity: "error",
+      timestamp: new Date().toISOString()
     });
     return { success: false, message: "Failed to deny transaction" };
   }
@@ -265,32 +243,28 @@ export async function denyTransaction(transactionId: number, employeeId: number,
 
 export async function getTransactionStatistics(): Promise<{ success: boolean; message: string; statistics?: any }> {
   try {
-    const stats = db.query(`
-      SELECT 
-        COUNT(*) as total_transactions,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
-        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_count,
-        SUM(CASE WHEN status = 'denied' THEN 1 ELSE 0 END) as denied_count,
-        SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END) as total_approved_amount,
-        COUNT(DISTINCT user_id) as unique_users
-      FROM transactions
-    `);
-
-    const [total, pending, approved, denied, totalAmount, uniqueUsers] = stats[0];
+    const totalTransactions = transactions.length;
+    const pendingCount = transactions.filter(t => t.status === 'pending').length;
+    const approvedCount = transactions.filter(t => t.status === 'approved').length;
+    const deniedCount = transactions.filter(t => t.status === 'denied').length;
+    const totalApprovedAmount = transactions
+      .filter(t => t.status === 'approved')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const uniqueUsers = new Set(transactions.map(t => t.user_id)).size;
 
     const statistics = {
-      totalTransactions: total,
-      pendingCount: pending,
-      approvedCount: approved,
-      deniedCount: denied,
-      totalApprovedAmount: totalAmount,
-      uniqueUsers: uniqueUsers
+      totalTransactions,
+      pendingCount,
+      approvedCount,
+      deniedCount,
+      totalApprovedAmount,
+      uniqueUsers
     };
 
-    return { 
-      success: true, 
-      message: "Statistics retrieved successfully", 
-      statistics 
+    return {
+      success: true,
+      message: "Statistics retrieved successfully",
+      statistics
     };
   } catch (error) {
     return { success: false, message: "Failed to retrieve statistics" };
