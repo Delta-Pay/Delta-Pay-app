@@ -117,12 +117,17 @@ function updateAccountModalWithUsers() {
     accountCard.className = 'account-card';
     accountCard.onclick = () => selectUserFromPopup(user.username);
 
+    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+    const maskedAccount = user.account_number ? `****${user.account_number.slice(-4)}` : '****0000';
+
     accountCard.innerHTML = `
-      <div class="account-icon">${user.letter}</div>
+      <div class="account-icon">${letter}</div>
       <div class="account-details">
         <h4>${user.full_name}</h4>
         <p>ID: ${user.id_number}</p>
-        <p class="account-number">Account: ****${user.account_number}</p>
+        <p class="account-number">Account: ${maskedAccount}</p>
+        <p class="account-balance">${user.currency} ${user.account_balance?.toLocaleString() || '0.00'}</p>
+        <p class="account-type">${user.account_type}</p>
       </div>
     `;
 
@@ -207,16 +212,22 @@ function populateUsersOnPaymentPage() {
     userCard.className = 'user-card';
     userCard.onclick = () => selectUserOnPaymentPage(user);
 
+    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+    const maskedAccount = user.account_number ? `****${user.account_number.slice(-4)}` : '****0000';
+
     userCard.innerHTML = `
       <div class="user-card-header">
-        <div class="user-avatar">${user.letter}</div>
+        <div class="user-avatar">${letter}</div>
         <div class="user-card-info">
           <h4>${user.full_name}</h4>
+          <p class="user-location">${user.city}, ${user.country}</p>
         </div>
       </div>
       <div class="user-card-details">
         <p>ID: ${user.id_number}</p>
-        <p>Account: ****${user.account_number}</p>
+        <p>Account: ${maskedAccount}</p>
+        <p>Balance: ${user.currency} ${user.account_balance?.toLocaleString() || '0.00'}</p>
+        <p>Type: ${user.account_type}</p>
       </div>
     `;
 
@@ -234,8 +245,20 @@ function selectUserOnPaymentPage(user) {
   sessionStorage.setItem('selectedUser', JSON.stringify(user));
 
   const userIcon = document.getElementById('userIcon');
+  const usernameField = document.getElementById('username');
+  const accountNumberField = document.getElementById('accountNumber');
+
   if (userIcon) {
-    userIcon.textContent = user.letter || 'U';
+    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+    userIcon.textContent = letter;
+  }
+
+  if (usernameField) {
+    usernameField.value = user.username;
+  }
+
+  if (accountNumberField) {
+    accountNumberField.value = user.account_number;
   }
 
   logSecurityEvent('USER_SELECTED_ON_PAYMENT_PAGE', {
@@ -410,10 +433,83 @@ document.addEventListener('DOMContentLoaded', async () => {
       paymentForm.addEventListener('submit', handlePaymentSubmit);
     }
 
+    if (window.location.pathname.includes('SelectAccount.html') || window.location.pathname === '/select-account') {
+      initializeSelectAccountPage();
+    }
+
   } catch (error) {
     console.error('Error during initialization:', error);
   }
 });
+
+function initializeSelectAccountPage() {
+  const accountsGrid = document.getElementById('accountsGrid');
+  if (!accountsGrid || users.length === 0) return;
+
+  accountsGrid.innerHTML = '';
+
+  users.forEach(user => {
+    const accountCard = document.createElement('div');
+    accountCard.className = 'account-card';
+    accountCard.onclick = () => selectUser(user.username);
+
+    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+    const maskedAccount = user.account_number ? `****${user.account_number.slice(-4)}` : '****0000';
+
+    accountCard.innerHTML = `
+      <div class="account-icon">${letter}</div>
+      <div class="account-details">
+        <h3>${user.full_name}</h3>
+        <p>ID: ${user.id_number}</p>
+        <p class="account-balance">Account: ${maskedAccount}</p>
+        <p class="account-type">${user.account_type} - ${user.currency} ${user.account_balance?.toLocaleString() || '0.00'}</p>
+      </div>
+      <div class="account-arrow">→</div>
+    `;
+
+    accountsGrid.appendChild(accountCard);
+  });
+}
+
+function selectUser(username) {
+  const user = users.find(u => u.username === username);
+  if (!user) {
+    console.error('User not found:', username);
+    return;
+  }
+
+  const selectedUserName = document.getElementById('selectedUserName');
+  if (selectedUserName) {
+    selectedUserName.textContent = user.full_name;
+  }
+
+  const passwordModal = document.getElementById('passwordModal');
+  if (passwordModal) {
+    passwordModal.style.display = 'flex';
+  }
+
+  sessionStorage.setItem('pendingUser', JSON.stringify(user));
+
+  logSecurityEvent('USER_SELECTION_ATTEMPT', {
+    username: user.username,
+    fullName: user.full_name,
+    timestamp: new Date().toISOString()
+  });
+}
+
+function closePasswordModal() {
+  const passwordModal = document.getElementById('passwordModal');
+  if (passwordModal) {
+    passwordModal.style.display = 'none';
+  }
+
+  const passwordForm = document.getElementById('passwordForm');
+  if (passwordForm) {
+    passwordForm.reset();
+  }
+
+  sessionStorage.removeItem('pendingUser');
+}
 
 if (typeof window !== 'undefined') {
   window.navigateToSelectAccount = navigateToSelectAccount;
@@ -427,4 +523,7 @@ if (typeof window !== 'undefined') {
   window.populateUsersOnPaymentPage = populateUsersOnPaymentPage;
   window.selectUserOnPaymentPage = selectUserOnPaymentPage;
   window.closeSuccessModal = closeSuccessModal;
+  window.initializeSelectAccountPage = initializeSelectAccountPage;
+  window.selectUser = selectUser;
+  window.closePasswordModal = closePasswordModal;
 }
