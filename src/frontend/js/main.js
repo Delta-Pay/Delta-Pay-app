@@ -391,10 +391,17 @@ function autoFillPaymentDetails() {
   const cardholderName = document.getElementById('cardholderName');
   const billingAddress = document.getElementById('billingAddress');
 
-  // #COMPLETION_DRIVE: Assuming demo card data for user accounts // #SUGGEST_VERIFY: Replace with actual stored card data from secure vault
-  if (cardNumber) cardNumber.value = '•••• •••• •••• 4532';
-  if (expiryDate) expiryDate.value = '12/28';
-  if (cardholderName) cardholderName.value = authenticatedUser.full_name;
+  // #COMPLETION_DRIVE: Assuming card data is stored securely in user profile // #SUGGEST_VERIFY: Implement proper card data encryption and PCI compliance
+  if (cardNumber && authenticatedUser.card_number) {
+    const maskedCardNumber = `•••• •••• •••• ${authenticatedUser.card_number.slice(-4)}`;
+    cardNumber.value = maskedCardNumber;
+  }
+  if (expiryDate && authenticatedUser.card_expiry) {
+    expiryDate.value = authenticatedUser.card_expiry;
+  }
+  if (cardholderName && authenticatedUser.card_holder_name) {
+    cardholderName.value = authenticatedUser.card_holder_name;
+  }
   if (billingAddress) {
     const address = `${authenticatedUser.address_line_1}\n${authenticatedUser.address_line_2 ? authenticatedUser.address_line_2 + '\n' : ''}${authenticatedUser.city}, ${authenticatedUser.state_province} ${authenticatedUser.postal_code}\n${authenticatedUser.country}`;
     billingAddress.value = address;

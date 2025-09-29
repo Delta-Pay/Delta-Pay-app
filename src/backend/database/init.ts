@@ -23,6 +23,9 @@ export interface User {
   preferred_language: string;
   occupation: string;
   annual_income: number;
+  card_number: string;
+  card_expiry: string;
+  card_holder_name: string;
   created_at: string;
   is_active: boolean;
   failed_login_attempts: number;
@@ -327,4 +330,5 @@ export function getEmployeeByUsername(username: string): Employee | null {
   return employees.find(emp => emp.username === username) || null;
 }
 
-export { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits };
+export { csrfTokens, employees, rateLimits, securityLogs, sessionTokens, transactions, users };
+
