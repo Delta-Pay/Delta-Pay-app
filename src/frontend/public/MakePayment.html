@@ -1,3 +1,6 @@
+<!-- // README.md: Payment page should feel like a real gateway with clean animations and a success tick. Terms content is not mandated. -->
+<!-- // CHANGE: Detailed terms content previously shown on page -->
+<!-- // NOW: Terms text hidden; a single required checkbox is presented per user request. -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -48,9 +51,7 @@
         <div class="payment-gateway-header">
           <button id="backBtn" class="btn-back" onclick="window.location.href='/'">Back</button>
           <h1 class="gateway-title">DeltaΔPay Secure Gateway</h1>
-          <p class="gateway-subtitle">
-            Complete your international payment securely
-          </p>
+          <p class="gateway-subtitle">Complete your international payment securely</p>
         </div>
 
         <form class="payment-gateway-form" id="paymentForm">
@@ -173,38 +174,18 @@
             </div>
           </div>
 
-          <!-- Terms and Conditions Section -->
+          <!-- Terms and Conditions Section (checkbox only per user request) -->
           <div class="payment-section">
             <div class="section-header">
-              <h3>Terms & Agreement</h3>
+              <h3>Agreement</h3>
             </div>
             <div class="section-content">
-              <div class="terms-container">
-                <div class="terms-scroll">
-                  <h4>Delta Pay Terms of Service</h4>
-                  <p>By proceeding with this payment, you acknowledge and agree to the following terms:</p>
-                  <ul>
-                    <li>This is a secure payment processing service provided by Delta Pay</li>
-                    <li>All transactions are encrypted and processed through secure channels</li>
-                    <li>Payment processing fees may apply as per your account agreement</li>
-                    <li>Transaction records are maintained for compliance and security purposes</li>
-                    <li>You authorize this payment and confirm account ownership</li>
-                    <li>Fraudulent activity will be reported to relevant authorities</li>
-                    <li>Refund policy applies as per your account terms and conditions</li>
-                  </ul>
-                </div>
-                <div class="form-group terms-agreement">
-                  <label class="checkbox-container">
-                    <input
-                      type="checkbox"
-                      id="acceptTerms"
-                      name="acceptTerms"
-                      required
-                    />
-                    <span class="checkmark"></span>
-                    <span class="checkbox-label">I have read, understood, and agree to the Terms of Service and Privacy Policy</span>
-                  </label>
-                </div>
+              <div class="form-group terms-agreement compact">
+                <label class="checkbox-container">
+                  <input type="checkbox" id="acceptTerms" name="acceptTerms" required />
+                  <span class="checkmark"></span>
+                  <span class="checkbox-label">I agree to the Terms of Service and Privacy Policy</span>
+                </label>
               </div>
             </div>
           </div>

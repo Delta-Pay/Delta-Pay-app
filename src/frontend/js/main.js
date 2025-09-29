@@ -3,6 +3,7 @@ let selectedUser = null;
 let authenticatedUser = null;
 let currentCharge = null;
 let paymentReference = null;
+let csrfToken = null;
 
 // #COMPLETION_DRIVE: Assuming API endpoints are available and secure // #SUGGEST_VERIFY: Add error handling for network failures and timeout scenarios
 async function loadUsers() {
@@ -42,31 +43,37 @@ function navigateToSelectAccount() {
     logSecurityEvent('ACCOUNT_MODAL_SHOWN', { timestamp: new Date().toISOString() });
   } catch (error) {
     console.error('Error showing account selection:', error);
-    window.location.href = '/SelectAccount.html';
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = '/SelectAccount.html';
+    }
   }
 }
 
 function navigateToViewPayments() {
   try {
-    window.location.href = '/security-logs';
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = '/security-logs';
+    }
   } catch (error) {
     console.error('Navigation error:', error);
-    window.location.href = '/SecurityLogs.html';
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = '/SecurityLogs.html';
+    }
   }
 }
 
 function navigateToMakePayment() {
   try {
-    if (typeof window !== "undefined" && window.location) {
-      window.location.href = '/make-payment';
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = '/make-payment';
     } else {
       console.error("Cannot navigate - window.location not available");
     }
   } catch (error) {
     console.error('Navigation error:', error);
     try {
-      if (typeof window !== "undefined" && window.location) {
-        window.location.href = '/MakePayment.html';
+      if (typeof globalThis !== 'undefined' && globalThis.location) {
+        globalThis.location.href = '/MakePayment.html';
       } else {
         console.error("Cannot navigate - window.location not available");
       }
@@ -82,16 +89,16 @@ function navigateToPayment() {
       throw new Error("Document object not available");
     }
 
-    if (typeof window !== "undefined" && window.location) {
-      window.location.href = "/select-account";
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = "/select-account";
     } else {
       console.error("Cannot navigate - window.location not available");
     }
   } catch (error) {
     console.error("Error navigating to payment:", error);
     try {
-      if (typeof window !== "undefined" && window.location) {
-        window.location.href = "/select-account";
+      if (typeof globalThis !== 'undefined' && globalThis.location) {
+        globalThis.location.href = "/select-account";
       } else {
         console.error("Cannot navigate - window.location not available");
       }
@@ -103,10 +110,14 @@ function navigateToPayment() {
 
 function navigateToSecurityLogs() {
   try {
-    window.location.href = '/security-logs';
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = '/security-logs';
+    }
   } catch (error) {
     console.error('Navigation error:', error);
-    window.location.href = '/SecurityLogs.html';
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = '/SecurityLogs.html';
+    }
   }
 }
 
@@ -182,7 +193,9 @@ function selectUserFromPopup(username) {
     closeAccountModal();
 
     setTimeout(() => {
-      window.location.href = '/make-payment';
+      if (typeof globalThis !== 'undefined' && globalThis.location) {
+        globalThis.location.href = '/make-payment';
+      }
     }, 300);
 
   } catch (error) {
@@ -204,14 +217,18 @@ async function initializePaymentPage() {
     if (!selectedUserData.username) {
       // #COMPLETION_DRIVE: Assuming user should be redirected if no user selected // #SUGGEST_VERIFY: Add proper error handling and user notification
       alert('Please select a user account first.');
-      window.location.href = '/select-account';
+      if (typeof globalThis !== 'undefined' && globalThis.location) {
+        globalThis.location.href = '/select-account';
+      }
       return;
     }
 
     selectedUser = users.find(u => u.username === selectedUserData.username);
     if (!selectedUser) {
       alert('Selected user not found. Please try again.');
-      window.location.href = '/select-account';
+      if (typeof globalThis !== 'undefined' && globalThis.location) {
+        globalThis.location.href = '/select-account';
+      }
       return;
     }
 
@@ -226,14 +243,18 @@ async function initializePaymentPage() {
   } catch (error) {
     console.error('Error initializing payment page:', error);
     alert('Failed to initialize payment page. Please try again.');
-    window.location.href = '/';
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      globalThis.location.href = '/';
+    }
   }
 }
 
 function showPasswordModal() {
   const modal = document.getElementById('passwordModal');
   if (modal) {
-    modal.style.display = 'flex';
+  // #COMPLETION_DRIVE: Assuming class-based modal visibility improves consistency with CSS animations // #SUGGEST_VERIFY: Confirm no other code relies on inline display toggling
+  modal.classList.add('active');
+  modal.style.display = 'flex';
     const passwordInput = document.getElementById('authPassword');
     if (passwordInput) {
       passwordInput.focus();
@@ -244,11 +265,24 @@ function showPasswordModal() {
 function closePasswordModal() {
   const modal = document.getElementById('passwordModal');
   if (modal) {
+    modal.classList.remove('active');
     modal.style.display = 'none';
   }
-  // Redirect back to account selection if password modal is closed without authentication
-  if (!authenticatedUser) {
-    window.location.href = '/select-account';
+  const passwordForm = document.getElementById('passwordForm');
+  if (passwordForm) {
+    passwordForm.reset();
+  }
+  // Cleanup any pending selection since auth was canceled
+  sessionStorage.removeItem('pendingUser');
+  // #COMPLETION_DRIVE: Assuming users should be redirected if on payment page without being authenticated // #SUGGEST_VERIFY: Confirm route mapping for "/make-payment" in dev server
+  if (
+    !authenticatedUser &&
+    (typeof globalThis !== 'undefined' && globalThis.location && (
+      globalThis.location.pathname.includes('MakePayment.html') ||
+      globalThis.location.pathname === '/make-payment'
+    ))
+  ) {
+    globalThis.location.href = '/select-account';
   }
 }
 
@@ -295,6 +329,11 @@ async function handlePasswordAuthentication(event) {
       // Store auth token if provided for API calls
       if (result.token) {
         sessionStorage.setItem('authToken', result.token);
+      }
+      // Store CSRF token for secure requests
+      if (result.csrfToken) {
+        csrfToken = result.csrfToken;
+        sessionStorage.setItem('csrfToken', csrfToken);
       }
       
       closePasswordModal();
@@ -614,6 +653,8 @@ async function processSecurePayment(paymentData) {
   try {
     // #COMPLETION_DRIVE: Assuming sessionStorage has authenticated user token for API calls // #SUGGEST_VERIFY: Add proper JWT token management and error handling for authentication
     const authToken = sessionStorage.getItem('authToken');
+    const storedCsrf = sessionStorage.getItem('csrfToken');
+    if (!csrfToken && storedCsrf) csrfToken = storedCsrf;
     const headers = {
       'Content-Type': 'application/json'
     };
@@ -621,6 +662,10 @@ async function processSecurePayment(paymentData) {
     // Add authentication header if token exists
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    // Add CSRF header if present
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
     }
 
     // Store payment in database
@@ -652,8 +697,8 @@ async function processSecurePayment(paymentData) {
         recipientAccount: 'DELTAPAY-PROCESSING',
         swiftCode: 'DELTASWIFT001',
         reference: paymentData.reference,
-        status: 'pending',
-        created_at: new Date().toISOString()
+  status: 'pending',
+  "created_at": new Date().toISOString()
       };
       
       logSecurityEvent('PAYMENT_DEMO_MODE', {
@@ -694,6 +739,8 @@ function showSuccessModal() {
   }
 
   if (modal) {
+    // #COMPLETION_DRIVE: Assuming active class will control opacity/visibility transitions // #SUGGEST_VERIFY: Visually confirm animation plays once
+    modal.classList.add('active');
     modal.style.display = 'flex';
 
     // Trigger success animation after a short delay
@@ -706,7 +753,7 @@ function showSuccessModal() {
 
     // Auto-redirect after 5 seconds if user doesn't manually close
     setTimeout(() => {
-      if (modal.style.display === 'flex') {
+      if (modal.classList.contains('active')) {
         closeSuccessModal();
       }
     }, 5000);
@@ -716,7 +763,8 @@ function showSuccessModal() {
 function closeSuccessModal() {
   const modal = document.getElementById('successModal');
   if (modal) {
-    modal.style.display = 'none';
+  modal.classList.remove('active');
+  modal.style.display = 'none';
   }
 
   // Clear session data and return to landing page
@@ -728,7 +776,9 @@ function closeSuccessModal() {
     timestamp: new Date().toISOString()
   });
 
-  window.location.href = '/';
+  if (typeof globalThis !== 'undefined' && globalThis.location) {
+    globalThis.location.href = '/';
+  }
 }
 
 async function logSecurityEvent(eventType, details) {
@@ -738,7 +788,7 @@ async function logSecurityEvent(eventType, details) {
       details,
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent || 'unknown',
-      url: window.location.href || 'unknown'
+  url: (typeof globalThis !== 'undefined' && globalThis.location ? globalThis.location.href : 'unknown')
     };
 
     await fetch('/api/security/log', {
@@ -758,7 +808,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUsers();
 
     logSecurityEvent('PAGE_LOAD', {
-      page: window.location.pathname,
+      page: (typeof globalThis !== 'undefined' && globalThis.location ? globalThis.location.pathname : 'unknown'),
       referrer: document.referrer || ''
     });
 
@@ -773,7 +823,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       backendOption.addEventListener('click', navigateToViewPayments);
     }
 
-    if (window.location.pathname.includes('MakePayment.html') || window.location.pathname === '/make-payment') {
+  if (typeof globalThis !== 'undefined' && globalThis.location && (globalThis.location.pathname.includes('MakePayment.html') || globalThis.location.pathname === '/make-payment')) {
       initializePaymentPage();
     }
 
@@ -787,7 +837,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       passwordForm.addEventListener('submit', handlePasswordAuthentication);
     }
 
-    if (window.location.pathname.includes('SelectAccount.html') || window.location.pathname === '/select-account') {
+  if (typeof globalThis !== 'undefined' && globalThis.location && (globalThis.location.pathname.includes('SelectAccount.html') || globalThis.location.pathname === '/select-account')) {
       initializeSelectAccountPage();
     }
 
@@ -851,33 +901,22 @@ function selectUser(username) {
   });
 }
 
-function closePasswordModal() {
-  const passwordModal = document.getElementById('passwordModal');
-  if (passwordModal) {
-    passwordModal.style.display = 'none';
-  }
+// duplicate closePasswordModal removed; unified logic is defined above
 
-  const passwordForm = document.getElementById('passwordForm');
-  if (passwordForm) {
-    passwordForm.reset();
-  }
-
-  sessionStorage.removeItem('pendingUser');
-}
-
-if (typeof window !== 'undefined') {
-  window.navigateToSelectAccount = navigateToSelectAccount;
-  window.navigateToViewPayments = navigateToViewPayments;
-  window.navigateToMakePayment = navigateToMakePayment;
-  window.navigateToPayment = navigateToPayment;
-  window.navigateToSecurityLogs = navigateToSecurityLogs;
-  window.closeAccountModal = closeAccountModal;
-  window.selectUserFromPopup = selectUserFromPopup;
-  window.initializePaymentPage = initializePaymentPage;
-  window.populateUsersOnPaymentPage = populateUsersOnPaymentPage;
-  window.selectUserOnPaymentPage = selectUserOnPaymentPage;
-  window.closeSuccessModal = closeSuccessModal;
-  window.initializeSelectAccountPage = initializeSelectAccountPage;
-  window.selectUser = selectUser;
-  window.closePasswordModal = closePasswordModal;
+if (typeof globalThis !== 'undefined') {
+  // #COMPLETION_DRIVE: Exposing handlers globally for inline HTML attributes // #SUGGEST_VERIFY: Replace with explicit addEventListener bindings
+  globalThis.navigateToSelectAccount = navigateToSelectAccount;
+  globalThis.navigateToViewPayments = navigateToViewPayments;
+  globalThis.navigateToMakePayment = navigateToMakePayment;
+  globalThis.navigateToPayment = navigateToPayment;
+  globalThis.navigateToSecurityLogs = navigateToSecurityLogs;
+  globalThis.closeAccountModal = closeAccountModal;
+  globalThis.selectUserFromPopup = selectUserFromPopup;
+  globalThis.initializePaymentPage = initializePaymentPage;
+  globalThis.populateUsersOnPaymentPage = populateUsersOnPaymentPage;
+  globalThis.selectUserOnPaymentPage = selectUserOnPaymentPage;
+  globalThis.closeSuccessModal = closeSuccessModal;
+  globalThis.initializeSelectAccountPage = initializeSelectAccountPage;
+  globalThis.selectUser = selectUser;
+  globalThis.closePasswordModal = closePasswordModal;
 }

@@ -9,7 +9,6 @@ import {
   getAllUsers, 
   getAllEmployees, 
   toggleUserAccount, 
-  toggleEmployeeAccount, 
   getSystemStatistics, 
   getFailedLoginAttemptsReport, 
   cleanupOldLogs 
@@ -27,9 +26,11 @@ import { DatabaseUtils } from "./utils/database.ts";
 // Type definitions for middleware
 type MiddlewareFunction = (ctx: Context, next: () => Promise<unknown>) => Promise<void>;
 
+// #COMPLETION_DRIVE: Assuming Oak is the HTTP server and all routes are handled here // #SUGGEST_VERIFY: Confirm no proxy or external reverse proxy changes route expectations
 const app = new Application();
 const router = new Router();
 
+// #COMPLETION_DRIVE: Assuming in-memory DB is sufficient for demo scope // #SUGGEST_VERIFY: Swap to persistent SQLite or external DB for production
 initializeDatabase();
 await seedDefaultEmployee();
 await seedExampleUsers();
@@ -38,6 +39,7 @@ app.use(logRequests);
 app.use(rateLimit);
 
 app.use(async (ctx, next) => {
+  // #COMPLETION_DRIVE: Assuming this CSP covers current assets // #SUGGEST_VERIFY: Audit asset sources (fonts, CDNs) and adjust CSP accordingly
   ctx.response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self';");
   ctx.response.headers.set("X-Frame-Options", "DENY");
   ctx.response.headers.set("X-Content-Type-Options", "nosniff");
@@ -48,12 +50,14 @@ app.use(async (ctx, next) => {
 });
 
 app.use(oakCors({
+  // #COMPLETION_DRIVE: Assuming local dev frontends on ports 3000/5173 // #SUGGEST_VERIFY: Externalize CORS origins via env/config
   origin: ["http://localhost:3000", "http://localhost:5173"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 
+// #COMPLETION_DRIVE: Assuming static assets served from src/frontend/public // #SUGGEST_VERIFY: Use absolute path resolution and handle cache headers
 router.get("/", async (ctx) => {
   await send(ctx, "index.html", {
     root: `${Deno.cwd()}/src/frontend/public`,
@@ -106,6 +110,7 @@ router.get("/api/users/all", async (ctx) => {
     const { getUsers } = await import("./database/init.ts");
     const users = getUsers();
 
+  // #COMPLETION_DRIVE: Assuming frontend only needs non-sensitive fields // #SUGGEST_VERIFY: Re-validate exposed fields against privacy policy
     const sanitizedUsers = users.map(user => ({
       id: user.id,
       full_name: user.full_name,
@@ -134,7 +139,7 @@ router.get("/api/users/all", async (ctx) => {
     }));
 
     ctx.response.body = { success: true, users: sanitizedUsers };
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -142,6 +147,7 @@ router.get("/api/users/all", async (ctx) => {
 
 router.get("/api/health", async (ctx) => {
   const dbHealth = await DatabaseUtils.healthCheck();
+  // #COMPLETION_DRIVE: Assuming health check reflects app readiness // #SUGGEST_VERIFY: Include additional checks (routes, port bind, timers)
   ctx.response.body = { 
     status: dbHealth.healthy ? "healthy" : "unhealthy", 
     timestamp: new Date().toISOString(),
@@ -157,7 +163,7 @@ router.post("/api/auth/register", async (ctx) => {
     const result = await registerUser(body, ip);
     ctx.response.status = result.success ? 201 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -171,7 +177,7 @@ router.post("/api/auth/login", async (ctx) => {
     const result = await loginUser(body.username, body.password, ip);
     ctx.response.status = result.success ? 200 : 401;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -185,7 +191,7 @@ router.post("/api/auth/employee-login", async (ctx) => {
     const result = await loginEmployee(body.username, body.password, ip);
     ctx.response.status = result.success ? 200 : 401;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -199,19 +205,19 @@ router.post("/api/auth/authenticate-password", async (ctx) => {
     const result = await authenticateUserPassword(body.username, body.password, ip);
     ctx.response.status = result.success ? 200 : 401;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
 });
 
-router.get("/api/auth/csrf-token", authenticateToken, async (ctx) => {
+router.get("/api/auth/csrf-token", authenticateToken, (ctx) => {
   try {
     const { userId, userType } = ctx.state.user;
     const token = generateCSRFToken(userType === 'user' ? userId : undefined, userType === 'employee' ? userId : undefined);
     
     ctx.response.body = { success: true, csrfToken: token };
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Failed to generate CSRF token" };
   }
@@ -227,12 +233,13 @@ router.get("/api/user/transactions", authenticateUser, async (ctx) => {
     const result = await getUserTransactions(userId, limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
 });
 
+// #COMPLETION_DRIVE: Assuming CSRF token is provided by frontend after login // #SUGGEST_VERIFY: Add CSRF retrieval flow in frontend and enforce header presence
 router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) => {
   try {
     const userId = ctx.state.user.userId;
@@ -242,7 +249,7 @@ router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) 
     const result = await createPayment(body, userId, ip);
     ctx.response.status = result.success ? 201 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -257,7 +264,7 @@ router.get("/api/admin/transactions", authenticateEmployee, async (ctx) => {
     const result = await getAllTransactions(limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -272,7 +279,7 @@ router.put("/api/admin/transactions/:id/approve", authenticateEmployee, csrfProt
     const result = await approveTransaction(transactionId, employeeId, ip);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -288,7 +295,7 @@ router.put("/api/admin/transactions/:id/deny", authenticateEmployee, csrfProtect
     const result = await denyTransaction(transactionId, employeeId, body.reason, ip);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -304,7 +311,7 @@ router.get("/api/admin/security-logs", authenticateEmployee, async (ctx) => {
     const result = await getSecurityLogs(limit, offset, severity);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -319,7 +326,7 @@ router.get("/api/admin/users", authenticateEmployee, async (ctx) => {
     const result = await getAllUsers(limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -334,7 +341,7 @@ router.get("/api/admin/employees", authenticateEmployee, async (ctx) => {
     const result = await getAllEmployees(limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -350,7 +357,7 @@ router.put("/api/admin/users/:id/toggle", authenticateEmployee, csrfProtection, 
     const result = await toggleUserAccount(userId, body.lock, employeeId, ip, body.reason);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -361,7 +368,7 @@ router.get("/api/admin/statistics", authenticateEmployee, async (ctx) => {
     const result = await getSystemStatistics();
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -373,7 +380,7 @@ router.get("/api/admin/failed-login-report", authenticateEmployee, async (ctx) =
     const result = await getFailedLoginAttemptsReport(hours);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -384,12 +391,13 @@ router.post("/api/admin/cleanup-logs", authenticateEmployee, csrfProtection, asy
     const employeeId = ctx.state.user.userId;
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-    const daysToKeep = body.daysToKeep || 90;
+  // #COMPLETION_DRIVE: Assuming default retention 90 days // #SUGGEST_VERIFY: Make configurable and align with compliance
+  const daysToKeep = body.daysToKeep || 90;
     
     const result = await cleanupOldLogs(daysToKeep, employeeId, ip);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -400,7 +408,7 @@ router.get("/api/statistics/transactions", async (ctx) => {
     const result = await getTransactionStatistics();
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
-  } catch (error) {
+  } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -444,11 +452,12 @@ app.use(async (ctx, next) => {
   }
 });
 
-app.use(async (ctx) => {
+app.use((ctx) => {
   ctx.response.status = 404;
   ctx.response.body = { success: false, message: "Endpoint not found" };
 });
 
+// #COMPLETION_DRIVE: Assuming hourly cleanup is sufficient // #SUGGEST_VERIFY: Tune interval based on load, and ensure timer cleared on shutdown
 setInterval(async () => {
   try {
     await DatabaseUtils.cleanupExpiredRecords();
@@ -458,6 +467,7 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000);
 
+// #COMPLETION_DRIVE: Assuming fixed port 3623 for Deno server // #SUGGEST_VERIFY: Read from env var PORT with fallback
 const port = 3623;
 console.log(`Delta Pay API Server running on http://localhost:${port}`);
 console.log("Database initialized and ready");

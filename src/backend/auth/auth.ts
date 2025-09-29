@@ -1,8 +1,20 @@
 import { crypto } from "https://deno.land/std@0.200.0/crypto/mod.ts";
 import { create, verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
-import { addSecurityLog, addUser, csrfTokens, getEmployeeByUsername, getUserByUsername, sessionTokens } from "../database/init.ts";
+import { addSecurityLog, addUser, csrfTokens, getEmployeeByUsername, getUserByUsername, sessionTokens, type User } from "../database/init.ts";
 
 const JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
+
+// Create a CryptoKey for HMAC signing from the string secret
+async function getJwtKey(): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  return await crypto.subtle.importKey(
+    "raw",
+    enc.encode(JWT_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
+}
 
 const VALIDATION_PATTERNS = {
   fullName: /^[a-zA-Z\s]{2,50}$/,
@@ -88,12 +100,39 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   }
 }
 
-export async function registerUser(userData: any, ip: string): Promise<any> {
+// Types for auth flows
+interface RegisterUserInput {
+  fullName: string;
+  idNumber: string;
+  accountNumber: string;
+  username: string;
+  password: string;
+}
+
+interface LoginResult {
+  success: boolean;
+  message?: string;
+  token?: string;
+  csrfToken?: string;
+  user?: Pick<User, "id" | "username" | "full_name" | "account_number" | "email" | "phone_number" | "address_line_1" | "address_line_2" | "city" | "state_province" | "postal_code" | "country" | "currency" | "account_balance" | "card_number" | "card_expiry" | "card_holder_name">;
+  employee?: { id: number; username: string; fullName: string };
+}
+
+export async function registerUser(userData: RegisterUserInput, ip: string): Promise<LoginResult> {
   try {
     const { fullName, idNumber, accountNumber, username, password } = userData;
 
     if (!fullName || !idNumber || !accountNumber || !username || !password) {
       return { success: false, message: "Missing required fields" };
+    }
+
+    // Basic validation
+    const validation = validateInput(
+      { fullName, idNumber, accountNumber, username, password },
+      VALIDATION_PATTERNS,
+    );
+    if (!validation.isValid) {
+      return { success: false, message: `Validation failed: ${validation.errors.join(", ")}` };
     }
 
     const existingUser = getUserByUsername(username);
@@ -109,9 +148,28 @@ export async function registerUser(userData: any, ip: string): Promise<any> {
       account_number: accountNumber,
       username: username,
       password_hash: passwordHash,
+      email: `${username}@example.com`,
+      phone_number: "+0000000000",
+      date_of_birth: "1990-01-01",
+      nationality: "Unknown",
+      address_line_1: "Unknown Street 1",
+      address_line_2: undefined,
+      city: "Unknown City",
+      state_province: "Unknown State",
+      postal_code: "0000",
+      country: "Unknown",
+      account_balance: 0,
+      currency: "ZAR",
+      account_type: "Standard",
+      preferred_language: "English",
+      occupation: "Unspecified",
+      annual_income: 0,
+      card_number: "4532123412341234",
+      card_expiry: "12/29",
+      card_holder_name: fullName,
       created_at: new Date().toISOString(),
       is_active: true,
-      failed_login_attempts: 0
+      failed_login_attempts: 0,
     });
 
     logSecurityEvent({
@@ -129,7 +187,16 @@ export async function registerUser(userData: any, ip: string): Promise<any> {
   }
 }
 
-export async function loginUser(username: string, password: string, ip: string): Promise<any> {
+async function issueJwtForUser(user: User, userType: "user" | "employee"): Promise<string> {
+  const key = await getJwtKey();
+  return await create({ alg: "HS256", typ: "JWT" }, {
+    userId: user.id,
+    username: user.username,
+    userType,
+  }, key);
+}
+
+export async function loginUser(username: string, password: string, ip: string): Promise<LoginResult> {
   try {
     const user = getUserByUsername(username);
     if (!user) {
@@ -141,11 +208,7 @@ export async function loginUser(username: string, password: string, ip: string):
       return { success: false, message: "Invalid credentials" };
     }
 
-    const token = await create({ alg: "HS256", typ: "JWT" }, {
-      userId: user.id,
-      username: user.username,
-      userType: "user"
-    }, JWT_SECRET);
+  const token = await issueJwtForUser(user, "user");
 
     sessionTokens.push({
       token,
@@ -164,14 +227,14 @@ export async function loginUser(username: string, password: string, ip: string):
       timestamp: new Date().toISOString()
     });
 
-    return { success: true, token, user: { id: user.id, username: user.username, fullName: user.full_name } };
+    return { success: true, token, user: { id: user.id, username: user.username, full_name: user.full_name, account_number: user.account_number, email: user.email, phone_number: user.phone_number, address_line_1: user.address_line_1, address_line_2: user.address_line_2, city: user.city, state_province: user.state_province, postal_code: user.postal_code, country: user.country, currency: user.currency, account_balance: user.account_balance, card_number: user.card_number, card_expiry: user.card_expiry, card_holder_name: user.card_holder_name } };
   } catch (error) {
     console.error("Login error:", error);
     return { success: false, message: "Login failed" };
   }
 }
 
-export async function loginEmployee(username: string, password: string, ip: string): Promise<any> {
+export async function loginEmployee(username: string, password: string, ip: string): Promise<LoginResult> {
   try {
     const employee = getEmployeeByUsername(username);
     if (!employee) {
@@ -183,11 +246,7 @@ export async function loginEmployee(username: string, password: string, ip: stri
       return { success: false, message: "Invalid credentials" };
     }
 
-    const token = await create({ alg: "HS256", typ: "JWT" }, {
-      userId: employee.id,
-      username: employee.username,
-      userType: "employee"
-    }, JWT_SECRET);
+  const token = await issueJwtForUser(employee as unknown as User, "employee");
 
     sessionTokens.push({
       token,
@@ -224,15 +283,30 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
   return token;
 }
 
-export function logSecurityEvent(eventData: any): void {
+type SecurityEventInput = {
+  "user_id"?: number;
+  "employee_id"?: number;
+  action: string;
+  "ip_address"?: string;
+  "user_agent"?: string;
+  details?: string;
+  severity?: string;
+  timestamp?: string;
+  userId?: number;
+  employeeId?: number;
+  ipAddress?: string;
+  userAgent?: string;
+};
+
+export function logSecurityEvent(eventData: SecurityEventInput): void {
   try {
     addSecurityLog({
-      user_id: eventData.user_id || eventData.userId || null,
-      employee_id: eventData.employee_id || eventData.employeeId || null,
+  user_id: eventData["user_id"] ?? eventData.userId ?? undefined,
+  employee_id: eventData["employee_id"] ?? eventData.employeeId ?? undefined,
       action: eventData.action,
-      ip_address: eventData.ip_address || eventData.ipAddress,
-      user_agent: eventData.user_agent || eventData.userAgent || null,
-      details: eventData.details || null,
+  ip_address: eventData["ip_address"] ?? eventData.ipAddress ?? "unknown",
+  user_agent: eventData["user_agent"] ?? eventData.userAgent ?? undefined,
+  details: eventData.details ?? undefined,
       severity: eventData.severity || 'info',
       timestamp: eventData.timestamp || new Date().toISOString()
     });
@@ -241,9 +315,10 @@ export function logSecurityEvent(eventData: any): void {
   }
 }
 
-export async function verifyToken(token: string): Promise<any> {
+export async function verifyToken(token: string): Promise<Record<string, unknown> | null> {
   try {
-    const payload = await verify(token, JWT_SECRET, "HS256");
+  const key = await getJwtKey();
+  const payload = await verify(token, key);
 
     const sessionToken = sessionTokens.find(t =>
       t.token === token &&
@@ -262,7 +337,7 @@ export async function verifyToken(token: string): Promise<any> {
   }
 }
 
-export async function authenticateUserPassword(username: string, password: string, ip: string): Promise<any> {
+export async function authenticateUserPassword(username: string, password: string, ip: string): Promise<LoginResult> {
   try {
     // #COMPLETION_DRIVE: Assuming user exists and password validation is required for payment flow // #SUGGEST_VERIFY: Add rate limiting and account lockout for failed authentication attempts
     const user = getUserByUsername(username);
@@ -299,8 +374,21 @@ export async function authenticateUserPassword(username: string, password: strin
       timestamp: new Date().toISOString()
     });
 
+    // Issue a JWT and CSRF token for subsequent operations
+    const token = await issueJwtForUser(user, "user");
+    sessionTokens.push({
+      token,
+      userId: user.id,
+      userType: "user",
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      is_revoked: false,
+    });
+    const csrfToken = generateCSRFToken(user.id, undefined);
+
     return {
       success: true,
+      token,
+      csrfToken,
       user: {
         id: user.id,
         username: user.username,
@@ -318,15 +406,15 @@ export async function authenticateUserPassword(username: string, password: strin
         account_balance: user.account_balance,
         card_number: user.card_number,
         card_expiry: user.card_expiry,
-        card_holder_name: user.card_holder_name
-      }
+        card_holder_name: user.card_holder_name,
+      },
     };
   } catch (error) {
     console.error("Password authentication error:", error);
     logSecurityEvent({
       action: 'PASSWORD_AUTH_ERROR',
       ip_address: ip,
-      details: `Authentication error: ${error.message}`,
+      details: `Authentication error: ${error instanceof Error ? error.message : String(error)}`,
       severity: 'error',
       timestamp: new Date().toISOString()
     });

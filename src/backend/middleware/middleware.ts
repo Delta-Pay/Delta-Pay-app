@@ -1,8 +1,9 @@
 import { verifyToken, logSecurityEvent } from "../auth/auth.ts";
-import { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
+import { csrfTokens, rateLimits } from "../database/init.ts";
 import { Context } from "https://deno.land/x/oak@v12.6.1/mod.ts";
 
 export async function authenticateToken(ctx: Context, next: () => Promise<unknown>) {
+  // #COMPLETION_DRIVE: Assuming JWT is provided via Authorization: Bearer header // #SUGGEST_VERIFY: Add cookie-based auth alternative and stricter parsing
   const authHeader = ctx.request.headers.get("Authorization");
   
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -47,6 +48,7 @@ export async function authenticateEmployee(ctx: Context, next: () => Promise<unk
 }
 
 export async function rateLimit(ctx: Context, next: () => Promise<unknown>) {
+  // #COMPLETION_DRIVE: Assuming simple in-memory sliding window is acceptable for demo // #SUGGEST_VERIFY: Move to Redis-backed counter for scale and multi-instance
   const ip = ctx.request.ip || "unknown";
   const endpoint = ctx.request.url.pathname;
   const now = new Date();
@@ -116,6 +118,7 @@ export async function rateLimit(ctx: Context, next: () => Promise<unknown>) {
 }
 
 export async function csrfProtection(ctx: Context, next: () => Promise<unknown>) {
+  // #COMPLETION_DRIVE: Assuming token can arrive via header or query param // #SUGGEST_VERIFY: Enforce header-only and rotate token per session
   if (ctx.request.method === "GET" || ctx.request.method === "HEAD" || ctx.request.method === "OPTIONS") {
     await next();
     return;
@@ -178,6 +181,7 @@ export async function csrfProtection(ctx: Context, next: () => Promise<unknown>)
 }
 
 export function generateCSRFToken(userId?: number, employeeId?: number): string {
+  // #COMPLETION_DRIVE: Assuming 24h CSRF token validity is adequate // #SUGGEST_VERIFY: Shorten validity window and bind to session/IP
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -193,6 +197,7 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
 }
 
 export async function logRequests(ctx: Context, next: () => Promise<unknown>) {
+  // #COMPLETION_DRIVE: Assuming structured logs to security table is sufficient // #SUGGEST_VERIFY: Add rolling file logs or external SIEM integration
   const start = Date.now();
   const ip = ctx.request.ip || "unknown";
   const userAgent = ctx.request.headers.get("User-Agent") || "unknown";
