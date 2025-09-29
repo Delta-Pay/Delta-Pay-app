@@ -196,11 +196,28 @@ export async function loginUser(username: string, password: string, ip: string):
   try {
     const user = getUserByUsername(username);
     if (!user) {
+      // #COMPLETION_DRIVE: Log unknown username attempts as suspicious
+      // #SUGGEST_VERIFY: Consider masking username details in production
+      logSecurityEvent({
+        action: 'USER_LOGIN_FAILED_UNKNOWN_USERNAME',
+        ip_address: ip,
+        details: `Login attempt for non-existent username: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
       return { success: false, message: "Invalid credentials" };
     }
 
     const now = Date.now();
     if (user.account_locked_until && new Date(user.account_locked_until).getTime() > now) {
+      logSecurityEvent({
+        action: 'USER_LOGIN_BLOCKED',
+        user_id: user.id,
+        ip_address: ip,
+        details: `Blocked login during lock window for user: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
       return { success: false, message: "Account temporarily locked. Please try again later." };
     }
 
@@ -209,9 +226,25 @@ export async function loginUser(username: string, password: string, ip: string):
       const next = (user.failed_login_attempts || 0) + 1;
       user.failed_login_attempts = next;
       user.last_login_attempt = new Date().toISOString();
+      logSecurityEvent({
+        action: 'USER_LOGIN_FAILED_INVALID_PASSWORD',
+        user_id: user.id,
+        ip_address: ip,
+        details: `Invalid password for username: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
       if (next >= 5) {
         user.account_locked_until = new Date(now + 2 * 60 * 1000).toISOString();
         user.failed_login_attempts = 0;
+        logSecurityEvent({
+          action: 'USER_ACCOUNT_TEMP_LOCKED',
+          user_id: user.id,
+          ip_address: ip,
+          details: 'Too many failed login attempts',
+          severity: 'warning',
+          timestamp: new Date().toISOString()
+        });
       }
       return { success: false, message: "Invalid credentials" };
     }
@@ -249,11 +282,26 @@ export async function loginEmployee(username: string, password: string, ip: stri
   try {
     const employee = getEmployeeByUsername(username);
     if (!employee) {
+      logSecurityEvent({
+        action: 'EMPLOYEE_LOGIN_FAILED_UNKNOWN_USERNAME',
+        ip_address: ip,
+        details: `Employee login attempt for non-existent username: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
       return { success: false, message: "Invalid credentials" };
     }
 
     const now = Date.now();
     if (employee.account_locked_until && new Date(employee.account_locked_until).getTime() > now) {
+      logSecurityEvent({
+        action: 'EMPLOYEE_LOGIN_BLOCKED',
+        employee_id: employee.id,
+        ip_address: ip,
+        details: `Blocked employee login during lock window for user: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
       return { success: false, message: "Account temporarily locked. Please try again later." };
     }
 
@@ -262,9 +310,25 @@ export async function loginEmployee(username: string, password: string, ip: stri
       const next = (employee.failed_login_attempts || 0) + 1;
       employee.failed_login_attempts = next;
       employee.last_login_attempt = new Date().toISOString();
+      logSecurityEvent({
+        action: 'EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD',
+        employee_id: employee.id,
+        ip_address: ip,
+        details: `Invalid password for employee username: ${username}`,
+        severity: 'warning',
+        timestamp: new Date().toISOString()
+      });
       if (next >= 5) {
         employee.account_locked_until = new Date(now + 2 * 60 * 1000).toISOString();
         employee.failed_login_attempts = 0;
+        logSecurityEvent({
+          action: 'EMPLOYEE_ACCOUNT_TEMP_LOCKED',
+          employee_id: employee.id,
+          ip_address: ip,
+          details: 'Too many failed employee login attempts',
+          severity: 'warning',
+          timestamp: new Date().toISOString()
+        });
       }
       return { success: false, message: "Invalid credentials" };
     }
@@ -302,8 +366,8 @@ export function generateCSRFToken(userId?: number, employeeId?: number): string 
   const token = crypto.randomUUID();
   csrfTokens.push({
     token,
-    userId,
-    employeeId,
+  user_id: userId,
+  employee_id: employeeId,
     expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString()
   });
   return token;
@@ -326,14 +390,20 @@ type SecurityEventInput = {
 
 export function logSecurityEvent(eventData: SecurityEventInput): void {
   try {
+    const safeAction = String(eventData.action || 'UNKNOWN').slice(0, 64);
+    const safeSeverity = (eventData.severity || 'info').toLowerCase();
+    const normalizedSeverity = safeSeverity === 'warning' ? 'warning' : safeSeverity === 'error' ? 'error' : 'info';
+    const rawDetails = eventData.details ?? undefined;
+    const safeDetails = typeof rawDetails === 'string' ? rawDetails.slice(0, 2000) : (rawDetails ? JSON.stringify(rawDetails).slice(0, 2000) : undefined);
+
     addSecurityLog({
-  user_id: eventData["user_id"] ?? eventData.userId ?? undefined,
-  employee_id: eventData["employee_id"] ?? eventData.employeeId ?? undefined,
-      action: eventData.action,
-  ip_address: eventData["ip_address"] ?? eventData.ipAddress ?? "unknown",
-  user_agent: eventData["user_agent"] ?? eventData.userAgent ?? undefined,
-  details: eventData.details ?? undefined,
-      severity: eventData.severity || 'info',
+      user_id: eventData["user_id"] ?? eventData.userId ?? undefined,
+      employee_id: eventData["employee_id"] ?? eventData.employeeId ?? undefined,
+      action: safeAction,
+      ip_address: eventData["ip_address"] ?? eventData.ipAddress ?? "unknown",
+      user_agent: eventData["user_agent"] ?? eventData.userAgent ?? undefined,
+      details: safeDetails,
+      severity: normalizedSeverity,
       timestamp: eventData.timestamp || new Date().toISOString()
     });
   } catch (error) {

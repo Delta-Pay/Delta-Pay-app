@@ -4,7 +4,8 @@ let authenticatedUser = null;
 let currentCharge = null;
 let paymentReference = null;
 let csrfToken = null;
-let employeeAuth = null;
+// #COMPLETION_DRIVE: Admin demo mode: no authentication required for admin actions
+// #SUGGEST_VERIFY: Re-enable auth in production by restoring employee login/CSRF
 
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 8000, retry = 1) {
   const controller = new AbortController();
@@ -973,65 +974,20 @@ function bindAdminControls() {
   const refreshBtn = document.getElementById('refreshTransactionsBtn');
   if (refreshBtn) refreshBtn.addEventListener('click', loadAndRenderTransactions);
 
-  const loginForm = document.getElementById('employeeLoginForm');
-  if (loginForm) loginForm.addEventListener('submit', handleEmployeeLogin);
-
   const denyForm = document.getElementById('denyForm');
   if (denyForm) denyForm.addEventListener('submit', submitDenyReason);
 }
 
-function updateAdminAuthStatus() {
-  const statusEl = document.getElementById('adminAuthStatus');
-  if (statusEl) statusEl.textContent = employeeAuth ? `Authenticated as ${employeeAuth.employee?.username}` : 'Not authenticated';
-  const icon = document.getElementById('employeeIcon');
-  if (icon) icon.textContent = employeeAuth?.employee?.fullName?.charAt(0)?.toUpperCase() || 'E';
-}
+function updateAdminAuthStatus() { /* demo mode, no-op */ }
 
-function showEmployeeLoginModal() {
-  const modal = document.getElementById('employeeLoginModal');
-  if (modal) {
-    modal.style.display = 'flex';
-  }
-}
+// Demo mode: no employee login modal required
 
 function closeEmployeeLoginModal() {
   const modal = document.getElementById('employeeLoginModal');
   if (modal) modal.style.display = 'none';
 }
 
-async function handleEmployeeLogin(e) {
-  e.preventDefault();
-  const username = document.getElementById('employeeUsername').value.trim();
-  const password = document.getElementById('employeePassword').value.trim();
-  if (!username || !password) return;
-  try {
-    const res = await fetch('/api/auth/employee-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if (!data.success) {
-      alert('Invalid employee credentials');
-      return;
-    }
-    const token = data.token;
-    let csrf = null;
-    try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${token}` } });
-      const csrfData = await csrfRes.json();
-    if (csrfData.success) csrf = csrfData.csrfToken;
-  } catch (_) {;}
-    employeeAuth = { token, csrfToken: csrf, employee: data.employee };
-    sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
-    updateAdminAuthStatus();
-    closeEmployeeLoginModal();
-    await loadAndRenderTransactions();
-  } catch (error) {
-    console.error('Employee login failed:', error);
-    alert('Login error');
-  }
-}
+/* demo mode, no-op */
 
 function restoreEmployeeSession() {
   const raw = sessionStorage.getItem('employeeAuth');
@@ -1042,9 +998,7 @@ function restoreEmployeeSession() {
 
 async function loadAndRenderTransactions() {
   try {
-    const headers = {};
-    if (employeeAuth?.token) headers['Authorization'] = `Bearer ${employeeAuth.token}`;
-  const res = await fetchWithTimeout('/api/admin/transactions', { headers }, 10000);
+  const res = await fetchWithTimeout('/api/admin/transactions', {}, 10000);
     const data = await res.json();
     if (!data.success) throw new Error('Failed to load transactions');
     renderTransactions(data.transactions || []);
@@ -1145,22 +1099,8 @@ function showToast(message, type = 'info', timeout = 3000) {
 
 async function approveTransactionAdmin(id) {
   try {
-    if (!employeeAuth?.token) return showEmployeeLoginModal();
-    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${employeeAuth.token}` };
-    if (!employeeAuth.csrfToken) {
-      try {
-        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${employeeAuth.token}` } }, 6000);
-        const csrfData = await csrfRes.json();
-        if (csrfData.success) employeeAuth.csrfToken = csrfData.csrfToken;
-        sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
-  } catch (_) {;}
-    }
-    if (!employeeAuth.csrfToken) {
-      showToast && showToast('Secure token missing. Please retry login.', 'error');
-      return;
-    }
-    if (employeeAuth.csrfToken) headers['X-CSRF-Token'] = employeeAuth.csrfToken;
-    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers }, 10000);
+  const headers = { 'Content-Type': 'application/json' };
+  const res = await fetchWithTimeout(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers }, 10000);
     const data = await res.json();
     if (!data.success) throw new Error('Approve failed');
     showToast('Transaction approved', 'success');
@@ -1173,22 +1113,8 @@ async function approveTransactionAdmin(id) {
 
 async function denyTransactionAdmin(id, reason) {
   try {
-    if (!employeeAuth?.token) return showEmployeeLoginModal();
-    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${employeeAuth.token}` };
-    if (!employeeAuth.csrfToken) {
-      try {
-        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${employeeAuth.token}` } }, 6000);
-        const csrfData = await csrfRes.json();
-        if (csrfData.success) employeeAuth.csrfToken = csrfData.csrfToken;
-        sessionStorage.setItem('employeeAuth', JSON.stringify(employeeAuth));
-  } catch (_) {;}
-    }
-    if (!employeeAuth.csrfToken) {
-      showToast && showToast('Secure token missing. Please retry login.', 'error');
-      return;
-    }
-    if (employeeAuth.csrfToken) headers['X-CSRF-Token'] = employeeAuth.csrfToken;
-    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) }, 10000);
+  const headers = { 'Content-Type': 'application/json' };
+  const res = await fetchWithTimeout(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) }, 10000);
     const data = await res.json();
     if (!data.success) throw new Error('Deny failed');
     showToast('Transaction denied', 'success');

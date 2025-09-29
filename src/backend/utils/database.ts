@@ -1,17 +1,17 @@
-import { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
+import { csrfTokens, employees, rateLimits, securityLogs, sessionTokens, transactions, users } from "../database/init.ts";
 
 export class DatabaseUtils {
-  static async executeQuery(query: string, params: any[] = []): Promise<any[]> {
+  static executeQuery<T = unknown>(query: string, params: ReadonlyArray<unknown> = []): T[] {
     console.log("Simulating query:", query, params);
-    return [];
+    return [] as T[];
   }
 
-  static async executeInsert(query: string, params: any[] = []): Promise<number> {
+  static executeInsert(query: string, params: ReadonlyArray<unknown> = []): number {
     console.log("Simulating insert:", query, params);
     return Math.floor(Math.random() * 1000);
   }
 
-  static async executeUpdate(query: string, params: any[] = []): Promise<number> {
+  static executeUpdate(query: string, params: ReadonlyArray<unknown> = []): number {
     console.log("Simulating update:", query, params);
     return 1;
   }
@@ -26,8 +26,8 @@ export class DatabaseUtils {
       .trim();
   }
 
-  static sanitizeObject(obj: Record<string, any>, allowedFields: string[]): Record<string, any> {
-    const sanitized: Record<string, any> = {};
+  static sanitizeObject<T extends Record<string, unknown>>(obj: T, allowedFields: ReadonlyArray<string>): Record<string, unknown> {
+    const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(obj)) {
       if (allowedFields.includes(key)) {
@@ -51,7 +51,7 @@ export class DatabaseUtils {
     return { offset, limit };
   }
 
-  static async healthCheck(): Promise<{ healthy: boolean; message: string }> {
+  static healthCheck(): { healthy: boolean; message: string } {
     try {
       const arrayChecks = [
         Array.isArray(users),
@@ -63,16 +63,16 @@ export class DatabaseUtils {
         Array.isArray(rateLimits)
       ];
 
-      if (arrayChecks.every(check => check === true)) {
+    if (arrayChecks.every(check => check === true)) {
         return { healthy: true, message: "In-memory database healthy" };
       }
       return { healthy: false, message: "In-memory database arrays not accessible" };
     } catch (error) {
-      return { healthy: false, message: `Database health check failed: ${error.message}` };
+    return { healthy: false, message: `Database health check failed: ${(error as Error).message}` };
     }
   }
 
-  static async cleanupExpiredRecords(): Promise<void> {
+  static cleanupExpiredRecords(): void {
     try {
       const now = new Date();
       const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -99,7 +99,7 @@ export class DatabaseUtils {
       console.log("Expired records cleanup completed");
     } catch (error) {
       console.error("Cleanup error:", error);
-      throw new Error(`Cleanup failed: ${error.message}`);
+  throw new Error(`Cleanup failed: ${(error as Error).message}`);
     }
   }
 }

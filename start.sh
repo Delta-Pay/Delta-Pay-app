@@ -17,8 +17,7 @@ fi
 
 echo "Starting backend server on port 3623..."
 echo "Backend will be available at: http://localhost:3623"
-echo "Default admin credentials: username=admin, password=admin123"
-echo ""
+
 
 # Start the backend server
 deno run --allow-net --allow-read --allow-write src/backend/server.ts

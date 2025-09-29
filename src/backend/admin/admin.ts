@@ -1,176 +1,198 @@
-import { users, employees, transactions, securityLogs, sessionTokens, csrfTokens, rateLimits } from "../database/init.ts";
+// README: Admin must view security logs and manage accounts; Backend Technologies mention SQLite.
+// Change: Using in-memory arrays for this mock instead of SQLite joins for admin queries.
+// #COMPLETION_DRIVE: Switched admin data access to in-memory arrays exposed by init.ts
+// #SUGGEST_VERIFY: If/when a persistent DB is introduced, replace selectors with SQL/ORM equivalents
+
 import { logSecurityEvent } from "../auth/auth.ts";
+import { employees, securityLogs, transactions, users } from "../database/init.ts";
 
-export async function getSecurityLogs(limit: number = 100, offset: number = 0, severity?: string): Promise<{ success: boolean; message: string; logs?: any[] }> {
+function toSafeInt(n: number, min = 0, max = Number.MAX_SAFE_INTEGER): number {
+  // #COMPLETION_DRIVE: Ensure pagination inputs don't explode memory
+  // #SUGGEST_VERIFY: Clamp via API validators once a framework is added
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, Math.floor(n)));
+}
+
+function arraysHealthy(): boolean {
+  // #COMPLETION_DRIVE: Switched to in-memory arrays; ensure availability at runtime
+  // #SUGGEST_VERIFY: Add diagnostics endpoint if this ever fails in production
   try {
-    let query = `
-      SELECT 
-        sl.id,
-        sl.action,
-        sl.ip_address,
-        sl.details,
-        sl.severity,
-        sl.timestamp,
-        u.username as user_username,
-        u.full_name as user_full_name,
-        e.username as employee_username,
-        e.full_name as employee_full_name
-      FROM security_logs sl
-      LEFT JOIN users u ON sl.user_id = u.id
-      LEFT JOIN employees e ON sl.employee_id = e.id
-    `;
-    
-    const params: any[] = [];
-    
+    return Array.isArray(users) && Array.isArray(employees) && Array.isArray(transactions) && Array.isArray(securityLogs);
+  } catch (_e) {
+    return false;
+  }
+}
+
+function normalizeSeverity(input?: string): 'info' | 'warning' | 'error' {
+  // #COMPLETION_DRIVE: Align severities to a fixed set to avoid UI/report drift
+  // #SUGGEST_VERIFY: If adding more severities, update this mapping and UI filters
+  const s = (input || 'info').toLowerCase();
+  return s === 'warning' ? 'warning' : s === 'error' ? 'error' : 'info';
+}
+
+type SecurityLogView = {
+  id: number;
+  action: string;
+  ipAddress: string;
+  userAgent?: string;
+  details?: string;
+  severity: string;
+  timestamp: string;
+  userUsername: string | null;
+  userFullName: string | null;
+  employeeUsername: string | null;
+  employeeFullName: string | null;
+};
+
+type UserView = {
+  id: number;
+  username: string;
+  fullName: string;
+  idNumber: string;
+  accountNumber: string;
+  createdAt: string;
+  isActive: boolean;
+  failedLoginAttempts: number;
+  lastLoginAttempt: string | null;
+  accountLockedUntil: string | null;
+};
+
+type EmployeeView = {
+  id: number;
+  username: string;
+  fullName: string;
+  employeeId: string;
+  createdAt: string;
+  isActive: boolean;
+  failedLoginAttempts: number;
+  lastLoginAttempt: string | null;
+  accountLockedUntil: string | null;
+};
+
+type SystemStats = {
+  users: { active: number; inactive: number; total: number };
+  employees: { active: number; inactive: number; total: number };
+  transactions: { pending: number; approved: number; denied: number; total: number };
+  security: { events24h: number; warnings24h: number; errors24h: number };
+};
+
+type FailedLoginReportEntry = { ipAddress: string; attemptCount: number; lastAttempt: string; usernames: string[] };
+
+export async function getSecurityLogs(limit: number = 100, offset: number = 0, severity?: string): Promise<{ success: boolean; message: string; logs?: SecurityLogView[] }> {
+  try {
+    await Promise.resolve();
+    if (!arraysHealthy()) return { success: false, message: "Security logs unavailable" };
+    const lim = toSafeInt(limit, 1, 500);
+    const off = toSafeInt(offset, 0, 1_000_000);
+
+    let logs = securityLogs.slice();
     if (severity) {
-      query += " WHERE sl.severity = ?";
-      params.push(severity);
+      const sev = normalizeSeverity(severity);
+      logs = logs.filter(l => (l.severity || 'info').toLowerCase() === sev);
     }
-    
-    query += " ORDER BY sl.timestamp DESC LIMIT ? OFFSET ?";
-    params.push(limit, offset);
 
-    const logs = db.query(query, params);
+    logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const page = logs.slice(off, off + lim);
 
-    const formattedLogs = logs.map(log => ({
-      id: log[0],
-      action: log[1],
-      ipAddress: log[2],
-      details: log[3],
-      severity: log[4],
-      timestamp: log[5],
-      userUsername: log[6],
-      userFullName: log[7],
-      employeeUsername: log[8],
-      employeeFullName: log[9]
-    }));
+  const formattedLogs: SecurityLogView[] = page.map(l => {
+      const u = typeof l.user_id === 'number' ? users.find(x => x.id === l.user_id) : undefined;
+      const e = typeof l.employee_id === 'number' ? employees.find(x => x.id === l.employee_id) : undefined;
+      return {
+        id: l.id,
+        action: l.action,
+        ipAddress: l.ip_address,
+        userAgent: l.user_agent || undefined,
+        details: l.details || undefined,
+        severity: l.severity,
+        timestamp: l.timestamp,
+        userUsername: u?.username || null,
+        userFullName: u?.full_name || null,
+        employeeUsername: e?.username || null,
+        employeeFullName: e?.full_name || null,
+      };
+    });
 
-    return { 
-      success: true, 
-      message: "Security logs retrieved successfully", 
-      logs: formattedLogs 
-    };
-  } catch (error) {
+    return { success: true, message: "Security logs retrieved successfully", logs: formattedLogs };
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve security logs" };
   }
 }
 
-export async function getAllUsers(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; users?: any[] }> {
+export async function getAllUsers(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; users?: UserView[] }> {
   try {
-    const users = db.query(`
-      SELECT 
-        id,
-        username,
-        full_name,
-        id_number,
-        account_number,
-        created_at,
-        is_active,
-        failed_login_attempts,
-        last_login_attempt,
-        account_locked_until
-      FROM users 
-      ORDER BY created_at DESC 
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
-
-    const formattedUsers = users.map(user => ({
-      id: user[0],
-      username: user[1],
-      fullName: user[2],
-      idNumber: user[3],
-      accountNumber: user[4],
-      createdAt: user[5],
-      isActive: user[6],
-      failedLoginAttempts: user[7],
-      lastLoginAttempt: user[8],
-      accountLockedUntil: user[9]
+  await Promise.resolve();
+  if (!arraysHealthy()) return { success: false, message: "Users unavailable" };
+    const lim = toSafeInt(limit, 1, 500);
+    const off = toSafeInt(offset, 0, 1_000_000);
+    const sorted = users.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const slice = sorted.slice(off, off + lim);
+  const formatted: UserView[] = slice.map(u => ({
+      id: u.id,
+      username: u.username,
+      fullName: u.full_name,
+      idNumber: u.id_number,
+      accountNumber: u.account_number,
+      createdAt: u.created_at,
+      isActive: u.is_active,
+      failedLoginAttempts: u.failed_login_attempts,
+      lastLoginAttempt: u.last_login_attempt || null,
+      accountLockedUntil: u.account_locked_until || null,
     }));
-
-    return { 
-      success: true, 
-      message: "Users retrieved successfully", 
-      users: formattedUsers 
-    };
-  } catch (error) {
+    return { success: true, message: "Users retrieved successfully", users: formatted };
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve users" };
   }
 }
 
-export async function getAllEmployees(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; employees?: any[] }> {
+export async function getAllEmployees(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; employees?: EmployeeView[] }> {
   try {
-    const employees = db.query(`
-      SELECT 
-        id,
-        username,
-        full_name,
-        employee_id,
-        created_at,
-        is_active,
-        failed_login_attempts,
-        last_login_attempt,
-        account_locked_until
-      FROM employees 
-      ORDER BY created_at DESC 
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
-
-    const formattedEmployees = employees.map(employee => ({
-      id: employee[0],
-      username: employee[1],
-      fullName: employee[2],
-      employeeId: employee[3],
-      createdAt: employee[4],
-      isActive: employee[5],
-      failedLoginAttempts: employee[6],
-      lastLoginAttempt: employee[7],
-      accountLockedUntil: employee[8]
+  await Promise.resolve();
+  if (!arraysHealthy()) return { success: false, message: "Employees unavailable" };
+    const lim = toSafeInt(limit, 1, 500);
+    const off = toSafeInt(offset, 0, 1_000_000);
+    const sorted = employees.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const slice = sorted.slice(off, off + lim);
+  const formatted: EmployeeView[] = slice.map(e => ({
+      id: e.id,
+      username: e.username,
+      fullName: e.full_name,
+      employeeId: e.employee_id,
+      createdAt: e.created_at,
+      isActive: e.is_active,
+      failedLoginAttempts: e.failed_login_attempts,
+      lastLoginAttempt: e.last_login_attempt || null,
+      accountLockedUntil: e.account_locked_until || null,
     }));
-
-    return { 
-      success: true, 
-      message: "Employees retrieved successfully", 
-      employees: formattedEmployees 
-    };
-  } catch (error) {
+    return { success: true, message: "Employees retrieved successfully", employees: formatted };
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve employees" };
   }
 }
 
 export async function toggleUserAccount(userId: number, lock: boolean, employeeId: number, ipAddress: string, reason?: string): Promise<{ success: boolean; message: string }> {
   try {
-    const user = db.query("SELECT id, is_active FROM users WHERE id = ?", [userId]);
-    if (user.length === 0) {
-      return { success: false, message: "User not found" };
-    }
+  await Promise.resolve();
+    const user = users.find(u => u.id === userId);
+    if (!user) return { success: false, message: "User not found" };
 
-    const action = lock ? "USER_ACCOUNT_LOCKED" : "USER_ACCOUNT_UNLOCKED";
-    const newStatus = lock ? 0 : 1;
-
-    db.execute(
-      "UPDATE users SET is_active = ? WHERE id = ?",
-      [newStatus, userId]
-    );
-
+    user.is_active = !lock;
+    // #COMPLETION_DRIVE: Record admin action to the security log
+    // #SUGGEST_VERIFY: Confirm action labels align with reporting widgets
     logSecurityEvent({
       employeeId,
-      action,
+      action: lock ? "USER_ACCOUNT_LOCKED" : "USER_ACCOUNT_UNLOCKED",
       ipAddress,
-      details: `User account ${lock ? 'locked' : 'unlocked'}${reason ? `. Reason: ${reason}` : ''}`,
-      severity: lock ? "warning" : "info"
+      details: `User @${user.username} ${lock ? 'locked' : 'unlocked'}${reason ? `. Reason: ${reason}` : ''}`,
+      severity: lock ? "warning" : "info",
     });
-
-    return { 
-      success: true, 
-      message: `User account ${lock ? 'locked' : 'unlocked'} successfully` 
-    };
+    return { success: true, message: `User account ${lock ? 'locked' : 'unlocked'} successfully` };
   } catch (error) {
     logSecurityEvent({
       employeeId,
       action: "USER_ACCOUNT_TOGGLE_FAILED",
       ipAddress,
-      details: `Failed to toggle user account: ${error.message}`,
-      severity: "error"
+      details: `Failed to toggle user account ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      severity: "error",
     });
     return { success: false, message: "Failed to toggle user account" };
   }
@@ -178,176 +200,136 @@ export async function toggleUserAccount(userId: number, lock: boolean, employeeI
 
 export async function toggleEmployeeAccount(employeeId: number, lock: boolean, adminEmployeeId: number, ipAddress: string, reason?: string): Promise<{ success: boolean; message: string }> {
   try {
-    const employee = db.query("SELECT id, is_active FROM employees WHERE id = ?", [employeeId]);
-    if (employee.length === 0) {
-      return { success: false, message: "Employee not found" };
-    }
+  await Promise.resolve();
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) return { success: false, message: "Employee not found" };
 
-    const action = lock ? "EMPLOYEE_ACCOUNT_LOCKED" : "EMPLOYEE_ACCOUNT_UNLOCKED";
-    const newStatus = lock ? 0 : 1;
-
-    db.execute(
-      "UPDATE employees SET is_active = ? WHERE id = ?",
-      [newStatus, employeeId]
-    );
-
+    employee.is_active = !lock;
     logSecurityEvent({
       employeeId: adminEmployeeId,
-      action,
+      action: lock ? "EMPLOYEE_ACCOUNT_LOCKED" : "EMPLOYEE_ACCOUNT_UNLOCKED",
       ipAddress,
-      details: `Employee account ${lock ? 'locked' : 'unlocked'}${reason ? `. Reason: ${reason}` : ''}`,
-      severity: lock ? "warning" : "info"
+      details: `Employee @${employee.username} ${lock ? 'locked' : 'unlocked'}${reason ? `. Reason: ${reason}` : ''}`,
+      severity: lock ? "warning" : "info",
     });
-
-    return { 
-      success: true, 
-      message: `Employee account ${lock ? 'locked' : 'unlocked'} successfully` 
-    };
+    return { success: true, message: `Employee account ${lock ? 'locked' : 'unlocked'} successfully` };
   } catch (error) {
     logSecurityEvent({
       employeeId: adminEmployeeId,
       action: "EMPLOYEE_ACCOUNT_TOGGLE_FAILED",
       ipAddress,
-      details: `Failed to toggle employee account: ${error.message}`,
-      severity: "error"
+      details: `Failed to toggle employee account ${employeeId}: ${error instanceof Error ? error.message : String(error)}`,
+      severity: "error",
     });
     return { success: false, message: "Failed to toggle employee account" };
   }
 }
 
-export async function getSystemStatistics(): Promise<{ success: boolean; message: string; statistics?: any }> {
+export async function getSystemStatistics(): Promise<{ success: boolean; message: string; statistics?: SystemStats }> {
   try {
-    const stats = db.query(`
-      SELECT 
-        (SELECT COUNT(*) FROM users WHERE is_active = 1) as active_users,
-        (SELECT COUNT(*) FROM users WHERE is_active = 0) as inactive_users,
-        (SELECT COUNT(*) FROM employees WHERE is_active = 1) as active_employees,
-        (SELECT COUNT(*) FROM employees WHERE is_active = 0) as inactive_employees,
-        (SELECT COUNT(*) FROM transactions WHERE status = 'pending') as pending_transactions,
-        (SELECT COUNT(*) FROM transactions WHERE status = 'approved') as approved_transactions,
-        (SELECT COUNT(*) FROM transactions WHERE status = 'denied') as denied_transactions,
-        (SELECT COUNT(*) FROM security_logs WHERE timestamp >= datetime('now', '-24 hours')) as security_events_24h,
-        (SELECT COUNT(*) FROM security_logs WHERE severity = 'warning' AND timestamp >= datetime('now', '-24 hours')) as security_warnings_24h,
-        (SELECT COUNT(*) FROM security_logs WHERE severity = 'error' AND timestamp >= datetime('now', '-24 hours')) as security_errors_24h
-    `);
-
-    const [
-      activeUsers, inactiveUsers, activeEmployees, inactiveEmployees,
-      pendingTransactions, approvedTransactions, deniedTransactions,
-      securityEvents24h, securityWarnings24h, securityErrors24h
-    ] = stats[0];
+  await Promise.resolve();
+  if (!arraysHealthy()) return { success: false, message: "Statistics unavailable" };
+    const now = Date.now();
+    const dayAgo = now - 24 * 60 * 60 * 1000;
+    const events24h = securityLogs.filter(l => new Date(l.timestamp).getTime() >= dayAgo);
+  const warnings24h = events24h.filter(l => normalizeSeverity(l.severity) === 'warning');
+  const errors24h = events24h.filter(l => normalizeSeverity(l.severity) === 'error');
 
     const statistics = {
       users: {
-        active: activeUsers,
-        inactive: inactiveUsers,
-        total: activeUsers + inactiveUsers
+        active: users.filter(u => u.is_active).length,
+        inactive: users.filter(u => !u.is_active).length,
+        total: users.length,
       },
       employees: {
-        active: activeEmployees,
-        inactive: inactiveEmployees,
-        total: activeEmployees + inactiveEmployees
+        active: employees.filter(e => e.is_active).length,
+        inactive: employees.filter(e => !e.is_active).length,
+        total: employees.length,
       },
       transactions: {
-        pending: pendingTransactions,
-        approved: approvedTransactions,
-        denied: deniedTransactions,
-        total: pendingTransactions + approvedTransactions + deniedTransactions
+        pending: transactions.filter(t => t.status === 'pending').length,
+        approved: transactions.filter(t => t.status === 'approved').length,
+        denied: transactions.filter(t => t.status === 'denied').length,
+        total: transactions.length,
       },
       security: {
-        events24h: securityEvents24h,
-        warnings24h: securityWarnings24h,
-        errors24h: securityErrors24h
-      }
+        events24h: events24h.length,
+        warnings24h: warnings24h.length,
+        errors24h: errors24h.length,
+      },
     };
-
-    return { 
-      success: true, 
-      message: "System statistics retrieved successfully", 
-      statistics 
-    };
-  } catch (error) {
+    return { success: true, message: "System statistics retrieved successfully", statistics };
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve system statistics" };
   }
 }
 
-export async function getFailedLoginAttemptsReport(hours: number = 24): Promise<{ success: boolean; message: string; report?: any[] }> {
+export async function getFailedLoginAttemptsReport(hours: number = 24): Promise<{ success: boolean; message: string; report?: FailedLoginReportEntry[] }> {
   try {
-    const report = db.query(`
-      SELECT 
-        ip_address,
-        COUNT(*) as attempt_count,
-        MAX(timestamp) as last_attempt,
-        GROUP_CONCAT(DISTINCT 
-          CASE 
-            WHEN user_id IS NOT NULL THEN (SELECT username FROM users WHERE id = user_id)
-            WHEN employee_id IS NOT NULL THEN (SELECT username FROM employees WHERE id = employee_id)
-            ELSE 'unknown'
-          END
-        ) as usernames
-      FROM security_logs 
-      WHERE action IN ('LOGIN_FAILED_INVALID_PASSWORD', 'EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD')
-      AND timestamp >= datetime('now', '-? hours')
-      GROUP BY ip_address
-      HAVING attempt_count >= 3
-      ORDER BY attempt_count DESC, last_attempt DESC
-    `, [hours]);
+  await Promise.resolve();
+  if (!arraysHealthy()) return { success: false, message: "Security logs unavailable" };
+    const windowMs = toSafeInt(hours, 1, 168) * 60 * 60 * 1000;
+    const cutoff = Date.now() - windowMs;
+    const actions = new Set([
+      'USER_LOGIN_FAILED_INVALID_PASSWORD',
+      'EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD',
+      'PASSWORD_AUTH_FAILED',
+    ]);
+    const attempts = securityLogs.filter(l => actions.has(l.action) && new Date(l.timestamp).getTime() >= cutoff);
+    const grouped = new Map<string, { ipAddress: string; attemptCount: number; lastAttempt: string; usernames: Set<string> }>();
 
-    const formattedReport = report.map(row => ({
-      ipAddress: row[0],
-      attemptCount: row[1],
-      lastAttempt: row[2],
-      usernames: row[3] ? row[3].split(',') : []
-    }));
+    for (const a of attempts) {
+      const key = a.ip_address || 'unknown';
+      if (!grouped.has(key)) grouped.set(key, { ipAddress: key, attemptCount: 0, lastAttempt: a.timestamp, usernames: new Set() });
+      const g = grouped.get(key)!;
+      g.attemptCount += 1;
+      if (new Date(a.timestamp).getTime() > new Date(g.lastAttempt).getTime()) g.lastAttempt = a.timestamp;
+      if (typeof a.user_id === 'number') {
+        const u = users.find(x => x.id === a.user_id);
+        if (u) g.usernames.add(u.username);
+      }
+    }
 
-    return { 
-      success: true, 
-      message: "Failed login attempts report retrieved successfully", 
-      report: formattedReport 
-    };
-  } catch (error) {
+  const report: FailedLoginReportEntry[] = Array.from(grouped.values())
+      .filter(r => r.attemptCount >= 3)
+      .sort((a, b) => b.attemptCount - a.attemptCount || new Date(b.lastAttempt).getTime() - new Date(a.lastAttempt).getTime())
+      .map(r => ({ ipAddress: r.ipAddress, attemptCount: r.attemptCount, lastAttempt: r.lastAttempt, usernames: Array.from(r.usernames) }));
+
+  return { success: true, message: "Failed login attempts report retrieved successfully", report };
+  } catch (_error) {
     return { success: false, message: "Failed to retrieve failed login attempts report" };
   }
 }
 
 export async function cleanupOldLogs(daysToKeep: number = 90, employeeId: number, ipAddress: string): Promise<{ success: boolean; message: string; deletedCount?: number }> {
   try {
-    const result = db.query(`
-      SELECT COUNT(*) FROM security_logs 
-      WHERE timestamp < datetime('now', '-? days')
-    `, [daysToKeep]);
-
-    const countToDelete = result[0][0];
-
-    if (countToDelete === 0) {
-      return { success: true, message: "No old logs to clean up" };
+  await Promise.resolve();
+    const days = toSafeInt(daysToKeep, 7, 365);
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    let deleted = 0;
+    for (let i = securityLogs.length - 1; i >= 0; i--) {
+      if (new Date(securityLogs[i].timestamp).getTime() < cutoff) {
+        securityLogs.splice(i, 1);
+        deleted++;
+      }
     }
-
-    db.execute(`
-      DELETE FROM security_logs 
-      WHERE timestamp < datetime('now', '-? days')
-    `, [daysToKeep]);
 
     logSecurityEvent({
       employeeId,
       action: "OLD_LOGS_CLEANED",
       ipAddress,
-      details: `Cleaned up ${countToDelete} security logs older than ${daysToKeep} days`,
-      severity: "info"
+      details: `Cleaned up ${deleted} security logs older than ${days} days`,
+      severity: "info",
     });
 
-    return { 
-      success: true, 
-      message: `Successfully cleaned up ${countToDelete} old security logs`,
-      deletedCount: countToDelete
-    };
+    return { success: true, message: deleted ? `Successfully cleaned up ${deleted} old security logs` : "No old logs to clean up", deletedCount: deleted };
   } catch (error) {
     logSecurityEvent({
       employeeId,
       action: "LOG_CLEANUP_FAILED",
       ipAddress,
-      details: `Failed to clean up old logs: ${error.message}`,
-      severity: "error"
+      details: `Failed to clean up old logs: ${error instanceof Error ? error.message : String(error)}`,
+      severity: "error",
     });
     return { success: false, message: "Failed to clean up old logs" };
   }

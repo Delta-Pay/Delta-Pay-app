@@ -19,7 +19,6 @@ if errorlevel 1 (
 
 echo Starting backend server on port 3623...
 echo Backend will be available at: http://localhost:3623
-echo Default admin credentials: username=admin, password=admin123
 echo.
 
 REM Start the backend server
