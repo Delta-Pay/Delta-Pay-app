@@ -28,6 +28,8 @@ type MiddlewareFunction = (ctx: Context, next: () => Promise<unknown>) => Promis
 const app = new Application();
 const router = new Router();
 
+const FRONTEND_DIST = `${Deno.cwd()}/src/frontend/dist`;
+
 initializeDatabase();
 await seedDefaultEmployee();
 await seedExampleUsers();
@@ -57,45 +59,19 @@ app.use(oakCors({
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 
+router.get("/assets/:path+", async (ctx) => {
+  await send(ctx, ctx.params.path, {
+    root: `${FRONTEND_DIST}/assets`,
+  });
+});
+
+router.get("/favicon.ico", async (ctx) => {
+  await send(ctx, "favicon.ico", { root: FRONTEND_DIST });
+});
+
 router.get("/", async (ctx) => {
   await send(ctx, "index.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/styles/:file", async (ctx) => {
-  await send(ctx, ctx.params.file, {
-    root: `${Deno.cwd()}/src/frontend/styles`,
-  });
-});
-
-router.get("/js/:file", async (ctx) => {
-  await send(ctx, ctx.params.file, {
-    root: `${Deno.cwd()}/src/frontend/js`,
-  });
-});
-
-router.get("/select-account", async (ctx) => {
-  await send(ctx, "SelectAccount.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/make-payment", async (ctx) => {
-  await send(ctx, "MakePayment.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/view-payments", async (ctx) => {
-  await send(ctx, "ViewPayments.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/security-logs", async (ctx) => {
-  await send(ctx, "SecurityLogs.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
+    root: FRONTEND_DIST,
   });
 });
 
@@ -450,7 +426,12 @@ app.use(async (ctx, next) => {
   }
 });
 
-app.use((ctx) => {
+app.use(async (ctx) => {
+  if (ctx.request.method === "GET" && !ctx.request.url.pathname.startsWith("/api")) {
+    await send(ctx, "index.html", { root: FRONTEND_DIST });
+    return;
+  }
+
   ctx.response.status = 404;
   ctx.response.body = { success: false, message: "Endpoint not found" };
 });

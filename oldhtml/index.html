@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeltaΔPay - International Payment Solution</title>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo">
+        <svg viewBox="0 0 120 120">
+          <line
+            x1="9"
+            y1="102"
+            x2="62"
+            y2="17"
+            stroke="#AB92BF"
+            stroke-width="5"
+          />
+          <line
+            x1="11"
+            y1="102"
+            x2="108"
+            y2="102"
+            stroke="#AB92BF"
+            stroke-width="2.5"
+          />
+          <line
+            x1="64"
+            y1="14"
+            x2="112"
+            y2="101"
+            stroke="#AB92BF"
+            stroke-width="10"
+          />
+        </svg>
+      </div>
+      <div class="logo-container">
+        <span class="logo-text">DeltaΔPay</span>
+      </div>
+      <div class="tagline">Secure Payment Gateway</div>
+    </header>
+
+    <main class="main-container">
+      <div class="options-container">
+        <button class="option-button payment-option" id="payment-option">
+          <div class="option-content">
+            <h2>Payment View</h2>
+            <p>Make international payments</p>
+          </div>
+        </button>
+
+        <button class="option-button backend-option" id="backend-option">
+          <div class="option-content">
+            <h2>Backend View</h2>
+            <p>Administrative dashboard</p>
+          </div>
+        </button>
+      </div>
+    </main>
+
+    <div id="accountSelectionModal" class="account-modal-overlay">
+      <div class="account-modal">
+        <div class="account-modal-header">
+          <h3>Select Your Account</h3>
+          <p>Choose your user account to access the payment system</p>
+        </div>
+        <div class="account-modal-body">
+          <div class="account-grid">
+          </div>
+        </div>
+        <div class="account-modal-footer">
+          <button class="btn-cancel" id="closeAccountModalBtn">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>
