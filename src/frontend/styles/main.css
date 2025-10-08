@@ -1032,7 +1032,7 @@ body {
 .account-modal-header {
   text-align: center;
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  padding-bottom: 1.5rem;
   border-bottom: 2px solid #f0f0f0;
 }
 
@@ -1046,7 +1046,37 @@ body {
 .account-modal-header p {
   color: #666;
   font-size: 1rem;
-  margin: 0;
+  margin: 0 0 1.5rem 0;
+}
+
+.btn-create-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #8da8c7 0%, #cef9f2 100%);
+  color: #655a7c;
+  border: 2px solid #8da8c7;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(141, 168, 199, 0.3);
+}
+
+.btn-create-account:hover {
+  background: linear-gradient(135deg, #ab92bf 0%, #8da8c7 100%);
+  color: white;
+  border-color: #ab92bf;
+  box-shadow: 0 6px 20px rgba(171, 146, 191, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-create-account .btn-icon {
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
 }
 
 .account-modal-body {

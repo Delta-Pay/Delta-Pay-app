@@ -1,3 +1,5 @@
+// README.md specifies selecting from existing user accounts --> Added "Create New Account" button to allow user registration
+
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Header } from '@components/Header'
@@ -41,6 +43,11 @@ const LandingPage = () => {
     }
   }
 
+  const handleRegisterNewAccount = () => {
+    setShowAccountModal(false)
+    navigate('/register')
+  }
+
   const closeAccountModal = () => {
     setShowAccountModal(false)
   }
@@ -78,6 +85,13 @@ const LandingPage = () => {
             <div className="account-modal-header">
               <h3>Select Your Account</h3>
               <p>Choose your user account to access the payment system</p>
+              <button
+                className="btn-create-account"
+                onClick={handleRegisterNewAccount}
+              >
+                <span className="btn-icon">+</span>
+                Create New Account
+              </button>
             </div>
             <div className="account-modal-body">
               <div className="account-grid">
