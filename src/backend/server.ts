@@ -57,17 +57,26 @@ app.use(oakCors({
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 
-// {Old vanilla HTML pages} --> {Serve React build from /dist for SPA routing}
-router.get("/assets/:file+", async (ctx) => {
-  await send(ctx, ctx.params.file, {
-    root: `${Deno.cwd()}/src/frontend/dist/assets`,
-  });
+// {Serve static assets from React build} --> {Extract path and serve from dist/assets}
+app.use(async (ctx, next) => {
+  if (ctx.request.url.pathname.startsWith('/assets/')) {
+    try {
+      await send(ctx, ctx.request.url.pathname, {
+        root: `${Deno.cwd()}/src/frontend/dist`,
+      });
+    } catch {
+      await next();
+    }
+  } else {
+    await next();
+  }
 });
 
 router.get("/api", (ctx) => {
   ctx.response.body = { message: "Delta Pay API Server" };
 });
 
+// {Frontend expects ApiResponse<{ users: User[] }> structure} --> {Use data field for consistency}
 router.get("/api/users/all", async (ctx) => {
   try {
     const { getUsers } = await import("./database/init.ts");
@@ -100,7 +109,7 @@ router.get("/api/users/all", async (ctx) => {
       letter: user.full_name.charAt(0).toUpperCase()
     }));
 
-    ctx.response.body = { success: true, users: sanitizedUsers };
+    ctx.response.body = { success: true, data: { users: sanitizedUsers } };
   } catch (_error) {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };

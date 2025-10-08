@@ -13,14 +13,8 @@ const AppRouter = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route
-        path="/make-payment"
-        element={
-          <ProtectedRoute requiredUserType="user">
-            <MakePaymentPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* {Payment View demo mode uses sessionStorage} --> {No auth required, user selected from account modal} */}
+      <Route path="/make-payment" element={<MakePaymentPage />} />
       <Route
         path="/view-payments"
         element={
