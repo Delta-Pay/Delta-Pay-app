@@ -57,45 +57,10 @@ app.use(oakCors({
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 
-router.get("/", async (ctx) => {
-  await send(ctx, "index.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/styles/:file", async (ctx) => {
+// {Old vanilla HTML pages} --> {Serve React build from /dist for SPA routing}
+router.get("/assets/:file+", async (ctx) => {
   await send(ctx, ctx.params.file, {
-    root: `${Deno.cwd()}/src/frontend/styles`,
-  });
-});
-
-router.get("/js/:file", async (ctx) => {
-  await send(ctx, ctx.params.file, {
-    root: `${Deno.cwd()}/src/frontend/js`,
-  });
-});
-
-router.get("/select-account", async (ctx) => {
-  await send(ctx, "SelectAccount.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/make-payment", async (ctx) => {
-  await send(ctx, "MakePayment.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/view-payments", async (ctx) => {
-  await send(ctx, "ViewPayments.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
-  });
-});
-
-router.get("/security-logs", async (ctx) => {
-  await send(ctx, "SecurityLogs.html", {
-    root: `${Deno.cwd()}/src/frontend/public`,
+    root: `${Deno.cwd()}/src/frontend/dist/assets`,
   });
 });
 
@@ -435,6 +400,13 @@ router.post("/api/security/log", async (ctx) => {
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Failed to log security event" };
   }
+});
+
+// {Catch-all for React Router} --> {Serve index.html for all non-API routes to enable client-side routing}
+router.get("/(.*)", async (ctx) => {
+  await send(ctx, "index.html", {
+    root: `${Deno.cwd()}/src/frontend/dist`,
+  });
 });
 
 app.use(router.routes());
