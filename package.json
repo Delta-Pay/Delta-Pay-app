@@ -4,10 +4,10 @@
   "description": "Delta Pay - International Payment Solution",
   "main": "src/backend/server.ts",
   "scripts": {
-    "dev": "npm run dev:frontend & npm run dev:backend",
+    "dev": "npm run dev:backend & cd src/frontend && npm run dev",
     "dev:frontend": "cd src/frontend && npm run dev",
     "dev:backend": "deno run --allow-net --allow-read --allow-write src/backend/server.ts",
-    "build": "npm run build:frontend",
+    "build": "cd src/frontend && npm install && npm run build",
     "build:frontend": "cd src/frontend && npm run build",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "lint:frontend": "cd src/frontend && npm run lint",
@@ -15,7 +15,8 @@
     "test": "npm run test:frontend && npm run test:backend",
     "test:frontend": "cd src/frontend && npm test",
     "test:backend": "deno test src/backend/",
-    "start": "deno run --allow-net --allow-read --allow-write src/backend/server.ts"
+    "start": "deno run --allow-net --allow-read --allow-write src/backend/server.ts",
+    "install:frontend": "cd src/frontend && npm install"
   },
   "keywords": ["payment", "banking", "international", "security", "deno", "react"],
   "author": "Delta Pay Team",
