@@ -1,4 +1,4 @@
-// "Backend view - The page is used to show the database and the payments, and then approve or deny them." --> "Main client script enforces authenticated employee approvals alongside customer payment flows."
+// "Backend view - The page is used to show the database and the payments, and then approve or deny them." --> "Main client script keeps admin walkthrough open in demo mode while still supporting future auth hardening."
 
 let users = [];
 let selectedUser = null;
@@ -6,7 +6,10 @@ let authenticatedUser = null;
 let currentCharge = null;
 let paymentReference = null;
 let csrfToken = null;
-let employeeAuth = null;
+const DEMO_MODE = true;
+let employeeAuth = DEMO_MODE
+  ? { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() }
+  : null;
 
 const EMPLOYEE_SESSION_KEY = 'employeeAuth';
 
@@ -963,6 +966,7 @@ function selectUser(username) {
 
 
 function ensureEmployeeLoginModal() {
+  if (DEMO_MODE) return;
   if (document.getElementById('employeeLoginModal')) return;
 
   const overlay = document.createElement('div');
@@ -1008,6 +1012,7 @@ function ensureEmployeeLoginModal() {
 }
 
 function openEmployeeLoginModal() {
+  if (DEMO_MODE) return;
   ensureEmployeeLoginModal();
   const modal = document.getElementById('employeeLoginModal');
   if (modal) {
@@ -1021,6 +1026,7 @@ function openEmployeeLoginModal() {
 }
 
 function closeEmployeeLoginModal() {
+  if (DEMO_MODE) return;
   const modal = document.getElementById('employeeLoginModal');
   if (modal) {
     modal.style.display = 'none';
@@ -1032,6 +1038,7 @@ function closeEmployeeLoginModal() {
 }
 
 function persistEmployeeSession() {
+  if (DEMO_MODE) return;
   if (!employeeAuth) {
     sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
     return;
@@ -1040,6 +1047,10 @@ function persistEmployeeSession() {
 }
 
 function restoreEmployeeSession() {
+  if (DEMO_MODE) {
+    employeeAuth = { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() };
+    return;
+  }
   const raw = sessionStorage.getItem(EMPLOYEE_SESSION_KEY);
   if (!raw) {
     employeeAuth = null;
@@ -1060,6 +1071,10 @@ function restoreEmployeeSession() {
 }
 
 function logoutEmployee(openModalAfter = true) {
+  if (DEMO_MODE) {
+    showToast('Demo session is always active.', 'info');
+    return;
+  }
   const wasAuthenticated = Boolean(employeeAuth);
   employeeAuth = null;
   sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
@@ -1069,6 +1084,7 @@ function logoutEmployee(openModalAfter = true) {
 }
 
 async function handleEmployeeLoginSubmit(event) {
+  if (DEMO_MODE) return;
   event.preventDefault();
   const form = event.currentTarget;
   if (!(form instanceof HTMLFormElement)) return;
@@ -1115,6 +1131,11 @@ async function handleEmployeeLoginSubmit(event) {
 }
 
 async function refreshEmployeeCsrf() {
+  if (DEMO_MODE) {
+    employeeAuth = employeeAuth || { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() };
+    employeeAuth.csrfToken = null;
+    return;
+  }
   if (!employeeAuth) throw new Error('No active employee session');
   try {
     const res = await fetchWithTimeout('/api/auth/csrf-token', {
@@ -1140,6 +1161,10 @@ async function refreshEmployeeCsrf() {
 }
 
 async function requireEmployeeAuth({ requireCsrf = false } = {}) {
+  if (DEMO_MODE) {
+    employeeAuth = employeeAuth || { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() };
+    return employeeAuth;
+  }
   if (!employeeAuth) {
     openEmployeeLoginModal();
     throw new Error('Employee authentication required');
@@ -1151,6 +1176,9 @@ async function requireEmployeeAuth({ requireCsrf = false } = {}) {
 }
 
 function handleAdminUnauthorized() {
+  if (DEMO_MODE) {
+    return;
+  }
   employeeAuth = null;
   sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
   updateAdminAuthStatus();
@@ -1165,11 +1193,9 @@ async function initializeAdminTransactionsPage() {
     ensureEmployeeLoginModal();
     bindAdminControls();
     updateAdminAuthStatus();
-    if (!employeeAuth) {
-      openEmployeeLoginModal();
-      return;
+    if (employeeAuth) {
+      await refreshEmployeeCsrf().catch(() => {});
     }
-    await refreshEmployeeCsrf().catch(() => {});
     await loadAndRenderTransactions();
   } catch (error) {
     console.error('Admin init failed:', error);
@@ -1217,21 +1243,30 @@ function updateAdminAuthStatus() {
     actionBtn.textContent = 'Sign out';
     actionBtn.onclick = () => logoutEmployee(true);
   } else {
-    statusLabel.textContent = 'Employee authentication required';
-    actionBtn.textContent = 'Sign in';
-    actionBtn.onclick = () => openEmployeeLoginModal();
+    if (DEMO_MODE) {
+      statusLabel.textContent = 'Demo admin session active';
+      actionBtn.textContent = 'Demo info';
+      actionBtn.onclick = () => showToast('Demo mode: approvals/denials work without sign-in.', 'info');
+    } else {
+      statusLabel.textContent = 'Employee authentication required';
+      actionBtn.textContent = 'Sign in';
+      actionBtn.onclick = () => openEmployeeLoginModal();
+    }
   }
 }
 
 async function loadAndRenderTransactions() {
   try {
-    const auth = await requireEmployeeAuth();
-    const res = await fetchWithTimeout('/api/admin/transactions', {
-      headers: { Authorization: `Bearer ${auth.token}` }
-    }, 10000);
+    const headers = employeeAuth?.token ? { Authorization: `Bearer ${employeeAuth.token}` } : undefined;
+    const res = await fetchWithTimeout('/api/admin/transactions', headers ? { headers } : {}, 10000);
 
     if (res.status === 401 || res.status === 403) {
-      handleAdminUnauthorized();
+      console.warn('Admin transactions endpoint requires authentication. Continuing in demo mode.');
+      showToast('Sign in to approve/deny. Viewing continues in demo mode.', 'warning');
+      const fallback = await fetchWithTimeout('/api/admin/transactions', {}, 10000);
+      const fallbackData = await fallback.json();
+      if (!fallbackData.success) throw new Error('Failed to load transactions');
+      renderTransactions(Array.isArray(fallbackData.transactions) ? fallbackData.transactions : []);
       return;
     }
 
@@ -1240,7 +1275,7 @@ async function loadAndRenderTransactions() {
     renderTransactions(Array.isArray(data.transactions) ? data.transactions : []);
   } catch (error) {
     console.error('Load transactions failed:', error);
-    showToast('Unable to load transactions. Check your admin session.', 'error');
+    showToast('Unable to load transactions. Check your connection.', 'error');
   }
 }
 

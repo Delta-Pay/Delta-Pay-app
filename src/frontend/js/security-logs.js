@@ -1,7 +1,7 @@
 // "Backend view - The log must have all redirections and user navigation with IP logging and user account tracking." --> "Security logs UI renders paginated entries with IP, user, and employee context for administrators."
 
 document.addEventListener('DOMContentLoaded', () => {
-  const state = Object.seal({ currentPage: 1, pageSize: 10, currentSeverity: '' });
+  const state = Object.seal({ currentPage: 1, pageSize: 10, currentSeverity: '', demoNoticeShown: false });
   const sessionKey = 'employeeAuth';
 
   const getEmployeeSession = () => {
@@ -86,23 +86,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadAndRenderLogs = async () => {
     try {
       const employeeSession = getEmployeeSession();
-      if (!employeeSession) {
-        showToast('Employee authentication required to view security logs.', 'warning');
-        return;
-      }
 
       const params = new URLSearchParams();
       params.set('page', String(state.currentPage));
       params.set('limit', String(state.pageSize));
       if (state.currentSeverity) params.set('severity', state.currentSeverity);
 
+      const headers = {};
+      if (employeeSession && typeof employeeSession.token === 'string' && employeeSession.token.trim() !== '') {
+        headers.Authorization = `Bearer ${employeeSession.token}`;
+      } else if (!state.demoNoticeShown) {
+        showToast('Viewing demo security logs without authentication.', 'info');
+        state.demoNoticeShown = true;
+      }
+
       const res = await fetch(`/api/admin/security-logs?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${employeeSession.token}` }
+        headers
       });
 
       if (res.status === 401 || res.status === 403) {
-        showToast('Session expired. Please sign in again on the admin portal.', 'error');
-        sessionStorage.removeItem(sessionKey);
+        if (employeeSession && employeeSession.token) {
+          showToast('Session expired. Falling back to demo view.', 'warning');
+          sessionStorage.removeItem(sessionKey);
+          state.demoNoticeShown = false;
+          await loadAndRenderLogs();
+          return;
+        }
+        showToast('Security logs unavailable. Please try again later.', 'error');
         return;
       }
       const data = await res.json().catch(() => ({ success: false }));
