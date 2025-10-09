@@ -1,3 +1,5 @@
+// "Customers need to log on to the website by providing their username, account number and password." --> "Authentication services validate credentials, issue tokens, and log suspicious behaviour without leaking sensitive identifiers."
+
 import { crypto } from "https://deno.land/std@0.200.0/crypto/mod.ts";
 import { create, verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
 import { addSecurityLog, addUser, csrfTokens, getEmployeeByUsername, getUserByUsername, sessionTokens, type User } from "../database/init.ts";
@@ -196,14 +198,13 @@ export async function loginUser(username: string, password: string, ip: string):
   try {
     const user = getUserByUsername(username);
     if (!user) {
-      // #COMPLETION_DRIVE: Log unknown username attempts as suspicious
-      // #SUGGEST_VERIFY: Consider masking username details in production
+      const timestamp = new Date().toISOString();
       logSecurityEvent({
         action: 'USER_LOGIN_FAILED_UNKNOWN_USERNAME',
         ip_address: ip,
-        details: `Login attempt for non-existent username: ${username}`,
+        details: `Login attempt for unknown username: ${maskIdentifier(username)}`,
         severity: 'warning',
-        timestamp: new Date().toISOString()
+        timestamp,
       });
       return { success: false, message: "Invalid credentials" };
     }
@@ -276,6 +277,15 @@ export async function loginUser(username: string, password: string, ip: string):
     console.error("Login error:", error);
     return { success: false, message: "Login failed" };
   }
+}
+
+function maskIdentifier(identifier: string): string {
+  if (!identifier) return "(empty)";
+  const trimmed = identifier.trim();
+  if (trimmed.length <= 2) return "**";
+  const start = trimmed.slice(0, 2);
+  const end = trimmed.slice(-1);
+  return `${start}***${end}`;
 }
 
 export async function loginEmployee(username: string, password: string, ip: string): Promise<LoginResult> {

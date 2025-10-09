@@ -1,7 +1,7 @@
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { Application, Context, Router, send } from "https://deno.land/x/oak@v12.6.1/mod.ts";
 
-// {Employees log in to check transactions (README)} --> {Demo mode: Admin endpoints are public, no auth required}
+// {Employees log in to check transactions (README)} --> {Admin endpoints now require authenticated employee JWTs with CSRF protection for state changes}
 import {
   cleanupOldLogs,
   getAllEmployees,
@@ -14,6 +14,7 @@ import {
 import { authenticateUserPassword, generateCSRFToken, loginEmployee, loginUser, logSecurityEvent, registerUser } from "./auth/auth.ts";
 import { initializeDatabase, seedDefaultEmployee, seedExampleUsers } from "./database/init.ts";
 import {
+  authenticateEmployee,
   authenticateToken,
   authenticateUser,
   csrfProtection,
@@ -250,7 +251,7 @@ router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) 
   }
 });
 
-router.get("/api/admin/transactions", async (ctx) => {
+router.get("/api/admin/transactions", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -265,10 +266,15 @@ router.get("/api/admin/transactions", async (ctx) => {
   }
 });
 
-router.put("/api/admin/transactions/:id/approve", async (ctx) => {
+router.put("/api/admin/transactions/:id/approve", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
-    const transactionId = parseInt(ctx.params.id);
-  const employeeId = 0; // Demo mode: no auth, use default employee id
+    const transactionId = Number.parseInt(ctx.params.id);
+    const employeeId = Number(ctx.state.user?.userId);
+    if (!Number.isFinite(employeeId)) {
+      ctx.response.status = 403;
+      ctx.response.body = { success: false, message: "Employee session invalid" };
+      return;
+    }
     const ip = ctx.request.ip || "unknown";
     
     const result = await approveTransaction(transactionId, employeeId, ip);
@@ -280,11 +286,16 @@ router.put("/api/admin/transactions/:id/approve", async (ctx) => {
   }
 });
 
-router.put("/api/admin/transactions/:id/deny", async (ctx) => {
+router.put("/api/admin/transactions/:id/deny", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
-    const transactionId = parseInt(ctx.params.id);
-  const employeeId = 0; // Demo mode: no auth
-  const body = await ctx.request.body({ type: "json" }).value;
+    const transactionId = Number.parseInt(ctx.params.id);
+    const employeeId = Number(ctx.state.user?.userId);
+    if (!Number.isFinite(employeeId)) {
+      ctx.response.status = 403;
+      ctx.response.body = { success: false, message: "Employee session invalid" };
+      return;
+    }
+    const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
     const result = await denyTransaction(transactionId, employeeId, body.reason, ip);
@@ -296,7 +307,7 @@ router.put("/api/admin/transactions/:id/deny", async (ctx) => {
   }
 });
 
-router.get("/api/admin/security-logs", async (ctx) => {
+router.get("/api/admin/security-logs", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -312,7 +323,7 @@ router.get("/api/admin/security-logs", async (ctx) => {
   }
 });
 
-router.get("/api/admin/users", async (ctx) => {
+router.get("/api/admin/users", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -327,7 +338,7 @@ router.get("/api/admin/users", async (ctx) => {
   }
 });
 
-router.get("/api/admin/employees", async (ctx) => {
+router.get("/api/admin/employees", authenticateEmployee, async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
@@ -342,10 +353,15 @@ router.get("/api/admin/employees", async (ctx) => {
   }
 });
 
-router.put("/api/admin/users/:id/toggle", async (ctx) => {
+router.put("/api/admin/users/:id/toggle", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
     const userId = parseInt(ctx.params.id);
-  const employeeId = 0; // Demo mode: no auth
+    const employeeId = Number(ctx.state.user?.userId);
+    if (!Number.isFinite(employeeId)) {
+      ctx.response.status = 403;
+      ctx.response.body = { success: false, message: "Employee session invalid" };
+      return;
+    }
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
     
@@ -358,7 +374,7 @@ router.put("/api/admin/users/:id/toggle", async (ctx) => {
   }
 });
 
-router.get("/api/admin/statistics", async (ctx) => {
+router.get("/api/admin/statistics", authenticateEmployee, async (ctx) => {
   try {
     const result = await getSystemStatistics();
     ctx.response.status = result.success ? 200 : 400;
@@ -369,7 +385,7 @@ router.get("/api/admin/statistics", async (ctx) => {
   }
 });
 
-router.get("/api/admin/failed-login-report", async (ctx) => {
+router.get("/api/admin/failed-login-report", authenticateEmployee, async (ctx) => {
   try {
     const hours = parseInt(ctx.request.url.searchParams.get("hours") || "24");
     const result = await getFailedLoginAttemptsReport(hours);
@@ -381,9 +397,14 @@ router.get("/api/admin/failed-login-report", async (ctx) => {
   }
 });
 
-router.post("/api/admin/cleanup-logs", async (ctx) => {
+router.post("/api/admin/cleanup-logs", authenticateEmployee, csrfProtection, async (ctx) => {
   try {
-  const employeeId = 0; // Demo mode: no auth
+    const employeeId = Number(ctx.state.user?.userId);
+    if (!Number.isFinite(employeeId)) {
+      ctx.response.status = 403;
+      ctx.response.body = { success: false, message: "Employee session invalid" };
+      return;
+    }
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
   let daysToKeep = Number(body.daysToKeep || 90);

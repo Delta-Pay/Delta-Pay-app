@@ -1,33 +1,37 @@
-// README: Admin must view security logs and manage accounts; Backend Technologies mention SQLite.
-// Change: Using in-memory arrays for this mock instead of SQLite joins for admin queries.
-// #COMPLETION_DRIVE: Switched admin data access to in-memory arrays exposed by init.ts
-// #SUGGEST_VERIFY: If/when a persistent DB is introduced, replace selectors with SQL/ORM equivalents
+// "Backend view - Have a log of users who have been kicked off the site or have attempted to exploit the page through the security measures we have discussed." --> "Admin services serve structured log, user, and employee data with full IP/account tracking."
 
 import { logSecurityEvent } from "../auth/auth.ts";
 import { employees, securityLogs, transactions, users } from "../database/init.ts";
 
-function toSafeInt(n: number, min = 0, max = Number.MAX_SAFE_INTEGER): number {
-  // #COMPLETION_DRIVE: Ensure pagination inputs don't explode memory
-  // #SUGGEST_VERIFY: Clamp via API validators once a framework is added
-  if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, Math.floor(n)));
+type IntBounds = { min?: number; max?: number; defaultValue?: number };
+
+function toSafeInt(value: unknown, { min = 0, max = Number.MAX_SAFE_INTEGER, defaultValue = min }: IntBounds = {}): number {
+  const numeric = typeof value === "string" ? Number.parseInt(value, 10) : typeof value === "number" ? value : defaultValue;
+  if (!Number.isFinite(numeric)) return defaultValue;
+  const downcast = Math.floor(numeric);
+  if (downcast < min) return min;
+  if (downcast > max) return max;
+  return downcast;
 }
 
-function arraysHealthy(): boolean {
-  // #COMPLETION_DRIVE: Switched to in-memory arrays; ensure availability at runtime
-  // #SUGGEST_VERIFY: Add diagnostics endpoint if this ever fails in production
-  try {
-    return Array.isArray(users) && Array.isArray(employees) && Array.isArray(transactions) && Array.isArray(securityLogs);
-  } catch (_e) {
-    return false;
+function assertArrayShape<T extends Record<string, unknown>>(value: unknown, label: string): asserts value is T[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} store is unavailable`);
   }
 }
 
-function normalizeSeverity(input?: string): 'info' | 'warning' | 'error' {
-  // #COMPLETION_DRIVE: Align severities to a fixed set to avoid UI/report drift
-  // #SUGGEST_VERIFY: If adding more severities, update this mapping and UI filters
-  const s = (input || 'info').toLowerCase();
-  return s === 'warning' ? 'warning' : s === 'error' ? 'error' : 'info';
+function ensureDataStoresReady(): void {
+  assertArrayShape(users, "Users");
+  assertArrayShape(employees, "Employees");
+  assertArrayShape(transactions, "Transactions");
+  assertArrayShape(securityLogs, "Security logs");
+}
+
+const allowedSeverities: ReadonlySet<string> = new Set(["info", "warning", "error"]);
+
+function normalizeSeverity(input?: string): "info" | "warning" | "error" {
+  const normalized = (input || "info").toLowerCase();
+  return allowedSeverities.has(normalized) ? (normalized as "info" | "warning" | "error") : "info";
 }
 
 type SecurityLogView = {
@@ -81,9 +85,9 @@ type FailedLoginReportEntry = { ipAddress: string; attemptCount: number; lastAtt
 export async function getSecurityLogs(limit: number = 100, offset: number = 0, severity?: string): Promise<{ success: boolean; message: string; logs?: SecurityLogView[] }> {
   try {
     await Promise.resolve();
-    if (!arraysHealthy()) return { success: false, message: "Security logs unavailable" };
-    const lim = toSafeInt(limit, 1, 500);
-    const off = toSafeInt(offset, 0, 1_000_000);
+    ensureDataStoresReady();
+    const lim = toSafeInt(limit, { min: 1, max: 500, defaultValue: 100 });
+    const off = toSafeInt(offset, { min: 0, max: 1_000_000, defaultValue: 0 });
 
     let logs = securityLogs.slice();
     if (severity) {
@@ -94,7 +98,7 @@ export async function getSecurityLogs(limit: number = 100, offset: number = 0, s
     logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     const page = logs.slice(off, off + lim);
 
-  const formattedLogs: SecurityLogView[] = page.map(l => {
+    const formattedLogs: SecurityLogView[] = page.map(l => {
       const u = typeof l.user_id === 'number' ? users.find(x => x.id === l.user_id) : undefined;
       const e = typeof l.employee_id === 'number' ? employees.find(x => x.id === l.employee_id) : undefined;
       return {
@@ -120,13 +124,13 @@ export async function getSecurityLogs(limit: number = 100, offset: number = 0, s
 
 export async function getAllUsers(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; users?: UserView[] }> {
   try {
-  await Promise.resolve();
-  if (!arraysHealthy()) return { success: false, message: "Users unavailable" };
-    const lim = toSafeInt(limit, 1, 500);
-    const off = toSafeInt(offset, 0, 1_000_000);
+    await Promise.resolve();
+    ensureDataStoresReady();
+    const lim = toSafeInt(limit, { min: 1, max: 500, defaultValue: 100 });
+    const off = toSafeInt(offset, { min: 0, max: 1_000_000, defaultValue: 0 });
     const sorted = users.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const slice = sorted.slice(off, off + lim);
-  const formatted: UserView[] = slice.map(u => ({
+    const formatted: UserView[] = slice.map(u => ({
       id: u.id,
       username: u.username,
       fullName: u.full_name,
@@ -146,13 +150,13 @@ export async function getAllUsers(limit: number = 100, offset: number = 0): Prom
 
 export async function getAllEmployees(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; employees?: EmployeeView[] }> {
   try {
-  await Promise.resolve();
-  if (!arraysHealthy()) return { success: false, message: "Employees unavailable" };
-    const lim = toSafeInt(limit, 1, 500);
-    const off = toSafeInt(offset, 0, 1_000_000);
+    await Promise.resolve();
+    ensureDataStoresReady();
+    const lim = toSafeInt(limit, { min: 1, max: 500, defaultValue: 100 });
+    const off = toSafeInt(offset, { min: 0, max: 1_000_000, defaultValue: 0 });
     const sorted = employees.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const slice = sorted.slice(off, off + lim);
-  const formatted: EmployeeView[] = slice.map(e => ({
+    const formatted: EmployeeView[] = slice.map(e => ({
       id: e.id,
       username: e.username,
       fullName: e.full_name,
@@ -171,14 +175,12 @@ export async function getAllEmployees(limit: number = 100, offset: number = 0): 
 
 export async function toggleUserAccount(userId: number, lock: boolean, employeeId: number, ipAddress: string, reason?: string): Promise<{ success: boolean; message: string }> {
   try {
-  await Promise.resolve();
+    await Promise.resolve();
     const user = users.find(u => u.id === userId);
     if (!user) return { success: false, message: "User not found" };
 
     user.is_active = !lock;
-    // #COMPLETION_DRIVE: Record admin action to the security log
-    // #SUGGEST_VERIFY: Confirm action labels align with reporting widgets
-    logSecurityEvent({
+    recordAdminSecurityEvent({
       employeeId,
       action: lock ? "USER_ACCOUNT_LOCKED" : "USER_ACCOUNT_UNLOCKED",
       ipAddress,
@@ -187,7 +189,7 @@ export async function toggleUserAccount(userId: number, lock: boolean, employeeI
     });
     return { success: true, message: `User account ${lock ? 'locked' : 'unlocked'} successfully` };
   } catch (error) {
-    logSecurityEvent({
+    recordAdminSecurityEvent({
       employeeId,
       action: "USER_ACCOUNT_TOGGLE_FAILED",
       ipAddress,
@@ -200,12 +202,12 @@ export async function toggleUserAccount(userId: number, lock: boolean, employeeI
 
 export async function toggleEmployeeAccount(employeeId: number, lock: boolean, adminEmployeeId: number, ipAddress: string, reason?: string): Promise<{ success: boolean; message: string }> {
   try {
-  await Promise.resolve();
+    await Promise.resolve();
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return { success: false, message: "Employee not found" };
 
     employee.is_active = !lock;
-    logSecurityEvent({
+    recordAdminSecurityEvent({
       employeeId: adminEmployeeId,
       action: lock ? "EMPLOYEE_ACCOUNT_LOCKED" : "EMPLOYEE_ACCOUNT_UNLOCKED",
       ipAddress,
@@ -214,7 +216,7 @@ export async function toggleEmployeeAccount(employeeId: number, lock: boolean, a
     });
     return { success: true, message: `Employee account ${lock ? 'locked' : 'unlocked'} successfully` };
   } catch (error) {
-    logSecurityEvent({
+    recordAdminSecurityEvent({
       employeeId: adminEmployeeId,
       action: "EMPLOYEE_ACCOUNT_TOGGLE_FAILED",
       ipAddress,
@@ -227,13 +229,13 @@ export async function toggleEmployeeAccount(employeeId: number, lock: boolean, a
 
 export async function getSystemStatistics(): Promise<{ success: boolean; message: string; statistics?: SystemStats }> {
   try {
-  await Promise.resolve();
-  if (!arraysHealthy()) return { success: false, message: "Statistics unavailable" };
+    await Promise.resolve();
+    ensureDataStoresReady();
     const now = Date.now();
     const dayAgo = now - 24 * 60 * 60 * 1000;
     const events24h = securityLogs.filter(l => new Date(l.timestamp).getTime() >= dayAgo);
-  const warnings24h = events24h.filter(l => normalizeSeverity(l.severity) === 'warning');
-  const errors24h = events24h.filter(l => normalizeSeverity(l.severity) === 'error');
+    const warnings24h = events24h.filter(l => normalizeSeverity(l.severity) === 'warning');
+    const errors24h = events24h.filter(l => normalizeSeverity(l.severity) === 'error');
 
     const statistics = {
       users: {
@@ -266,9 +268,9 @@ export async function getSystemStatistics(): Promise<{ success: boolean; message
 
 export async function getFailedLoginAttemptsReport(hours: number = 24): Promise<{ success: boolean; message: string; report?: FailedLoginReportEntry[] }> {
   try {
-  await Promise.resolve();
-  if (!arraysHealthy()) return { success: false, message: "Security logs unavailable" };
-    const windowMs = toSafeInt(hours, 1, 168) * 60 * 60 * 1000;
+    await Promise.resolve();
+    ensureDataStoresReady();
+    const windowMs = toSafeInt(hours, { min: 1, max: 168, defaultValue: 24 }) * 60 * 60 * 1000;
     const cutoff = Date.now() - windowMs;
     const actions = new Set([
       'USER_LOGIN_FAILED_INVALID_PASSWORD',
@@ -290,12 +292,12 @@ export async function getFailedLoginAttemptsReport(hours: number = 24): Promise<
       }
     }
 
-  const report: FailedLoginReportEntry[] = Array.from(grouped.values())
+    const report: FailedLoginReportEntry[] = Array.from(grouped.values())
       .filter(r => r.attemptCount >= 3)
       .sort((a, b) => b.attemptCount - a.attemptCount || new Date(b.lastAttempt).getTime() - new Date(a.lastAttempt).getTime())
       .map(r => ({ ipAddress: r.ipAddress, attemptCount: r.attemptCount, lastAttempt: r.lastAttempt, usernames: Array.from(r.usernames) }));
 
-  return { success: true, message: "Failed login attempts report retrieved successfully", report };
+    return { success: true, message: "Failed login attempts report retrieved successfully", report };
   } catch (_error) {
     return { success: false, message: "Failed to retrieve failed login attempts report" };
   }
@@ -303,8 +305,9 @@ export async function getFailedLoginAttemptsReport(hours: number = 24): Promise<
 
 export async function cleanupOldLogs(daysToKeep: number = 90, employeeId: number, ipAddress: string): Promise<{ success: boolean; message: string; deletedCount?: number }> {
   try {
-  await Promise.resolve();
-    const days = toSafeInt(daysToKeep, 7, 365);
+    await Promise.resolve();
+    ensureDataStoresReady();
+    const days = toSafeInt(daysToKeep, { min: 7, max: 365, defaultValue: 90 });
     const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
     let deleted = 0;
     for (let i = securityLogs.length - 1; i >= 0; i--) {
@@ -324,7 +327,7 @@ export async function cleanupOldLogs(daysToKeep: number = 90, employeeId: number
 
     return { success: true, message: deleted ? `Successfully cleaned up ${deleted} old security logs` : "No old logs to clean up", deletedCount: deleted };
   } catch (error) {
-    logSecurityEvent({
+    recordAdminSecurityEvent({
       employeeId,
       action: "LOG_CLEANUP_FAILED",
       ipAddress,
@@ -332,5 +335,28 @@ export async function cleanupOldLogs(daysToKeep: number = 90, employeeId: number
       severity: "error",
     });
     return { success: false, message: "Failed to clean up old logs" };
+  }
+}
+
+type AdminSecurityEvent = {
+  employeeId?: number;
+  action: string;
+  ipAddress: string;
+  details: string;
+  severity: "info" | "warning" | "error";
+};
+
+function recordAdminSecurityEvent(event: AdminSecurityEvent): void {
+  try {
+    const trimmedDetails = event.details.length > 1800 ? `${event.details.slice(0, 1797)}...` : event.details;
+    logSecurityEvent({
+      employeeId: event.employeeId,
+      action: event.action,
+      ipAddress: event.ipAddress,
+      details: trimmedDetails,
+      severity: event.severity,
+    });
+  } catch (recordError) {
+    console.error("Failed to record admin security event:", recordError);
   }
 }

@@ -1,11 +1,14 @@
+// "Backend view - The page is used to show the database and the payments, and then approve or deny them." --> "Main client script enforces authenticated employee approvals alongside customer payment flows."
+
 let users = [];
 let selectedUser = null;
 let authenticatedUser = null;
 let currentCharge = null;
 let paymentReference = null;
 let csrfToken = null;
-// #COMPLETION_DRIVE: Admin demo mode: no authentication required for admin actions
-// #SUGGEST_VERIFY: Re-enable auth in production by restoring employee login/CSRF
+let employeeAuth = null;
+
+const EMPLOYEE_SESSION_KEY = 'employeeAuth';
 
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 8000, retry = 1) {
   const controller = new AbortController();
@@ -835,6 +838,9 @@ async function logSecurityEvent(eventType, details) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    ensureEmployeeLoginModal();
+    restoreEmployeeSession();
+
     await loadUsers();
 
     logSecurityEvent('PAGE_LOAD', {
@@ -863,9 +869,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const goToLogsBtn = document.getElementById('goToLogsBtn');
   if (goToLogsBtn) goToLogsBtn.addEventListener('click', navigateToSecurityLogs);
-
-  const employeeLoginClose = document.getElementById('employeeLoginClose');
-  if (employeeLoginClose) employeeLoginClose.addEventListener('click', closeEmployeeLoginModal);
 
   const denyClose = document.getElementById('denyClose');
   if (denyClose) denyClose.addEventListener('click', closeDenyModal);
@@ -958,13 +961,216 @@ function selectUser(username) {
   });
 }
 
+
+function ensureEmployeeLoginModal() {
+  if (document.getElementById('employeeLoginModal')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'employeeLoginModal';
+  overlay.className = 'modal-overlay';
+  overlay.style.display = 'none';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>Employee Authentication</h3>
+        <button type="button" class="modal-close" id="employeeLoginClose">×</button>
+      </div>
+      <form id="employeeLoginForm" class="modal-content">
+        <div class="form-group">
+          <label class="form-label" for="employeeUsername">Username</label>
+          <input type="text" id="employeeUsername" class="form-input" autocomplete="username" placeholder="admin" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="employeePassword">Password</label>
+          <input type="password" id="employeePassword" class="form-input" autocomplete="current-password" placeholder="••••••••" required />
+        </div>
+        <div class="form-group" style="display:flex; justify-content: flex-end; gap: 0.5rem;">
+          <button type="button" class="option-button" id="employeeLoginCancel" style="padding: 0.6rem 0.9rem; min-width: 120px;">
+            <div class="option-content"><h2 style="font-size: 0.95rem; margin: 0;">Cancel</h2></div>
+          </button>
+          <button type="submit" class="submit-button ready" style="padding: 0.6rem 0.9rem; min-width: 140px;">
+            <div class="button-content"><span class="button-text">Sign In</span></div>
+          </button>
+        </div>
+        <p class="form-label" style="font-size: 0.85rem; opacity: 0.8; margin-top: 0.5rem;">Only authorised staff may approve or deny transactions.</p>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const form = overlay.querySelector('#employeeLoginForm');
+  if (form) form.addEventListener('submit', handleEmployeeLoginSubmit, { passive: false });
+  const closeBtn = overlay.querySelector('#employeeLoginClose');
+  if (closeBtn) closeBtn.addEventListener('click', () => closeEmployeeLoginModal());
+  const cancelBtn = overlay.querySelector('#employeeLoginCancel');
+  if (cancelBtn) cancelBtn.addEventListener('click', () => closeEmployeeLoginModal());
+}
+
+function openEmployeeLoginModal() {
+  ensureEmployeeLoginModal();
+  const modal = document.getElementById('employeeLoginModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    const usernameInput = modal.querySelector('#employeeUsername');
+    if (usernameInput instanceof HTMLInputElement) {
+      usernameInput.focus();
+      usernameInput.select();
+    }
+  }
+}
+
+function closeEmployeeLoginModal() {
+  const modal = document.getElementById('employeeLoginModal');
+  if (modal) {
+    modal.style.display = 'none';
+    const form = modal.querySelector('#employeeLoginForm');
+    if (form instanceof HTMLFormElement) {
+      form.reset();
+    }
+  }
+}
+
+function persistEmployeeSession() {
+  if (!employeeAuth) {
+    sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+    return;
+  }
+  sessionStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(employeeAuth));
+}
+
+function restoreEmployeeSession() {
+  const raw = sessionStorage.getItem(EMPLOYEE_SESSION_KEY);
+  if (!raw) {
+    employeeAuth = null;
+    return;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.token === 'string') {
+      employeeAuth = parsed;
+    } else {
+      employeeAuth = null;
+      sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+    }
+  } catch (_error) {
+    employeeAuth = null;
+    sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+  }
+}
+
+function logoutEmployee(openModalAfter = true) {
+  const wasAuthenticated = Boolean(employeeAuth);
+  employeeAuth = null;
+  sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+  updateAdminAuthStatus();
+  if (wasAuthenticated) showToast('Signed out of admin session', 'info');
+  if (openModalAfter) openEmployeeLoginModal();
+}
+
+async function handleEmployeeLoginSubmit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!(form instanceof HTMLFormElement)) return;
+
+  const usernameField = form.querySelector('#employeeUsername');
+  const passwordField = form.querySelector('#employeePassword');
+
+  const username = usernameField instanceof HTMLInputElement ? usernameField.value.trim() : '';
+  const password = passwordField instanceof HTMLInputElement ? passwordField.value : '';
+
+  if (!username || !password) {
+    showToast('Please provide your employee credentials.', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetchWithTimeout('/api/auth/employee-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    }, 10000);
+
+    const data = await res.json();
+    if (!data.success || !data.token) {
+      throw new Error(data.message || 'Authentication failed');
+    }
+
+    employeeAuth = {
+      token: data.token,
+      employee: data.employee || null,
+      csrfToken: null,
+      obtainedAt: Date.now()
+    };
+    persistEmployeeSession();
+    await refreshEmployeeCsrf();
+    closeEmployeeLoginModal();
+    updateAdminAuthStatus();
+    showToast('Employee authenticated', 'success');
+    await loadAndRenderTransactions();
+  } catch (error) {
+    console.error('Employee authentication failed:', error);
+    showToast('Employee authentication failed. Please retry.', 'error');
+  }
+}
+
+async function refreshEmployeeCsrf() {
+  if (!employeeAuth) throw new Error('No active employee session');
+  try {
+    const res = await fetchWithTimeout('/api/auth/csrf-token', {
+      headers: { Authorization: `Bearer ${employeeAuth.token}` }
+    }, 8000);
+
+    if (res.status === 401 || res.status === 403) {
+      handleAdminUnauthorized();
+      throw new Error('Admin session expired');
+    }
+
+    const data = await res.json();
+    if (!data.success || !data.csrfToken) {
+      throw new Error('Invalid CSRF token payload');
+    }
+
+    employeeAuth.csrfToken = data.csrfToken;
+    persistEmployeeSession();
+  } catch (error) {
+    console.error('Failed to refresh employee CSRF token:', error);
+    throw error;
+  }
+}
+
+async function requireEmployeeAuth({ requireCsrf = false } = {}) {
+  if (!employeeAuth) {
+    openEmployeeLoginModal();
+    throw new Error('Employee authentication required');
+  }
+  if (requireCsrf) {
+    await refreshEmployeeCsrf();
+  }
+  return employeeAuth;
+}
+
+function handleAdminUnauthorized() {
+  employeeAuth = null;
+  sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+  updateAdminAuthStatus();
+  showToast('Admin session expired. Please sign in again.', 'error');
+  openEmployeeLoginModal();
+}
+
  
 async function initializeAdminTransactionsPage() {
   try {
-  restoreEmployeeSession();
-  bindAdminControls();
-  updateAdminAuthStatus();
-  await loadAndRenderTransactions();
+    restoreEmployeeSession();
+    ensureEmployeeLoginModal();
+    bindAdminControls();
+    updateAdminAuthStatus();
+    if (!employeeAuth) {
+      openEmployeeLoginModal();
+      return;
+    }
+    await refreshEmployeeCsrf().catch(() => {});
+    await loadAndRenderTransactions();
   } catch (error) {
     console.error('Admin init failed:', error);
   }
@@ -978,32 +1184,63 @@ function bindAdminControls() {
   if (denyForm) denyForm.addEventListener('submit', submitDenyReason);
 }
 
-function updateAdminAuthStatus() { /* demo mode, no-op */ }
+function updateAdminAuthStatus() {
+  const toolbarRight = document.querySelector('.toolbar .toolbar-right');
+  if (!toolbarRight) return;
 
-// Demo mode: no employee login modal required
+  let statusLabel = toolbarRight.querySelector('[data-admin-auth-status]');
+  let actionBtn = toolbarRight.querySelector('[data-admin-auth-action]');
 
-function closeEmployeeLoginModal() {
-  const modal = document.getElementById('employeeLoginModal');
-  if (modal) modal.style.display = 'none';
-}
+  if (!statusLabel) {
+    statusLabel = document.createElement('span');
+    statusLabel.dataset.adminAuthStatus = 'true';
+    statusLabel.className = 'form-label';
+    statusLabel.style.opacity = '0.9';
+    toolbarRight.innerHTML = '';
+    toolbarRight.appendChild(statusLabel);
+  }
 
-/* demo mode, no-op */
+  if (!actionBtn) {
+    actionBtn = document.createElement('button');
+    actionBtn.dataset.adminAuthAction = 'true';
+    actionBtn.type = 'button';
+    actionBtn.className = 'option-button backend-option';
+    actionBtn.style.padding = '0.6rem 0.9rem';
+    actionBtn.style.minWidth = '120px';
+    toolbarRight.appendChild(actionBtn);
+  }
 
-function restoreEmployeeSession() {
-  const raw = sessionStorage.getItem('employeeAuth');
-  if (raw) {
-    try { employeeAuth = JSON.parse(raw); } catch (_) { employeeAuth = null; }
+  if (employeeAuth && employeeAuth.employee) {
+    const { employee } = employeeAuth;
+    const displayName = employee.fullName || employee.full_name || employee.username;
+    statusLabel.textContent = `Signed in as ${displayName}`;
+    actionBtn.textContent = 'Sign out';
+    actionBtn.onclick = () => logoutEmployee(true);
+  } else {
+    statusLabel.textContent = 'Employee authentication required';
+    actionBtn.textContent = 'Sign in';
+    actionBtn.onclick = () => openEmployeeLoginModal();
   }
 }
 
 async function loadAndRenderTransactions() {
   try {
-  const res = await fetchWithTimeout('/api/admin/transactions', {}, 10000);
+    const auth = await requireEmployeeAuth();
+    const res = await fetchWithTimeout('/api/admin/transactions', {
+      headers: { Authorization: `Bearer ${auth.token}` }
+    }, 10000);
+
+    if (res.status === 401 || res.status === 403) {
+      handleAdminUnauthorized();
+      return;
+    }
+
     const data = await res.json();
     if (!data.success) throw new Error('Failed to load transactions');
-    renderTransactions(data.transactions || []);
+    renderTransactions(Array.isArray(data.transactions) ? data.transactions : []);
   } catch (error) {
     console.error('Load transactions failed:', error);
+    showToast('Unable to load transactions. Check your admin session.', 'error');
   }
 }
 
@@ -1099,10 +1336,25 @@ function showToast(message, type = 'info', timeout = 3000) {
 
 async function approveTransactionAdmin(id) {
   try {
-  const headers = { 'Content-Type': 'application/json' };
-  const res = await fetchWithTimeout(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers }, 10000);
+    const auth = await requireEmployeeAuth({ requireCsrf: true });
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${auth.token}`,
+      'X-CSRF-Token': auth.csrfToken
+    };
+    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers }, 10000);
+
+    if (res.status === 401 || res.status === 403) {
+      handleAdminUnauthorized();
+      return;
+    }
+
     const data = await res.json();
     if (!data.success) throw new Error('Approve failed');
+    if (employeeAuth) {
+      employeeAuth.csrfToken = null;
+      persistEmployeeSession();
+    }
     showToast('Transaction approved', 'success');
     await loadAndRenderTransactions();
   } catch (error) {
@@ -1113,10 +1365,25 @@ async function approveTransactionAdmin(id) {
 
 async function denyTransactionAdmin(id, reason) {
   try {
-  const headers = { 'Content-Type': 'application/json' };
-  const res = await fetchWithTimeout(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) }, 10000);
+    const auth = await requireEmployeeAuth({ requireCsrf: true });
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${auth.token}`,
+      'X-CSRF-Token': auth.csrfToken
+    };
+    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) }, 10000);
+
+    if (res.status === 401 || res.status === 403) {
+      handleAdminUnauthorized();
+      return;
+    }
+
     const data = await res.json();
     if (!data.success) throw new Error('Deny failed');
+    if (employeeAuth) {
+      employeeAuth.csrfToken = null;
+      persistEmployeeSession();
+    }
     showToast('Transaction denied', 'success');
     await loadAndRenderTransactions();
   } catch (error) {
