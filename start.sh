@@ -20,4 +20,4 @@ echo "Backend will be available at: http://localhost:3623"
 
 
 # Start the backend server
-deno run --allow-net --allow-read --allow-write src/backend/server.ts
+deno run --allow-net --allow-read --allow-write --allow-env src/backend/server.ts

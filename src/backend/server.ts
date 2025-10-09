@@ -464,9 +464,17 @@ const cleanupInterval = setInterval(async () => {
   }
 }, 60 * 60 * 1000);
 
+const shutdownController = new AbortController();
+
+const handleShutdown = (signal: Deno.Signal) => {
+  console.log(`Received ${signal}, shutting down Delta Pay API server`);
+  clearInterval(cleanupInterval);
+  shutdownController.abort();
+};
+
 try {
-  Deno.addSignalListener('SIGTERM', () => clearInterval(cleanupInterval));
-  Deno.addSignalListener('SIGINT', () => clearInterval(cleanupInterval));
+  Deno.addSignalListener("SIGTERM", () => handleShutdown("SIGTERM"));
+  Deno.addSignalListener("SIGINT", () => handleShutdown("SIGINT"));
 } catch (_) {;}
 
 const port = Number(Deno.env.get('PORT') || 3623);
@@ -474,4 +482,14 @@ console.log(`Delta Pay API Server running on http://localhost:${port}`);
 console.log("Database initialized and ready");
 console.log("Default admin employee: username=admin, password=admin123");
 
-await app.listen({ port });
+try {
+  await app.listen({ port, signal: shutdownController.signal });
+} catch (error) {
+  if (!(error instanceof DOMException && error.name === "AbortError")) {
+    console.error("Server listen error:", error);
+    throw error;
+  }
+}
+
+console.log("Delta Pay API server stopped cleanly");
+Deno.exit(0);
