@@ -5,7 +5,7 @@ Delta pay is a mockup of an international payment solution. It features multiple
 ## UI Structure
 
 ### General Layout:
-- delta pay logo in the top right corner of the page.
+- Delta Pay logo in the top right corner of the page.
 - text next to logo.
 - text color for logo is #AB92BF while outline of the top bar is #655A7C
 - any additional elements can either be #8da8c7ff or #CEF9F2
