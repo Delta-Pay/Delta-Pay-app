@@ -12,10 +12,112 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (form) {
-        // Real-time password match validation
+        // Password visibility toggle
         const password = document.getElementById('password');
         const confirmPassword = document.getElementById('confirmPassword');
+        const togglePassword = document.getElementById('togglePassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const eyeIconConfirm = document.getElementById('eyeIconConfirm');
 
+        togglePassword.addEventListener('click', () => {
+            const type = password.type === 'password' ? 'text' : 'password';
+            password.type = type;
+            
+            if (type === 'text') {
+                eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            } else {
+                eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        });
+
+        toggleConfirmPassword.addEventListener('click', () => {
+            const type = confirmPassword.type === 'password' ? 'text' : 'password';
+            confirmPassword.type = type;
+            
+            if (type === 'text') {
+                eyeIconConfirm.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            } else {
+                eyeIconConfirm.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        });
+
+        // Password strength checker
+        const passwordStrength = document.getElementById('passwordStrength');
+        const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+        const passwordStrengthText = document.getElementById('passwordStrengthText');
+
+        function calculatePasswordStrength(pwd) {
+            let strength = 0;
+            const checks = {
+                length: pwd.length >= 8,
+                lowercase: /[a-z]/.test(pwd),
+                uppercase: /[A-Z]/.test(pwd),
+                number: /\d/.test(pwd),
+                special: /[@$!%*?&]/.test(pwd),
+                longLength: pwd.length >= 12
+            };
+
+            if (checks.length) strength += 1;
+            if (checks.lowercase) strength += 1;
+            if (checks.uppercase) strength += 1;
+            if (checks.number) strength += 1;
+            if (checks.special) strength += 1;
+            if (checks.longLength) strength += 1;
+
+            return { strength, checks };
+        }
+
+        password.addEventListener('input', () => {
+            const pwd = password.value;
+            
+            if (pwd.length === 0) {
+                passwordStrength.style.display = 'none';
+                return;
+            }
+
+            passwordStrength.style.display = 'block';
+            const { strength, checks } = calculatePasswordStrength(pwd);
+            
+            const maxStrength = 6;
+            const percentage = (strength / maxStrength) * 100;
+            passwordStrengthBar.style.width = percentage + '%';
+
+            let color, text;
+            if (strength <= 2) {
+                color = '#D4B5E0';
+                text = 'Weak';
+            } else if (strength === 3) {
+                color = '#BDA0CE';
+                text = 'Fair';
+            } else if (strength === 4) {
+                color = '#AB92BF';
+                text = 'Good';
+            } else if (strength === 5) {
+                color = '#8A75A0';
+                text = 'Strong';
+            } else {
+                color = '#655A7C';
+                text = 'Very Strong';
+            }
+
+            passwordStrengthBar.style.backgroundColor = color;
+            passwordStrengthText.textContent = text;
+            passwordStrengthText.style.color = color;
+
+            const submitBtn = document.getElementById('submitBtn');
+            if (strength < 5) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        });
+
+        // Real-time password match validation
         confirmPassword.addEventListener('input', () => {
             if (password.value !== confirmPassword.value) {
                 confirmPassword.setCustomValidity('Passwords do not match');
@@ -100,6 +202,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            const { strength } = calculatePasswordStrength(password.value);
+            if (strength < 5) {
+                console.error('Password too weak');
+                showToast('Password must be at least Strong (5 out of 6 criteria)', 'error');
+                return;
+            }
 
             // Validate passwords match
             if (password.value !== confirmPassword.value) {
