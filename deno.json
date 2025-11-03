@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "allowJs": true,
     "lib": ["deno.window"],
     "strict": true
+  },
+  "tasks": {
+    "start": "deno run --allow-net --allow-read --allow-write --allow-env src/backend/server.ts",
+    "dev": "deno run --allow-net --allow-read --allow-write --allow-env src/backend/server.ts",
+    "lint": "deno lint src/backend/",
+    "test": "deno test src/backend/"
   },
   "lint": {
     "rules": {

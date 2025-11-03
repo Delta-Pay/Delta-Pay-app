@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (employeeSession && typeof employeeSession.token === 'string' && employeeSession.token.trim() !== '') {
         headers.Authorization = `Bearer ${employeeSession.token}`;
       } else if (!state.demoNoticeShown) {
-        showToast('Viewing demo security logs without authentication.', 'info');
+        showToast('Demo Mode: Security logs are publicly accessible for testing', 'info', 5000);
         state.demoNoticeShown = true;
       }
 

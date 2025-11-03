@@ -76,7 +76,7 @@ router.get("/js/:file", async (ctx) => {
 });
 
 router.get("/select-account", async (ctx) => {
-  await send(ctx, "SelectAccount.html", {
+  await send(ctx, "index.html", {
     root: `${Deno.cwd()}/src/frontend/public`,
   });
 });
