@@ -562,9 +562,9 @@ export async function createUser(
       data: Record<string, unknown>,
       patterns: Record<string, RegExp>,
     ) => { isValid: boolean; errors: string[] };
-    let addUser: (user: any) => any;
-    let getUserByUsername: (username: string) => any;
-    let users: any[];
+    let addUser: (user: Omit<User, "id">) => User;
+    let getUserByUsername: (username: string) => User | undefined;
+    let users: User[];
 
     try {
       const authModule = await import("../auth/auth.ts");

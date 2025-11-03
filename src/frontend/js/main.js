@@ -875,7 +875,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const createUserBtn = document.getElementById('createUserBtn');
   if (createUserBtn) createUserBtn.addEventListener('click', () => {
-    window.location.href = '/create-user';
+    globalThis.location.href = '/create-user';
   });
 
   const denyClose = document.getElementById('denyClose');
