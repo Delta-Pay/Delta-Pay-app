@@ -1,4 +1,7 @@
-# DeltaΔPay
+<div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+  <img src="src/Icons/DeltaPayReadMELogo.svg" alt="Delta Pay Logo" width="1000" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));"/>
+</div>
+
 
 Delta pay is a mockup of an international payment solution. It features multiple security features and data security layers with a clean and structured layout. 
 
