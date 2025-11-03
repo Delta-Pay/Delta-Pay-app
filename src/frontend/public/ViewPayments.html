@@ -23,14 +23,17 @@
     <div class="tagline">Admin — Transactions</div>
     </header>
 
-    <main class="main-container" style="align-items: stretch;">
+    <main class="main-container" style="align-items: center; justify-content: center; min-height: calc(100vh - 120px);">
         <div class="payment-container" style="max-width: 1100px; width: 100%;">
             <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
             <div class="payment-header" style="margin-bottom: 1rem;">
                 <div class="payment-title">Pending Transactions</div>
                 <div class="form-row" style="gap: 0.5rem; align-items: center;">
-                    <button id="refreshTransactionsBtn" class="option-button" style="padding: 0.75rem 1rem; min-width: 140px;">
+                    <button id="refreshTransactionsBtn" class="option-button backend-option" style="padding: 0.75rem 1rem; min-width: 140px;">
                         <div class="option-content"><h2 style="font-size: 1rem; margin: 0;">Refresh</h2></div>
+                    </button>
+                    <button id="createUserBtn" class="option-button backend-option" style="padding: 0.75rem 1rem; min-width: 150px;">
+                        <div class="option-content"><h2 style="font-size: 1rem; margin: 0;">Create User</h2></div>
                     </button>
                     <button id="goToLogsBtn" class="option-button backend-option" style="padding: 0.75rem 1rem; min-width: 180px;">
                         <div class="option-content"><h2 style="font-size: 1rem; margin: 0;">View Security Logs</h2></div>

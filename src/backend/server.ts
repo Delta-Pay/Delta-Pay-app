@@ -4,6 +4,7 @@ import { Application, Context, Router, send } from "https://deno.land/x/oak@v12.
 // {Employees log in to check transactions (README)} --> {Demo walkthrough keeps admin endpoints open; JWT/CSRF optional for future hardening}
 import {
   cleanupOldLogs,
+  createUser,
   getAllEmployees,
   getAllUsers,
   getFailedLoginAttemptsReport,
@@ -95,6 +96,12 @@ router.get("/view-payments", async (ctx) => {
 
 router.get("/security-logs", async (ctx) => {
   await send(ctx, "SecurityLogs.html", {
+    root: `${Deno.cwd()}/src/frontend/public`,
+  });
+});
+
+router.get("/create-user", async (ctx) => {
+  await send(ctx, "CreateUser.html", {
     root: `${Deno.cwd()}/src/frontend/public`,
   });
 });
@@ -362,6 +369,22 @@ router.get("/api/admin/statistics", async (ctx) => {
   try {
     const result = await getSystemStatistics();
     ctx.response.status = result.success ? 200 : 400;
+    ctx.response.body = result;
+  } catch (_error) {
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, message: "Server error" };
+  }
+});
+
+// Admin: Create new user (Part 3 requirement - no customer self-registration)
+router.post("/api/admin/users/create", async (ctx) => {
+  try {
+    const body = await ctx.request.body({ type: "json" }).value;
+    const employeeId = Number(ctx.state.user?.userId ?? 0); // 0 for demo mode
+    const ip = ctx.request.ip || "unknown";
+    
+    const result = await createUser(body, employeeId, ip);
+    ctx.response.status = result.success ? 201 : 400;
     ctx.response.body = result;
   } catch (_error) {
     ctx.response.status = 500;

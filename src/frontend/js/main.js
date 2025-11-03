@@ -873,6 +873,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const goToLogsBtn = document.getElementById('goToLogsBtn');
   if (goToLogsBtn) goToLogsBtn.addEventListener('click', navigateToSecurityLogs);
 
+  const createUserBtn = document.getElementById('createUserBtn');
+  if (createUserBtn) createUserBtn.addEventListener('click', () => {
+    window.location.href = '/create-user';
+  });
+
   const denyClose = document.getElementById('denyClose');
   if (denyClose) denyClose.addEventListener('click', closeDenyModal);
 

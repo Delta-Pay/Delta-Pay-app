@@ -360,3 +360,185 @@ function recordAdminSecurityEvent(event: AdminSecurityEvent): void {
     console.error("Failed to record admin security event:", recordError);
   }
 }
+
+/**
+ * Creates a new user account (admin only)
+ * Part 3 Requirement: Users are created by admin, no self-registration
+ */
+export async function createUser(
+  userData: {
+    fullName: string;
+    idNumber: string;
+    accountNumber: string;
+    username: string;
+    password: string;
+    email: string;
+    phoneNumber: string;
+    dateOfBirth: string;
+    nationality: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    stateProvince: string;
+    postalCode: string;
+    country: string;
+    accountBalance: number;
+    currency: string;
+    accountType: string;
+    preferredLanguage: string;
+    occupation: string;
+    annualIncome: number;
+    cardNumber: string;
+    cardExpiry: string;
+    cardHolderName: string;
+  },
+  employeeId: number,
+  ipAddress: string
+): Promise<{ success: boolean; message: string; userId?: number }> {
+  try {
+    // Import required functions
+    await Promise.resolve();
+    const { hashPassword, validateInput } = await import('../auth/auth.ts');
+    const { addUser, getUserByUsername, users } = await import('../database/init.ts');
+
+    // Define validation patterns (RegEx whitelisting per security requirements)
+    const VALIDATION_PATTERNS = {
+      fullName: /^[a-zA-Z\s]{2,50}$/,
+      idNumber: /^[0-9]{13}$/,
+      accountNumber: /^[0-9]{10,20}$/,
+      username: /^[a-zA-Z0-9_]{3,20}$/,
+      password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      phoneNumber: /^[0-9+\-\s()]{10,20}$/,
+      cardNumber: /^[0-9]{16}$/,
+      cardExpiry: /^(0[1-9]|1[0-2])\/[0-9]{2}$/,
+    };
+
+    // Validate required fields
+    const validation = validateInput(
+      {
+        fullName: userData.fullName,
+        idNumber: userData.idNumber,
+        accountNumber: userData.accountNumber,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        phoneNumber: userData.phoneNumber,
+        cardNumber: userData.cardNumber,
+        cardExpiry: userData.cardExpiry,
+      },
+      VALIDATION_PATTERNS
+    );
+
+    if (!validation.isValid) {
+      recordAdminSecurityEvent({
+        employeeId,
+        action: 'USER_CREATION_VALIDATION_FAILED',
+        ipAddress,
+        details: `Validation failed: ${validation.errors.join(', ')}`,
+        severity: 'warning',
+      });
+      return {
+        success: false,
+        message: `Validation failed: ${validation.errors.join(', ')}`,
+      };
+    }
+
+    // Check for duplicate username
+    const existingUser = getUserByUsername(userData.username);
+    if (existingUser) {
+      recordAdminSecurityEvent({
+        employeeId,
+        action: 'USER_CREATION_DUPLICATE_USERNAME',
+        ipAddress,
+        details: `Attempted to create user with existing username: ${userData.username}`,
+        severity: 'warning',
+      });
+      return {
+        success: false,
+        message: 'Username already exists',
+      };
+    }
+
+    // Check for duplicate account number
+    const existingByAccount = users.find(
+      (u) => u.account_number === userData.accountNumber
+    );
+    if (existingByAccount) {
+      recordAdminSecurityEvent({
+        employeeId,
+        action: 'USER_CREATION_DUPLICATE_ACCOUNT',
+        ipAddress,
+        details: `Attempted to create user with existing account number: ${userData.accountNumber}`,
+        severity: 'warning',
+      });
+      return {
+        success: false,
+        message: 'Account number already exists',
+      };
+    }
+
+    // Hash password (PBKDF2 with 100,000 iterations per security requirements)
+    const passwordHash = await hashPassword(userData.password);
+
+    // Create new user
+    const newUser = addUser({
+      full_name: userData.fullName,
+      id_number: userData.idNumber,
+      account_number: userData.accountNumber,
+      username: userData.username,
+      password_hash: passwordHash,
+      email: userData.email,
+      phone_number: userData.phoneNumber,
+      date_of_birth: userData.dateOfBirth,
+      nationality: userData.nationality,
+      address_line_1: userData.addressLine1,
+      address_line_2: userData.addressLine2 || undefined,
+      city: userData.city,
+      state_province: userData.stateProvince,
+      postal_code: userData.postalCode,
+      country: userData.country,
+      account_balance: userData.accountBalance,
+      currency: userData.currency,
+      account_type: userData.accountType,
+      preferred_language: userData.preferredLanguage,
+      occupation: userData.occupation,
+      annual_income: userData.annualIncome,
+      card_number: userData.cardNumber,
+      card_expiry: userData.cardExpiry,
+      card_holder_name: userData.cardHolderName,
+      created_at: new Date().toISOString(),
+      is_active: true,
+      failed_login_attempts: 0,
+    });
+
+    // Log successful user creation
+    recordAdminSecurityEvent({
+      employeeId,
+      action: 'USER_CREATED_BY_ADMIN',
+      ipAddress,
+      details: `Created new user: ${userData.username} (${userData.fullName}) with account ${userData.accountNumber}`,
+      severity: 'info',
+    });
+
+    return {
+      success: true,
+      message: 'User created successfully',
+      userId: newUser.id,
+    };
+  } catch (error) {
+    // Log error
+    recordAdminSecurityEvent({
+      employeeId,
+      action: 'USER_CREATION_FAILED',
+      ipAddress,
+      details: `Failed to create user: ${error instanceof Error ? error.message : String(error)}`,
+      severity: 'error',
+    });
+
+    return {
+      success: false,
+      message: 'Failed to create user account',
+    };
+  }
+}

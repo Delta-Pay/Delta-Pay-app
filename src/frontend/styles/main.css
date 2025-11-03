@@ -934,7 +934,11 @@ body {
 }
 
 .btn-cancel:hover {
-  background: #e0e0e0;
+  background: linear-gradient(
+    135deg,
+    rgba(141, 168, 199, 0.9) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
 }
 
 .btn-confirm {
@@ -1132,7 +1136,11 @@ body {
 }
 
 .btn-back:hover {
-  background-color: #f8f8f8;
+  background: linear-gradient(
+    135deg,
+    rgba(141, 168, 199, 0.9) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
@@ -1157,7 +1165,11 @@ body {
 }
 
 .btn-security-logs:hover {
-  background-color: #f8f8f8;
+  background: linear-gradient(
+    135deg,
+    rgba(141, 168, 199, 0.9) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
