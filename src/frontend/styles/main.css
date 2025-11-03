@@ -192,22 +192,27 @@ body {
 
 .option-button:hover {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-  border-color: #8da8c7ff;
+  border-color: #AB92BF;
+  background: linear-gradient(
+    135deg,
+    rgba(171, 146, 191, 0.15) 0%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
 }
 
 .payment-option:hover {
   background: linear-gradient(
     135deg,
-    rgba(206, 249, 242, 0.9) 0%,
-    rgba(255, 255, 255, 0.9) 100%
+    rgba(171, 146, 191, 0.15) 0%,
+    rgba(255, 255, 255, 0.95) 100%
   );
 }
 
 .backend-option:hover {
   background: linear-gradient(
     135deg,
-    rgba(141, 168, 199, 0.9) 0%,
-    rgba(255, 255, 255, 0.9) 100%
+    rgba(171, 146, 191, 0.15) 0%,
+    rgba(255, 255, 255, 0.95) 100%
   );
 }
 
@@ -936,9 +941,10 @@ body {
 .btn-cancel:hover {
   background: linear-gradient(
     135deg,
-    rgba(141, 168, 199, 0.9) 0%,
-    rgba(255, 255, 255, 0.9) 100%
+    rgba(171, 146, 191, 0.15) 0%,
+    rgba(255, 255, 255, 0.95) 100%
   );
+  border-color: #AB92BF;
 }
 
 .btn-confirm {
@@ -1138,9 +1144,10 @@ body {
 .btn-back:hover {
   background: linear-gradient(
     135deg,
-    rgba(141, 168, 199, 0.9) 0%,
-    rgba(255, 255, 255, 0.9) 100%
+    rgba(171, 146, 191, 0.15) 0%,
+    rgba(255, 255, 255, 0.95) 100%
   );
+  border-color: #AB92BF;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
@@ -1167,9 +1174,10 @@ body {
 .btn-security-logs:hover {
   background: linear-gradient(
     135deg,
-    rgba(141, 168, 199, 0.9) 0%,
-    rgba(255, 255, 255, 0.9) 100%
+    rgba(171, 146, 191, 0.15) 0%,
+    rgba(255, 255, 255, 0.95) 100%
   );
+  border-color: #AB92BF;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
@@ -1193,7 +1201,12 @@ body {
 }
 
 .btn-view-payments:hover {
-  background-color: #f8f8f8;
+  background: linear-gradient(
+    135deg,
+    rgba(171, 146, 191, 0.15) 0%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  border-color: #AB92BF;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
