@@ -190,9 +190,68 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
         });
 
-        // Auto-fill cardholder name from full name
+        // Format date of birth (DD/MM/YYYY) - only 4 digits for year
+        const dateOfBirth = document.getElementById('dateOfBirth');
+        dateOfBirth.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2);
+            }
+            if (value.length >= 5) {
+                value = value.slice(0, 5) + '/' + value.slice(5, 9);
+            }
+            e.target.value = value;
+        });
+
+        // Letters only - Full Name
         const fullName = document.getElementById('fullName');
+        fullName.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Letters only - Nationality
+        const nationality = document.getElementById('nationality');
+        nationality.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Letters only - Occupation
+        const occupation = document.getElementById('occupation');
+        occupation.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Letters only - City
+        const city = document.getElementById('city');
+        city.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Letters only - State/Province
+        const stateProvince = document.getElementById('stateProvince');
+        stateProvince.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Letters only - Country
+        const country = document.getElementById('country');
+        country.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Letters only - Preferred Language
+        const preferredLanguage = document.getElementById('preferredLanguage');
+        preferredLanguage.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Letters only - Cardholder Name
         const cardHolderName = document.getElementById('cardHolderName');
+        cardHolderName.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        // Auto-fill cardholder name from full name
         fullName.addEventListener('blur', () => {
             if (!cardHolderName.value && fullName.value) {
                 cardHolderName.value = fullName.value;
@@ -222,6 +281,19 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerHTML = '<div class="button-content"><span class="button-text">Creating Account...</span></div>';
 
             try {
+                const dobValue = document.getElementById('dateOfBirth').value;
+                let formattedDOB = dobValue;
+                
+                if (dobValue.includes('/')) {
+                    const parts = dobValue.split('/');
+                    if (parts.length === 3) {
+                        const day = parts[0].padStart(2, '0');
+                        const month = parts[1].padStart(2, '0');
+                        const year = parts[2];
+                        formattedDOB = `${year}-${month}-${day}`;
+                    }
+                }
+
                 const formData = {
                     fullName: document.getElementById('fullName').value.trim(),
                     idNumber: document.getElementById('idNumber').value.replace(/\D/g, ''),
@@ -230,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     password: document.getElementById('password').value,
                     email: document.getElementById('email').value.trim(),
                     phoneNumber: document.getElementById('phoneNumber').value.trim(),
-                    dateOfBirth: document.getElementById('dateOfBirth').value,
+                    dateOfBirth: formattedDOB,
                     nationality: document.getElementById('nationality').value.trim(),
                     addressLine1: document.getElementById('addressLine1').value.trim(),
                     addressLine2: document.getElementById('addressLine2').value.trim(),
@@ -272,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('User created successfully with ID:', result.userId);
                     showToast('User account created successfully!', 'success', 3000);
                     setTimeout(() => {
-                        window.location.href = '/view-payments';
+                        globalThis.location.href = '/view-payments';
                     }, 2000);
                 } else {
                     console.error('User creation failed:', result.message);
