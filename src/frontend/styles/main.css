@@ -1,1985 +1,2034 @@
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 /* Toasts */
 .toast-container {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 2000;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .toast {
-  min-width: 240px;
-  max-width: 420px;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(0,0,0,.2);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  font-family: "Inter", sans-serif;
+    min-width: 240px;
+    max-width: 420px;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-family: "Inter", sans-serif;
 }
 
-.toast-success { background: #2e7d32; }
-.toast-error { background: #c62828; }
-.toast-info { background: #455a64; }
+.toast-success {
+    background: #2e7d32;
+}
+.toast-error {
+    background: #c62828;
+}
+.toast-info {
+    background: #455a64;
+}
 
-.toast .toast-message { flex: 1; font-weight: 600; }
+.toast .toast-message {
+    flex: 1;
+    font-weight: 600;
+}
 .toast .toast-close {
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 1.1rem;
-  cursor: pointer;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
 }
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
 
 body {
-  /* Inter is loaded via Google Fonts in development; consider self-hosting for production */
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+    /* Inter is loaded via Google Fonts in development; consider self-hosting for production */
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        sans-serif;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .header {
-  padding: 1rem 2rem;
-  border-bottom: 2px solid #ffffff;
-  background: #ffffff;
-  backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
+    padding: 1rem 2rem;
+    border-bottom: 2px solid #ffffff;
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
 }
 
 .logo svg {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  left: 4px;
-  top: 5px;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    left: 4px;
+    top: 5px;
 }
 
 .logo {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  left: 15px;
-  top: 8px;
-  background: linear-gradient(180deg, #cef9f2 0%, #8da8c7 100%);
-  border-radius: 15px;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    left: 15px;
+    top: 8px;
+    background: linear-gradient(180deg, #cef9f2 0%, #8da8c7 100%);
+    border-radius: 15px;
 }
 
 .logo {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .logo svg {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
 }
 
 .logo-container {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .logo-text {
-  position: absolute;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #ab92bf;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  position: relative;
-  left: 50px;
+    position: absolute;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ab92bf;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    left: 50px;
 
-  font-family: "Inter", sans-serif;
+    font-family: "Inter", sans-serif;
 }
 
 .tagline {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #ab92bf;
-  margin-left: auto;
-  margin-right: 1rem;
-  font-family: "Inter", sans-serif;
-  position: relative;
-  top: 2px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ab92bf;
+    margin-left: auto;
+    margin-right: 1rem;
+    font-family: "Inter", sans-serif;
+    position: relative;
+    top: 2px;
 }
 
 .user-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-  margin-left: 1rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    margin-left: 1rem;
 }
 
 .user-icon:hover {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 .main-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  padding-top: 4rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    padding-top: 4rem;
 }
 
 .options-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  max-width: 600px;
-  width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 600px;
+    width: 100%;
 }
 
 .option-button {
-  flex: 1;
-  padding: 3rem 2rem;
-  border: none;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 10px 20px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  border: 2px solid transparent;
-  position: relative;
+    flex: 1;
+    padding: 3rem 2rem;
+    border: none;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.1),
+        0 10px 20px rgba(0, 0, 0, 0.15),
+        0 0 20px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 2px solid transparent;
+    position: relative;
 }
 
 .option-button::after {
-  content: "";
-  position: absolute;
-  bottom: -8px;
-  left: 10%;
-  right: 10%;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  filter: blur(8px);
-  z-index: -1;
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 10%;
+    right: 10%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    filter: blur(8px);
+    z-index: -1;
 }
 
 .option-button:hover {
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-  border-color: #AB92BF;
-  background: linear-gradient(
-    135deg,
-    rgba(171, 146, 191, 0.15) 0%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+    border-color: #ab92bf;
+    background: linear-gradient(
+        135deg,
+        rgba(171, 146, 191, 0.15) 0%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
 }
 
 .payment-option:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(171, 146, 191, 0.15) 0%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
+    background: linear-gradient(
+        135deg,
+        rgba(171, 146, 191, 0.15) 0%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
 }
 
 .backend-option:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(171, 146, 191, 0.15) 0%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
+    background: linear-gradient(
+        135deg,
+        rgba(171, 146, 191, 0.15) 0%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
 }
 
 .option-content h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: #655a7c;
-  font-weight: 600; /* Inter Semi-Bold */
-  font-family: "Inter", sans-serif;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #655a7c;
+    font-weight: 600; /* Inter Semi-Bold */
+    font-family: "Inter", sans-serif;
 }
 
 .option-content p {
-  font-size: 1.1rem;
-  color: #666;
-  line-height: 1.5;
+    font-size: 1.1rem;
+    color: #666;
+    line-height: 1.5;
 }
 
 /* Account Selection Page Styles */
 .account-selection-container {
-  max-width: 800px;
-  width: 100%;
-  text-align: center;
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
 }
 
 .page-title {
-  font-size: 2.5rem;
-  color: #ffffff;
-  margin-bottom: 1rem;
-  font-weight: 700; /* Inter Bold */
-  font-family: "Inter", sans-serif;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-size: 2.5rem;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-weight: 700; /* Inter Bold */
+    font-family: "Inter", sans-serif;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .page-subtitle {
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 3rem;
-  font-weight: 400;
-  font-family: "Inter", sans-serif;
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 3rem;
+    font-weight: 400;
+    font-family: "Inter", sans-serif;
 }
 
 .accounts-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
 }
 
 .account-card {
-  display: flex;
-  align-items: center;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 10px 20px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  border: 2px solid transparent;
-  width: 100%;
-  max-width: 600px;
-  position: relative;
-  overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.1),
+        0 10px 20px rgba(0, 0, 0, 0.15),
+        0 0 20px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 2px solid transparent;
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+    overflow: hidden;
 }
 
 .account-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(206, 249, 242, 0.3),
-    transparent
-  );
-  transition: left 0.5s ease;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(206, 249, 242, 0.3),
+        transparent
+    );
+    transition: left 0.5s ease;
 }
 
 .account-card:hover::before {
-  left: 100%;
+    left: 100%;
 }
 
 .account-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-  border-color: #8da8c7ff;
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+    border-color: #8da8c7ff;
 }
 
 .account-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-right: 1.5rem;
-  flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-right: 1.5rem;
+    flex-shrink: 0;
 }
 
 .account-details {
-  flex: 1;
-  text-align: left;
+    flex: 1;
+    text-align: left;
 }
 
 .account-details h3 {
-  font-size: 1.3rem;
-  color: #655a7c;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+    font-size: 1.3rem;
+    color: #655a7c;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
 }
 
 .account-details p {
-  font-size: 1rem;
-  color: #666;
-  margin-bottom: 0.25rem;
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 0.25rem;
 }
 
 .account-balance {
-  font-weight: 600;
-  color: #ab92bf !important;
+    font-weight: 600;
+    color: #ab92bf !important;
 }
 
 .account-arrow {
-  font-size: 1.5rem;
-  color: #8da8c7ff;
-  margin-left: 1rem;
-  transition: transform 0.3s ease;
+    font-size: 1.5rem;
+    color: #8da8c7ff;
+    margin-left: 1rem;
+    transition: transform 0.3s ease;
 }
 
 .account-card:hover .account-arrow {
-  transform: translateX(4px);
+    transform: translateX(4px);
 }
 
 /* Payment Page Styles */
 .payment-container {
-  max-width: 800px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 10px 20px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 2px solid transparent;
-  padding: 2rem;
+    max-width: 800px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.1),
+        0 10px 20px rgba(0, 0, 0, 0.15),
+        0 0 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    border: 2px solid transparent;
+    padding: 2rem;
 }
 
 .payment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(101, 90, 124, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(101, 90, 124, 0.2);
 }
 
 .payment-title {
-  font-size: 2rem;
-  color: #655a7c;
-  font-weight: 700; /* Inter Bold */
-  font-family: "Inter", sans-serif;
+    font-size: 2rem;
+    color: #655a7c;
+    font-weight: 700; /* Inter Bold */
+    font-family: "Inter", sans-serif;
 }
 
 .user-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s ease;
 }
 
 .user-icon:hover {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 .payment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-section {
+    margin-bottom: 2.5rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    color: #655a7c;
+    font-weight: 700;
+    font-family: "Inter", sans-serif;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(171, 146, 191, 0.2);
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.5rem;
 }
 
 .form-row {
-  display: flex;
-  gap: 1rem;
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-row .form-group {
-  flex: 1;
+    flex: 1;
+    margin-bottom: 0;
 }
 
 .form-label {
-  font-size: 0.9rem;
-  color: #655a7c;
-  font-weight: 600; /* Inter Semi-Bold */
-  font-family: "Inter", sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    color: #655a7c;
+    font-weight: 600;
+    font-family: "Inter", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
 }
 
 .form-input {
-  padding: 1rem;
-  border: 2px solid rgba(101, 90, 124, 0.2);
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.8);
+    padding: 1rem;
+    border: 2px solid rgba(101, 90, 124, 0.2);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
 }
 
 .form-input:focus {
-  outline: none;
-  border-color: #ab92bf;
-  box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
+    outline: none;
+    border-color: #ab92bf;
+    box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
 }
 
 .form-input.censored {
-  font-family: monospace;
-  letter-spacing: 2px;
+    font-family: monospace;
+    letter-spacing: 2px;
 }
 
 .submit-button {
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600; /* Inter Semi-Bold */
-  font-family: "Inter", sans-serif;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
-  position: relative;
-  overflow: hidden;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600; /* Inter Semi-Bold */
+    font-family: "Inter", sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .submit-button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s ease;
 }
 
 .submit-button:hover::before {
-  left: 100%;
+    left: 100%;
 }
 
 .submit-button:hover {
-  box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
+    box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
 }
 
 /* Success Modal */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
 }
 
 .modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
+    opacity: 1;
+    visibility: visible;
 }
 
 .success-modal {
-  background: white;
-  border-radius: 16px;
-  padding: 3rem;
-  text-align: center;
-  max-width: 400px;
-  width: 90%;
-  transform: scale(0.8);
-  transition: transform 0.3s ease;
+    background: white;
+    border-radius: 16px;
+    padding: 3rem;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
 }
 
 .modal-overlay.active .success-modal {
-  transform: scale(1);
+    transform: scale(1);
 }
 
 .tick-animation {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 2rem;
-  position: relative;
-  animation: tickPulse 0.6s ease-out;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    position: relative;
+    animation: tickPulse 0.6s ease-out;
 }
 
 .tick-animation::after {
-  content: "✓";
-  color: white;
-  font-size: 2rem;
-  font-weight: bold;
-  animation: tickDraw 0.6s ease-out 0.3s both;
+    content: "✓";
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    animation: tickDraw 0.6s ease-out 0.3s both;
 }
 
 @keyframes tickPulse {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes tickDraw {
-  0% {
-    transform: scale(0) rotate(-45deg);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
+    0% {
+        transform: scale(0) rotate(-45deg);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
 }
 
 .success-title {
-  font-size: 1.8rem;
-  color: #655a7c;
-  margin-bottom: 1rem;
-  font-weight: 700;
+    font-size: 1.8rem;
+    color: #655a7c;
+    margin-bottom: 1rem;
+    font-weight: 700;
 }
 
 .success-message {
-  font-size: 1.1rem;
-  color: #666;
-  margin-bottom: 2rem;
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 2rem;
 }
 
 .close-modal-button {
-  padding: 0.8rem 2rem;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+    padding: 0.8rem 2rem;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .close-modal-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
 }
 
 @media (max-width: 768px) {
-  .header {
-    flex-direction: row;
-    gap: 0.5rem;
-    text-align: left;
-  }
+    .header {
+        flex-direction: row;
+        gap: 0.5rem;
+        text-align: left;
+    }
 
-  .option-button {
-    padding: 2rem 1.5rem;
-  }
+    .option-button {
+        padding: 2rem 1.5rem;
+    }
 
-  .option-content h2 {
-    font-size: 1.5rem;
-  }
+    .option-content h2 {
+        font-size: 1.5rem;
+    }
 
-  .header {
-    padding: 1rem;
-  }
+    .header {
+        padding: 1rem;
+    }
 
-  .logo-text {
-    font-size: 1.5rem;
-  }
+    .logo-text {
+        font-size: 1.5rem;
+    }
 
-  .page-title {
-    font-size: 2rem;
-  }
+    .page-title {
+        font-size: 2rem;
+    }
 
-  .page-subtitle {
-    font-size: 1rem;
-  }
+    .page-subtitle {
+        font-size: 1rem;
+    }
 
-  .account-card {
-    padding: 1.5rem;
-  }
+    .account-card {
+        padding: 1.5rem;
+    }
 
-  .account-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
-  }
+    .account-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
 
-  .payment-container {
-    padding: 1.5rem;
-  }
+    .payment-container {
+        padding: 1.5rem;
+    }
 
-  .payment-title {
-    font-size: 1.5rem;
-  }
+    .payment-title {
+        font-size: 1.5rem;
+    }
 
-  .form-row {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+    .form-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 
-  .success-modal {
-    padding: 2rem;
-  }
+    .success-modal {
+        padding: 2rem;
+    }
 }
 
 /* Registration and Login Forms */
 .register-container,
 .login-container {
-  background: white;
-  border-radius: 16px;
-  padding: 3rem;
-  max-width: 500px;
-  width: 90%;
-  margin: 2rem auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
+    background: white;
+    border-radius: 16px;
+    padding: 3rem;
+    max-width: 500px;
+    width: 90%;
+    margin: 2rem auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 .register-container h2,
 .login-container h2 {
-  font-size: 2rem;
-  color: #655a7c;
-  margin-bottom: 2rem;
-  text-align: center;
-  font-weight: 700;
+    font-size: 2rem;
+    color: #655a7c;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-weight: 700;
 }
 
 .register-container .form-group,
 .login-container .form-group {
-  margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .register-container label,
 .login-container label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #655a7c;
-  font-weight: 600;
-  font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #655a7c;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .register-container input,
 .login-container input {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  background: #f8f9fa;
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
 }
 
 .register-container input:focus,
 .login-container input:focus {
-  outline: none;
-  border-color: #ab92bf;
-  box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
-  background: white;
+    outline: none;
+    border-color: #ab92bf;
+    box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
+    background: white;
 }
 
 .btn-primary {
-  width: 100%;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
-  position: relative;
-  overflow: hidden;
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .btn-primary::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s ease;
 }
 
 .btn-primary:hover::before {
-  left: 100%;
+    left: 100%;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
+    box-shadow: 0 8px 25px rgba(171, 146, 191, 0.3);
 }
 
 .login-link,
 .register-link {
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
 }
 
 .login-link p,
 .register-link p {
-  color: #666;
-  font-size: 0.9rem;
+    color: #666;
+    font-size: 0.9rem;
 }
 
 .login-link a,
 .register-link a {
-  color: #ab92bf;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
+    color: #ab92bf;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
 }
 
 .login-link a:hover,
 .register-link a:hover {
-  color: #655a7c;
-  text-decoration: underline;
+    color: #655a7c;
+    text-decoration: underline;
 }
 
 /* Mobile responsiveness for auth forms */
 @media (max-width: 768px) {
-  .register-container,
-  .login-container {
-    padding: 2rem;
-    margin: 1rem auto;
-  }
+    .register-container,
+    .login-container {
+        padding: 2rem;
+        margin: 1rem auto;
+    }
 
-  .register-container h2,
-  .login-container h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
+    .register-container h2,
+    .login-container h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-  .register-container .form-group,
-  .login-container .form-group {
-    margin-bottom: 1rem;
-  }
+    .register-container .form-group,
+    .login-container .form-group {
+        margin-bottom: 1rem;
+    }
 
-  .register-container input,
-  .login-container input {
-    padding: 0.8rem;
-    font-size: 0.9rem;
-  }
+    .register-container input,
+    .login-container input {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+    }
 
-  .btn-primary {
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-  }
+    .btn-primary {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
 }
 
 /* Custom Password Modal */
 .password-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
 .password-modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
+    opacity: 1;
+    visibility: visible;
 }
 
 .password-modal {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  transform: scale(0.8) translateY(20px);
-  transition: all 0.3s ease;
-  border: 2px solid #ab92bf;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8) translateY(20px);
+    transition: all 0.3s ease;
+    border: 2px solid #ab92bf;
 }
 
 .password-modal-overlay.active .password-modal {
-  transform: scale(1) translateY(0);
+    transform: scale(1) translateY(0);
 }
 
 .password-modal-header {
-  text-align: center;
-  margin-bottom: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
 .password-modal-header h3 {
-  font-size: 1.5rem;
-  color: #655a7c;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
+    font-size: 1.5rem;
+    color: #655a7c;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
 }
 
 .selected-user-info {
-  color: #666;
-  font-size: 0.9rem;
-  margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0;
 }
 
 .selected-user-info span {
-  color: #ab92bf;
-  font-weight: 600;
+    color: #ab92bf;
+    font-weight: 600;
 }
 
 .password-modal-body .form-group {
-  margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .password-modal-body label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #655a7c;
-  font-weight: 600;
-  font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #655a7c;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .password-modal-body input {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  background: #f8f9fa;
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
 }
 
 .password-modal-body input:focus {
-  outline: none;
-  border-color: #ab92bf;
-  box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
-  background: white;
+    outline: none;
+    border-color: #ab92bf;
+    box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
+    background: white;
 }
 
 .password-modal-buttons {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
 .btn-cancel,
 .btn-confirm {
-  flex: 1;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+    flex: 1;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .btn-cancel {
-  background: #f0f0f0;
-  color: #666;
+    background: #f0f0f0;
+    color: #666;
 }
 
 .btn-cancel:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(171, 146, 191, 0.15) 0%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
-  border-color: #AB92BF;
+    background: linear-gradient(
+        135deg,
+        rgba(171, 146, 191, 0.15) 0%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
+    border-color: #ab92bf;
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
 }
 
 .btn-confirm::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s ease;
 }
 
 .btn-confirm:hover::before {
-  left: 100%;
+    left: 100%;
 }
 
 .btn-confirm:hover {
-  box-shadow: 0 4px 15px rgba(171, 146, 191, 0.3);
+    box-shadow: 0 4px 15px rgba(171, 146, 191, 0.3);
 }
 
 /* Mobile responsiveness for password modal */
 @media (max-width: 768px) {
-  .password-modal {
-    padding: 1.5rem;
-    margin: 1rem;
-  }
+    .password-modal {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
 
-  .password-modal-header h3 {
-    font-size: 1.3rem;
-  }
+    .password-modal-header h3 {
+        font-size: 1.3rem;
+    }
 
-  .password-modal-buttons {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+    .password-modal-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 
-  .btn-cancel,
-  .btn-confirm {
-    width: 100%;
-  }
+    .btn-cancel,
+    .btn-confirm {
+        width: 100%;
+    }
 }
 
 /* Account Selection Modal */
 .account-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1500;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
 .account-modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
+    opacity: 1;
+    visibility: visible;
 }
 
 .account-modal {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  transform: scale(0.8) translateY(20px);
-  transition: all 0.3s ease;
-  border: 2px solid #ab92bf;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8) translateY(20px);
+    transition: all 0.3s ease;
+    border: 2px solid #ab92bf;
 }
 
 .account-modal-overlay.active .account-modal {
-  transform: scale(1) translateY(0);
+    transform: scale(1) translateY(0);
 }
 
 .account-modal-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #f0f0f0;
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
 }
 
 .account-modal-header h3 {
-  font-size: 1.8rem;
-  color: #655a7c;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
+    font-size: 1.8rem;
+    color: #655a7c;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
 }
 
 .account-modal-header p {
-  color: #666;
-  font-size: 1rem;
-  margin: 0;
+    color: #666;
+    font-size: 1rem;
+    margin: 0;
 }
 
 .account-modal-body {
-  margin-bottom: 2rem;
+    margin-bottom: 2rem;
 }
 
 .account-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
 }
 
 .account-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .account-card:hover {
-  border-color: #ab92bf;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(171, 146, 191, 0.2);
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-color: #ab92bf;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(171, 146, 191, 0.2);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
 }
 
 .account-card .account-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  font-weight: bold;
-  flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    flex-shrink: 0;
 }
 
 .account-card .account-details h4 {
-  font-size: 1.1rem;
-  color: #655a7c;
-  margin-bottom: 0.3rem;
-  font-weight: 600;
+    font-size: 1.1rem;
+    color: #655a7c;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
 }
 
 .account-card .account-details p {
-  font-size: 0.8rem;
-  color: #666;
-  margin: 0.1rem 0;
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0.1rem 0;
 }
 
 .account-card .account-details .account-number {
-  color: #ab92bf;
-  font-weight: 600;
+    color: #ab92bf;
+    font-weight: 600;
 }
 
 .account-modal-footer {
-  text-align: center;
-  padding-top: 1rem;
-  border-top: 2px solid #f0f0f0;
+    text-align: center;
+    padding-top: 1rem;
+    border-top: 2px solid #f0f0f0;
 }
 
 .btn-back {
-  background-color: white;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: absolute;
-  top: 110px;
-  left: 20px;
+    background-color: white;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    top: 110px;
+    left: 20px;
 }
 
 .btn-back:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(171, 146, 191, 0.15) 0%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
-  border-color: #AB92BF;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
+    background: linear-gradient(
+        135deg,
+        rgba(171, 146, 191, 0.15) 0%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
+    border-color: #ab92bf;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
 }
 
 .btn-back:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-security-logs {
-  background-color: white;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  bottom: 20px;
+    background-color: white;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    bottom: 20px;
 }
 
 .btn-security-logs:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(171, 146, 191, 0.15) 0%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
-  border-color: #AB92BF;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
+    background: linear-gradient(
+        135deg,
+        rgba(171, 146, 191, 0.15) 0%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
+    border-color: #ab92bf;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
 }
 
 .btn-security-logs:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-view-payments {
-  background-color: white;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
+    background-color: white;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 .btn-view-payments:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(171, 146, 191, 0.15) 0%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
-  border-color: #AB92BF;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
+    background: linear-gradient(
+        135deg,
+        rgba(171, 146, 191, 0.15) 0%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
+    border-color: #ab92bf;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
 }
 
 .btn-view-payments:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .users-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
 .user-card {
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-card:hover {
-  border-color: #AB92BF;
-  box-shadow: 0 4px 12px rgba(171, 146, 191, 0.2);
-  transform: translateY(-2px);
+    border-color: #ab92bf;
+    box-shadow: 0 4px 12px rgba(171, 146, 191, 0.2);
+    transform: translateY(-2px);
 }
 
 .user-card.selected {
-  border-color: #AB92BF;
-  background: linear-gradient(135deg, rgba(206, 249, 242, 0.1) 0%, rgba(255, 255, 255, 1) 100%);
+    border-color: #ab92bf;
+    background: linear-gradient(
+        135deg,
+        rgba(206, 249, 242, 0.1) 0%,
+        rgba(255, 255, 255, 1) 100%
+    );
 }
 
 .user-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #AB92BF 0%, #655A7C 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
 }
 
 .user-card-info h4 {
-  margin: 0;
-  color: #333;
-  font-size: 1rem;
-  font-weight: 600;
+    margin: 0;
+    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .user-card-details {
-  color: #666;
-  font-size: 0.875rem;
-  line-height: 1.4;
+    color: #666;
+    font-size: 0.875rem;
+    line-height: 1.4;
 }
 
 .user-card-details p {
-  margin: 0.25rem 0;
+    margin: 0.25rem 0;
 }
 
 /* Payment Gateway Redesign */
 .payment-gateway-container {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  max-width: 800px;
-  width: 90%;
-  margin: 2rem auto;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 800px;
+    width: 90%;
+    margin: 2rem auto;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
 }
 
 .payment-gateway-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid #f0f0f0;
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #f0f0f0;
 }
 
 .gateway-title {
-  font-size: 2.5rem;
-  color: #655a7c;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
+    font-size: 2.5rem;
+    color: #655a7c;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
 }
 
 .gateway-subtitle {
-  font-size: 1.1rem;
-  color: #666;
-  margin: 0;
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0;
 }
 
 .payment-gateway-form {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
 .payment-section {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border: 2px solid #e0e0e0;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid #e0e0e0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
 }
 
 .payment-section:hover {
-  border-color: #ab92bf;
-  box-shadow: 0 8px 25px rgba(171, 146, 191, 0.15);
+    border-color: #ab92bf;
+    box-shadow: 0 8px 25px rgba(171, 146, 191, 0.15);
 }
 
 .section-header {
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
-  padding: 1rem 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .section-icon {
-  font-size: 1.5rem;
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .section-icon svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-  color: white;
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    color: white;
 }
 
 .section-header h3 {
-  font-size: 1.3rem;
-  margin: 0;
-  font-weight: 600;
+    font-size: 1.3rem;
+    margin: 0;
+    font-weight: 600;
 }
 
 .section-content {
-  padding: 1.5rem;
+    padding: 1.5rem;
 }
 
 .payment-submit-section {
-  text-align: center;
-  margin-top: 2rem;
+    text-align: center;
+    margin-top: 2rem;
 }
 
 .submit-button {
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 1rem 3rem;
-  font-size: 1.2rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 1rem;
-  position: relative;
-  overflow: hidden;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .submit-button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s ease;
 }
 
 .submit-button:hover::before {
-  left: 100%;
+    left: 100%;
 }
 
 .submit-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(171, 146, 191, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(171, 146, 191, 0.4);
 }
 
 .button-text {
-  font-weight: 600;
+    font-weight: 600;
 }
 
 .button-icon {
-  font-size: 1.2rem;
-  transition: transform 0.3s ease;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
 }
 
 .submit-button:hover .button-icon {
-  transform: translateX(5px);
+    transform: translateX(5px);
 }
 
 /* Form input improvements for payment gateway */
 .payment-gateway-form .form-input {
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  width: 100%;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    width: 100%;
 }
 
 .payment-gateway-form .form-input:focus {
-  outline: none;
-  border-color: #ab92bf;
-  box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
+    outline: none;
+    border-color: #ab92bf;
+    box-shadow: 0 0 0 3px rgba(171, 146, 191, 0.1);
 }
 
 .payment-gateway-form .form-input:read-only {
-  background: #f8f9fa;
-  color: #655a7c;
-  font-weight: 600;
+    background: #f8f9fa;
+    color: #655a7c;
+    font-weight: 600;
 }
 
 .payment-gateway-form .form-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #655a7c;
-  font-weight: 600;
-  font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #655a7c;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .payment-gateway-form .form-group {
-  margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .payment-gateway-form .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
 }
 
 /* Mobile responsiveness for payment gateway */
 @media (max-width: 768px) {
-  .payment-gateway-container {
-    padding: 1.5rem;
-    margin: 1rem auto;
-  }
+    .payment-gateway-container {
+        padding: 1.5rem;
+        margin: 1rem auto;
+    }
 
-  .gateway-title {
-    font-size: 2rem;
-  }
+    .gateway-title {
+        font-size: 2rem;
+    }
 
-  .payment-section {
-    margin-bottom: 1rem;
-  }
+    .payment-section {
+        margin-bottom: 1rem;
+    }
 
-  .section-header {
-    padding: 0.8rem 1rem;
-  }
+    .section-header {
+        padding: 0.8rem 1rem;
+    }
 
-  .section-header h3 {
-    font-size: 1.1rem;
-  }
+    .section-header h3 {
+        font-size: 1.1rem;
+    }
 
-  .section-content {
-    padding: 1rem;
-  }
+    .section-content {
+        padding: 1rem;
+    }
 
-  .payment-gateway-form .form-row {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
+    .payment-gateway-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
 
-  .submit-button {
-    padding: 0.8rem 2rem;
-    font-size: 1.1rem;
-  }
+    .submit-button {
+        padding: 0.8rem 2rem;
+        font-size: 1.1rem;
+    }
 
-  .account-modal {
-    padding: 1.5rem;
-    margin: 1rem;
-  }
+    .account-modal {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
 
-  .account-grid {
-    grid-template-columns: 1fr;
-  }
+    .account-grid {
+        grid-template-columns: 1fr;
+    }
 
-  .account-card {
-    padding: 1rem;
-  }
+    .account-card {
+        padding: 1rem;
+    }
 }
 
 /* Professional Payment Form Styles */
 .account-display {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
-  padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
 }
 
 .account-details h4 {
-  font-size: 1.2rem;
-  color: #655a7c;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    color: #655a7c;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
 }
 
 .account-details p {
-  margin: 0.25rem 0;
-  color: #666;
-  font-size: 0.9rem;
+    margin: 0.25rem 0;
+    color: #666;
+    font-size: 0.9rem;
 }
 
 .balance-amount {
-  color: #28a745;
-  font-weight: 700;
-  font-size: 1rem;
+    color: #28a745;
+    font-weight: 700;
+    font-size: 1rem;
 }
 
 .account-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-  font-weight: 700;
-  flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    flex-shrink: 0;
 }
 
 .amount-display {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #655a7c;
-  text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #655a7c;
+    text-align: center;
 }
 
 .charge-description {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 1rem;
-  border-left: 4px solid #ab92bf;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-left: 4px solid #ab92bf;
 }
 
 .charge-description p {
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
 }
 
 .secure-input {
-  background: #f8f9fa !important;
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-  letter-spacing: 2px;
+    background: #f8f9fa !important;
+    font-family: "Courier New", monospace;
+    font-weight: 600;
+    letter-spacing: 2px;
 }
 
 .cvv-input {
-  text-align: center;
-  font-family: 'Courier New', monospace;
-  font-size: 1.1rem;
-  font-weight: bold;
+    text-align: center;
+    font-family: "Courier New", monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
 }
 
 .address-input {
-  resize: vertical;
-  min-height: 80px;
-  line-height: 1.4;
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.4;
 }
 
 .security-note {
-  font-size: 0.85rem;
-  color: #28a745;
-  font-style: italic;
-  margin: 0.5rem 0 0 0;
-  padding: 0.5rem;
-  background: rgba(40, 167, 69, 0.1);
-  border-radius: 6px;
-  border-left: 3px solid #28a745;
+    font-size: 0.85rem;
+    color: #28a745;
+    font-style: italic;
+    margin: 0.5rem 0 0 0;
+    padding: 0.5rem;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #28a745;
 }
 
 /* Terms and Conditions Styles */
 .terms-container {
-  max-width: 100%;
+    max-width: 100%;
 }
 
 .terms-scroll {
-  max-height: 200px;
-  overflow-y: auto;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  line-height: 1.5;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
 .terms-scroll h4 {
-  color: #655a7c;
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
+    color: #655a7c;
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .terms-scroll ul {
-  padding-left: 1.5rem;
-  color: #666;
+    padding-left: 1.5rem;
+    color: #666;
 }
 
 .terms-scroll li {
-  margin-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .terms-agreement {
-  margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 .checkbox-container {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
 
 .checkbox-container input[type="checkbox"] {
-  margin: 0;
-  width: 18px;
-  height: 18px;
-  accent-color: #ab92bf;
-  flex-shrink: 0;
-  margin-top: 2px;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    accent-color: #ab92bf;
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 
 .checkbox-label {
-  color: #666;
-  user-select: none;
+    color: #666;
+    user-select: none;
 }
 
 /* Enhanced Submit Button */
 .submit-button.ready {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
 
 .submit-button.ready:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
 }
 
 .button-content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
 }
 
 .button-amount {
-  font-size: 1.3rem;
-  font-weight: 700;
-  opacity: 0.9;
+    font-size: 1.3rem;
+    font-weight: 700;
+    opacity: 0.9;
 }
 
 .button-security {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .security-badge {
-  font-size: 1.5rem;
+    font-size: 1.5rem;
 }
 
 .security-badge-icon {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-  color: #8DA8C7;
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    color: #8da8c7;
 }
 
 .payment-security-notice {
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 1rem;
-  text-align: center;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 1rem;
+    text-align: center;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-left: 0.5rem;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 0.5rem;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Enhanced Password Modal */
 .auth-modal {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  transform: scale(0.9);
-  transition: transform 0.3s ease;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
 }
 
 .modal-overlay[style*="flex"] .auth-modal {
-  transform: scale(1);
+    transform: scale(1);
 }
 
 .auth-header {
-  text-align: center;
-  margin-bottom: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
 .auth-header h3 {
-  color: #655a7c;
-  font-size: 1.4rem;
-  margin: 0 0 0.5rem 0;
-  font-weight: 600;
+    color: #655a7c;
+    font-size: 1.4rem;
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
 }
 
 .auth-header p {
-  color: #666;
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
+    color: #666;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
 
 .auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 .password-input {
-  text-align: center;
-  font-size: 1.1rem;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 2px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-family: "Courier New", monospace;
+    letter-spacing: 2px;
 }
 
 .auth-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
 }
 
 .auth-btn {
-  flex: 1;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .cancel-btn {
-  background: #f8f9fa;
-  color: #666;
-  border: 2px solid #e9ecef;
+    background: #f8f9fa;
+    color: #666;
+    border: 2px solid #e9ecef;
 }
 
 .cancel-btn:hover {
-  background: #e9ecef;
-  color: #495057;
+    background: #e9ecef;
+    color: #495057;
 }
 
 .authenticate-btn {
-  background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
-  color: white;
+    background: linear-gradient(135deg, #ab92bf 0%, #655a7c 100%);
+    color: white;
 }
 
 .authenticate-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(171, 146, 191, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(171, 146, 191, 0.3);
 }
 
 /* Enhanced Success Modal */
 .success-animation {
-  margin-bottom: 2rem;
+    margin-bottom: 2rem;
 }
 
 .checkmark-circle {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #AB92BF 0%, #8DA8C7 100%);
-  border: 3px solid #655A7C;
-  margin: 0 auto;
-  position: relative;
-  transform: scale(0);
-  animation: scaleIn 0.6s ease-out forwards, pulse 2s ease-in-out 0.6s infinite;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ab92bf 0%, #8da8c7 100%);
+    border: 3px solid #655a7c;
+    margin: 0 auto;
+    position: relative;
+    transform: scale(0);
+    animation:
+        scaleIn 0.6s ease-out forwards,
+        pulse 2s ease-in-out 0.6s infinite;
 }
 
 @keyframes scaleIn {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(171, 146, 191, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 20px rgba(171, 146, 191, 0);
-  }
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(171, 146, 191, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 20px rgba(171, 146, 191, 0);
+    }
 }
 
 .checkmark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 35px;
-  height: 35px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 35px;
+    height: 35px;
 }
 
 .checkmark svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: white;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: white;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .checkmark svg path {
-  stroke-dasharray: 50;
-  stroke-dashoffset: 50;
-  animation: drawCheck 0.6s ease-out 0.3s forwards;
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+    animation: drawCheck 0.6s ease-out 0.3s forwards;
 }
 
 @keyframes drawCheck {
-  to {
-    stroke-dashoffset: 0;
-  }
+    to {
+        stroke-dashoffset: 0;
+    }
 }
 
 .success-details {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin: 1.5rem 0;
-  text-align: left;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    text-align: left;
 }
 
 .success-details p {
-  margin: 0.5rem 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    margin: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .status-approved {
-  color: #28a745;
-  font-weight: 600;
+    color: #28a745;
+    font-weight: 600;
 }
 
 /* Professional Icon Updates (removing emojis) */
 .section-icon.account-icon {
-  background: rgba(255, 255, 255, 0.2);
-  font-style: normal;
+    background: rgba(255, 255, 255, 0.2);
+    font-style: normal;
 }
 
 .section-icon.account-icon::before {
-  content: 'ACC';
-  font-family: Arial, sans-serif;
-  font-weight: bold;
-  font-size: 0.7rem;
+    content: "ACC";
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 0.7rem;
 }
 
 .section-icon.payment-icon::before {
-  content: '$';
-  font-family: Arial, sans-serif;
-  font-weight: bold;
-  font-size: 1.8rem;
+    content: "$";
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 1.8rem;
 }
 
 .section-icon.card-icon::before {
-  content: 'CARD';
-  font-family: Arial, sans-serif;
-  font-weight: bold;
-  font-size: 0.6rem;
+    content: "CARD";
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 0.6rem;
 }
 
 .section-icon.terms-icon::before {
-  content: 'TERMS';
-  font-family: Arial, sans-serif;
-  font-weight: bold;
-  font-size: 0.5rem;
+    content: "TERMS";
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 0.5rem;
 }
 
 /* Mobile Responsiveness for New Components */
 @media (max-width: 480px) {
-  .account-display {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
+    .account-display {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
 
-  .button-content {
-    align-items: center;
-  }
+    .button-content {
+        align-items: center;
+    }
 
-  .terms-scroll {
-    max-height: 150px;
-  }
+    .terms-scroll {
+        max-height: 150px;
+    }
 
-  .checkbox-container {
-    font-size: 0.8rem;
-  }
+    .checkbox-container {
+        font-size: 0.8rem;
+    }
 
-  .auth-modal {
-    padding: 1.5rem;
-    margin: 1rem;
-  }
+    .auth-modal {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
 
-  .success-modal {
-    padding: 2rem 1.5rem;
-    margin: 1rem;
-  }
+    .success-modal {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+    }
 }
