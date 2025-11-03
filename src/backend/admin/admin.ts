@@ -396,10 +396,14 @@ export async function createUser(
   ipAddress: string
 ): Promise<{ success: boolean; message: string; userId?: number }> {
   try {
+    console.log('createUser called with username:', userData.username);
+    
     // Import required functions
     await Promise.resolve();
     const { hashPassword, validateInput } = await import('../auth/auth.ts');
     const { addUser, getUserByUsername, users } = await import('../database/init.ts');
+
+    console.log('Imports successful, current user count:', users.length);
 
     // Define validation patterns (RegEx whitelisting per security requirements)
     const VALIDATION_PATTERNS = {
@@ -431,6 +435,7 @@ export async function createUser(
     );
 
     if (!validation.isValid) {
+      console.error('Validation failed:', validation.errors);
       recordAdminSecurityEvent({
         employeeId,
         action: 'USER_CREATION_VALIDATION_FAILED',
@@ -444,9 +449,12 @@ export async function createUser(
       };
     }
 
+    console.log('Validation passed');
+
     // Check for duplicate username
     const existingUser = getUserByUsername(userData.username);
     if (existingUser) {
+      console.error('Duplicate username:', userData.username);
       recordAdminSecurityEvent({
         employeeId,
         action: 'USER_CREATION_DUPLICATE_USERNAME',
@@ -465,6 +473,7 @@ export async function createUser(
       (u) => u.account_number === userData.accountNumber
     );
     if (existingByAccount) {
+      console.error('Duplicate account number:', userData.accountNumber);
       recordAdminSecurityEvent({
         employeeId,
         action: 'USER_CREATION_DUPLICATE_ACCOUNT',
@@ -478,8 +487,12 @@ export async function createUser(
       };
     }
 
+    console.log('No duplicates found, hashing password...');
+
     // Hash password (PBKDF2 with 100,000 iterations per security requirements)
     const passwordHash = await hashPassword(userData.password);
+
+    console.log('Password hashed, creating user...');
 
     // Create new user
     const newUser = addUser({
@@ -512,6 +525,9 @@ export async function createUser(
       failed_login_attempts: 0,
     });
 
+    console.log('User created with ID:', newUser.id);
+    console.log('Total users now:', users.length);
+
     // Log successful user creation
     recordAdminSecurityEvent({
       employeeId,
@@ -527,6 +543,10 @@ export async function createUser(
       userId: newUser.id,
     };
   } catch (error) {
+    console.error('createUser ERROR:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    
     // Log error
     recordAdminSecurityEvent({
       employeeId,

@@ -115,6 +115,8 @@ router.get("/api/users/all", async (ctx) => {
     const { getUsers } = await import("./database/init.ts");
     const users = getUsers();
 
+    console.log('GET /api/users/all - Total users:', users.length);
+
     const sanitizedUsers = users.map(user => ({
       id: user.id,
       full_name: user.full_name,
@@ -143,7 +145,8 @@ router.get("/api/users/all", async (ctx) => {
     }));
 
     ctx.response.body = { success: true, users: sanitizedUsers };
-  } catch (_error) {
+  } catch (error) {
+    console.error('GET /api/users/all ERROR:', error);
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -383,12 +386,26 @@ router.post("/api/admin/users/create", async (ctx) => {
     const employeeId = Number(ctx.state.user?.userId ?? 0); // 0 for demo mode
     const ip = ctx.request.ip || "unknown";
     
+    console.log("Creating user with data:", { 
+      username: body.username, 
+      fullName: body.fullName,
+      employeeId 
+    });
+    
     const result = await createUser(body, employeeId, ip);
+    
+    console.log("User creation result:", { 
+      success: result.success, 
+      message: result.message,
+      userId: result.userId 
+    });
+    
     ctx.response.status = result.success ? 201 : 400;
     ctx.response.body = result;
-  } catch (_error) {
+  } catch (error) {
+    console.error("User creation endpoint error:", error);
     ctx.response.status = 500;
-    ctx.response.body = { success: false, message: "Server error" };
+    ctx.response.body = { success: false, message: "Server error", error: error instanceof Error ? error.message : String(error) };
   }
 });
 

@@ -47,8 +47,8 @@
                         <div class="form-group">
                             <label class="form-label" for="idNumber">ID Number *</label>
                             <input type="text" id="idNumber" name="idNumber" class="form-input" 
-                                   placeholder="8501011234567" required pattern="[0-9]{13}"
-                                   title="Must be exactly 13 digits" maxlength="13">
+                                   placeholder="0000000000000 (13 digits)" required 
+                                   title="Must be exactly 13 digits" maxlength="13" inputmode="numeric">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="dateOfBirth">Date of Birth *</label>
@@ -84,8 +84,8 @@
                         <div class="form-group">
                             <label class="form-label" for="accountNumber">Account Number *</label>
                             <input type="text" id="accountNumber" name="accountNumber" class="form-input" 
-                                   placeholder="1234567890123456" required pattern="[0-9]{10,20}"
-                                   title="10-20 digits" maxlength="20">
+                                   placeholder="0000 0000 0000 0000 (10-20 digits)" required 
+                                   title="10-20 digits" maxlength="24" inputmode="numeric">
                         </div>
                     </div>
 
@@ -155,7 +155,8 @@
                         <div class="form-group">
                             <label class="form-label" for="phoneNumber">Phone Number *</label>
                             <input type="tel" id="phoneNumber" name="phoneNumber" class="form-input" 
-                                   placeholder="+1-555-0101" required>
+                                   placeholder="+00-00-000-0000" required 
+                                   title="Format: +country-area-number" maxlength="20">
                         </div>
                     </div>
 
@@ -212,14 +213,14 @@
                         <div class="form-group">
                             <label class="form-label" for="cardNumber">Card Number *</label>
                             <input type="text" id="cardNumber" name="cardNumber" class="form-input" 
-                                   placeholder="4532123456789012" required pattern="[0-9]{16}"
-                                   title="Must be 16 digits" maxlength="16">
+                                   placeholder="0000 0000 0000 0000 (16 digits)" required 
+                                   title="Must be 16 digits" maxlength="19" inputmode="numeric">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="cardExpiry">Card Expiry *</label>
                             <input type="text" id="cardExpiry" name="cardExpiry" class="form-input" 
-                                   placeholder="MM/YY" required pattern="(0[1-9]|1[0-2])\/[0-9]{2}"
-                                   title="Format: MM/YY" maxlength="5">
+                                   placeholder="MM/YY" required 
+                                   title="Format: MM/YY" maxlength="5" inputmode="numeric">
                         </div>
                     </div>
 
@@ -246,139 +247,6 @@
     </main>
 
     <script src="js/main.js"></script>
-    <script>
-        // Form validation and submission handling
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('createUserForm');
-            const backBtn = document.getElementById('backToAdminBtn');
-
-            if (backBtn) {
-                backBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    globalThis.location.href = '/view-payments';
-                });
-            }
-
-            if (form) {
-                // Real-time password match validation
-                const password = document.getElementById('password');
-                const confirmPassword = document.getElementById('confirmPassword');
-
-                confirmPassword.addEventListener('input', () => {
-                    if (password.value !== confirmPassword.value) {
-                        confirmPassword.setCustomValidity('Passwords do not match');
-                    } else {
-                        confirmPassword.setCustomValidity('');
-                    }
-                });
-
-                // Format card expiry as user types
-                const cardExpiry = document.getElementById('cardExpiry');
-                cardExpiry.addEventListener('input', (e) => {
-                    let value = e.target.value.replace(/\D/g, '');
-                    if (value.length >= 2) {
-                        value = value.slice(0, 2) + '/' + value.slice(2, 4);
-                    }
-                    e.target.value = value;
-                });
-
-                // Format ID number - only digits
-                const idNumber = document.getElementById('idNumber');
-                idNumber.addEventListener('input', (e) => {
-                    e.target.value = e.target.value.replace(/\D/g, '');
-                });
-
-                // Format account number - only digits
-                const accountNumber = document.getElementById('accountNumber');
-                accountNumber.addEventListener('input', (e) => {
-                    e.target.value = e.target.value.replace(/\D/g, '');
-                });
-
-                // Format card number - only digits
-                const cardNumber = document.getElementById('cardNumber');
-                cardNumber.addEventListener('input', (e) => {
-                    e.target.value = e.target.value.replace(/\D/g, '');
-                });
-
-                // Auto-fill cardholder name from full name
-                const fullName = document.getElementById('fullName');
-                const cardHolderName = document.getElementById('cardHolderName');
-                fullName.addEventListener('blur', () => {
-                    if (!cardHolderName.value && fullName.value) {
-                        cardHolderName.value = fullName.value;
-                    }
-                });
-
-                // Form submission
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-
-                    // Validate passwords match
-                    if (password.value !== confirmPassword.value) {
-                        showToast('Passwords do not match', 'error');
-                        return;
-                    }
-
-                    const submitBtn = document.getElementById('submitBtn');
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<div class="button-content"><span class="button-text">Creating Account...</span></div>';
-
-                    try {
-                        const formData = {
-                            fullName: document.getElementById('fullName').value.trim(),
-                            idNumber: document.getElementById('idNumber').value.trim(),
-                            accountNumber: document.getElementById('accountNumber').value.trim(),
-                            username: document.getElementById('username').value.trim(),
-                            password: document.getElementById('password').value,
-                            email: document.getElementById('email').value.trim(),
-                            phoneNumber: document.getElementById('phoneNumber').value.trim(),
-                            dateOfBirth: document.getElementById('dateOfBirth').value,
-                            nationality: document.getElementById('nationality').value.trim(),
-                            addressLine1: document.getElementById('addressLine1').value.trim(),
-                            addressLine2: document.getElementById('addressLine2').value.trim(),
-                            city: document.getElementById('city').value.trim(),
-                            stateProvince: document.getElementById('stateProvince').value.trim(),
-                            postalCode: document.getElementById('postalCode').value.trim(),
-                            country: document.getElementById('country').value.trim(),
-                            accountBalance: parseFloat(document.getElementById('accountBalance').value) || 0,
-                            currency: document.getElementById('currency').value,
-                            accountType: document.getElementById('accountType').value,
-                            preferredLanguage: document.getElementById('preferredLanguage').value.trim() || 'English',
-                            occupation: document.getElementById('occupation').value.trim() || 'Unspecified',
-                            annualIncome: parseFloat(document.getElementById('annualIncome').value) || 0,
-                            cardNumber: document.getElementById('cardNumber').value.trim(),
-                            cardExpiry: document.getElementById('cardExpiry').value.trim(),
-                            cardHolderName: document.getElementById('cardHolderName').value.trim()
-                        };
-
-                        const response = await fetch('/api/admin/users/create', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(formData)
-                        });
-
-                        const result = await response.json();
-
-                        if (result.success) {
-                            showToast('✅ User account created successfully!', 'success', 3000);
-                            setTimeout(() => {
-                                window.location.href = '/view-payments';
-                            }, 2000);
-                        } else {
-                            throw new Error(result.message || 'Failed to create user');
-                        }
-                    } catch (error) {
-                        console.error('User creation error:', error);
-                        showToast(error.message || 'Failed to create user account', 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<div class="button-content"><span class="button-text">Create User Account</span></div>';
-                    }
-                });
-            }
-        });
-    </script>
+    <script src="js/create-user.js"></script>
 </body>
 </html>
