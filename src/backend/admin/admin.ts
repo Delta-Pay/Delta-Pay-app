@@ -1,12 +1,29 @@
 // "Backend view - Have a log of users who have been kicked off the site or have attempted to exploit the page through the security measures we have discussed." --> "Admin services serve structured log, user, and employee data with full IP/account tracking."
 
 import { logSecurityEvent } from "../auth/auth.ts";
-import { employees, securityLogs, transactions, users } from "../database/init.ts";
+import {
+  employees,
+  securityLogs,
+  transactions,
+  users,
+} from "../database/init.ts";
 
 type IntBounds = { min?: number; max?: number; defaultValue?: number };
 
-function toSafeInt(value: unknown, { min = 0, max = Number.MAX_SAFE_INTEGER, defaultValue = min }: IntBounds = {}): number {
-  const numeric = typeof value === "string" ? Number.parseInt(value, 10) : typeof value === "number" ? value : defaultValue;
+function toSafeInt(
+  value: unknown,
+  {
+    min = 0,
+    max = Number.MAX_SAFE_INTEGER,
+    defaultValue = min,
+  }: IntBounds = {},
+): number {
+  const numeric =
+    typeof value === "string"
+      ? Number.parseInt(value, 10)
+      : typeof value === "number"
+        ? value
+        : defaultValue;
   if (!Number.isFinite(numeric)) return defaultValue;
   const downcast = Math.floor(numeric);
   if (downcast < min) return min;
@@ -14,7 +31,10 @@ function toSafeInt(value: unknown, { min = 0, max = Number.MAX_SAFE_INTEGER, def
   return downcast;
 }
 
-function assertArrayShape<T extends Record<string, unknown>>(value: unknown, label: string): asserts value is T[] {
+function assertArrayShape<T extends Record<string, unknown>>(
+  value: unknown,
+  label: string,
+): asserts value is T[] {
   if (!Array.isArray(value)) {
     throw new Error(`${label} store is unavailable`);
   }
@@ -27,11 +47,17 @@ function ensureDataStoresReady(): void {
   assertArrayShape(securityLogs, "Security logs");
 }
 
-const allowedSeverities: ReadonlySet<string> = new Set(["info", "warning", "error"]);
+const allowedSeverities: ReadonlySet<string> = new Set([
+  "info",
+  "warning",
+  "error",
+]);
 
 function normalizeSeverity(input?: string): "info" | "warning" | "error" {
   const normalized = (input || "info").toLowerCase();
-  return allowedSeverities.has(normalized) ? (normalized as "info" | "warning" | "error") : "info";
+  return allowedSeverities.has(normalized)
+    ? (normalized as "info" | "warning" | "error")
+    : "info";
 }
 
 type SecurityLogView = {
@@ -76,13 +102,27 @@ type EmployeeView = {
 type SystemStats = {
   users: { active: number; inactive: number; total: number };
   employees: { active: number; inactive: number; total: number };
-  transactions: { pending: number; approved: number; denied: number; total: number };
+  transactions: {
+    pending: number;
+    approved: number;
+    denied: number;
+    total: number;
+  };
   security: { events24h: number; warnings24h: number; errors24h: number };
 };
 
-type FailedLoginReportEntry = { ipAddress: string; attemptCount: number; lastAttempt: string; usernames: string[] };
+type FailedLoginReportEntry = {
+  ipAddress: string;
+  attemptCount: number;
+  lastAttempt: string;
+  usernames: string[];
+};
 
-export async function getSecurityLogs(limit: number = 100, offset: number = 0, severity?: string): Promise<{ success: boolean; message: string; logs?: SecurityLogView[] }> {
+export async function getSecurityLogs(
+  limit: number = 100,
+  offset: number = 0,
+  severity?: string,
+): Promise<{ success: boolean; message: string; logs?: SecurityLogView[] }> {
   try {
     await Promise.resolve();
     ensureDataStoresReady();
@@ -92,15 +132,24 @@ export async function getSecurityLogs(limit: number = 100, offset: number = 0, s
     let logs = securityLogs.slice();
     if (severity) {
       const sev = normalizeSeverity(severity);
-      logs = logs.filter(l => (l.severity || 'info').toLowerCase() === sev);
+      logs = logs.filter((l) => (l.severity || "info").toLowerCase() === sev);
     }
 
-    logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    logs.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
     const page = logs.slice(off, off + lim);
 
-    const formattedLogs: SecurityLogView[] = page.map(l => {
-      const u = typeof l.user_id === 'number' ? users.find(x => x.id === l.user_id) : undefined;
-      const e = typeof l.employee_id === 'number' ? employees.find(x => x.id === l.employee_id) : undefined;
+    const formattedLogs: SecurityLogView[] = page.map((l) => {
+      const u =
+        typeof l.user_id === "number"
+          ? users.find((x) => x.id === l.user_id)
+          : undefined;
+      const e =
+        typeof l.employee_id === "number"
+          ? employees.find((x) => x.id === l.employee_id)
+          : undefined;
       return {
         id: l.id,
         action: l.action,
@@ -116,21 +165,33 @@ export async function getSecurityLogs(limit: number = 100, offset: number = 0, s
       };
     });
 
-    return { success: true, message: "Security logs retrieved successfully", logs: formattedLogs };
+    return {
+      success: true,
+      message: "Security logs retrieved successfully",
+      logs: formattedLogs,
+    };
   } catch (_error) {
     return { success: false, message: "Failed to retrieve security logs" };
   }
 }
 
-export async function getAllUsers(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; users?: UserView[] }> {
+export async function getAllUsers(
+  limit: number = 100,
+  offset: number = 0,
+): Promise<{ success: boolean; message: string; users?: UserView[] }> {
   try {
     await Promise.resolve();
     ensureDataStoresReady();
     const lim = toSafeInt(limit, { min: 1, max: 500, defaultValue: 100 });
     const off = toSafeInt(offset, { min: 0, max: 1_000_000, defaultValue: 0 });
-    const sorted = users.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const sorted = users
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
     const slice = sorted.slice(off, off + lim);
-    const formatted: UserView[] = slice.map(u => ({
+    const formatted: UserView[] = slice.map((u) => ({
       id: u.id,
       username: u.username,
       fullName: u.full_name,
@@ -142,21 +203,33 @@ export async function getAllUsers(limit: number = 100, offset: number = 0): Prom
       lastLoginAttempt: u.last_login_attempt || null,
       accountLockedUntil: u.account_locked_until || null,
     }));
-    return { success: true, message: "Users retrieved successfully", users: formatted };
+    return {
+      success: true,
+      message: "Users retrieved successfully",
+      users: formatted,
+    };
   } catch (_error) {
     return { success: false, message: "Failed to retrieve users" };
   }
 }
 
-export async function getAllEmployees(limit: number = 100, offset: number = 0): Promise<{ success: boolean; message: string; employees?: EmployeeView[] }> {
+export async function getAllEmployees(
+  limit: number = 100,
+  offset: number = 0,
+): Promise<{ success: boolean; message: string; employees?: EmployeeView[] }> {
   try {
     await Promise.resolve();
     ensureDataStoresReady();
     const lim = toSafeInt(limit, { min: 1, max: 500, defaultValue: 100 });
     const off = toSafeInt(offset, { min: 0, max: 1_000_000, defaultValue: 0 });
-    const sorted = employees.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const sorted = employees
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
     const slice = sorted.slice(off, off + lim);
-    const formatted: EmployeeView[] = slice.map(e => ({
+    const formatted: EmployeeView[] = slice.map((e) => ({
       id: e.id,
       username: e.username,
       fullName: e.full_name,
@@ -167,16 +240,26 @@ export async function getAllEmployees(limit: number = 100, offset: number = 0): 
       lastLoginAttempt: e.last_login_attempt || null,
       accountLockedUntil: e.account_locked_until || null,
     }));
-    return { success: true, message: "Employees retrieved successfully", employees: formatted };
+    return {
+      success: true,
+      message: "Employees retrieved successfully",
+      employees: formatted,
+    };
   } catch (_error) {
     return { success: false, message: "Failed to retrieve employees" };
   }
 }
 
-export async function toggleUserAccount(userId: number, lock: boolean, employeeId: number, ipAddress: string, reason?: string): Promise<{ success: boolean; message: string }> {
+export async function toggleUserAccount(
+  userId: number,
+  lock: boolean,
+  employeeId: number,
+  ipAddress: string,
+  reason?: string,
+): Promise<{ success: boolean; message: string }> {
   try {
     await Promise.resolve();
-    const user = users.find(u => u.id === userId);
+    const user = users.find((u) => u.id === userId);
     if (!user) return { success: false, message: "User not found" };
 
     user.is_active = !lock;
@@ -184,10 +267,13 @@ export async function toggleUserAccount(userId: number, lock: boolean, employeeI
       employeeId,
       action: lock ? "USER_ACCOUNT_LOCKED" : "USER_ACCOUNT_UNLOCKED",
       ipAddress,
-      details: `User @${user.username} ${lock ? 'locked' : 'unlocked'}${reason ? `. Reason: ${reason}` : ''}`,
+      details: `User @${user.username} ${lock ? "locked" : "unlocked"}${reason ? `. Reason: ${reason}` : ""}`,
       severity: lock ? "warning" : "info",
     });
-    return { success: true, message: `User account ${lock ? 'locked' : 'unlocked'} successfully` };
+    return {
+      success: true,
+      message: `User account ${lock ? "locked" : "unlocked"} successfully`,
+    };
   } catch (error) {
     recordAdminSecurityEvent({
       employeeId,
@@ -200,10 +286,16 @@ export async function toggleUserAccount(userId: number, lock: boolean, employeeI
   }
 }
 
-export async function toggleEmployeeAccount(employeeId: number, lock: boolean, adminEmployeeId: number, ipAddress: string, reason?: string): Promise<{ success: boolean; message: string }> {
+export async function toggleEmployeeAccount(
+  employeeId: number,
+  lock: boolean,
+  adminEmployeeId: number,
+  ipAddress: string,
+  reason?: string,
+): Promise<{ success: boolean; message: string }> {
   try {
     await Promise.resolve();
-    const employee = employees.find(e => e.id === employeeId);
+    const employee = employees.find((e) => e.id === employeeId);
     if (!employee) return { success: false, message: "Employee not found" };
 
     employee.is_active = !lock;
@@ -211,10 +303,13 @@ export async function toggleEmployeeAccount(employeeId: number, lock: boolean, a
       employeeId: adminEmployeeId,
       action: lock ? "EMPLOYEE_ACCOUNT_LOCKED" : "EMPLOYEE_ACCOUNT_UNLOCKED",
       ipAddress,
-      details: `Employee @${employee.username} ${lock ? 'locked' : 'unlocked'}${reason ? `. Reason: ${reason}` : ''}`,
+      details: `Employee @${employee.username} ${lock ? "locked" : "unlocked"}${reason ? `. Reason: ${reason}` : ""}`,
       severity: lock ? "warning" : "info",
     });
-    return { success: true, message: `Employee account ${lock ? 'locked' : 'unlocked'} successfully` };
+    return {
+      success: true,
+      message: `Employee account ${lock ? "locked" : "unlocked"} successfully`,
+    };
   } catch (error) {
     recordAdminSecurityEvent({
       employeeId: adminEmployeeId,
@@ -227,31 +322,41 @@ export async function toggleEmployeeAccount(employeeId: number, lock: boolean, a
   }
 }
 
-export async function getSystemStatistics(): Promise<{ success: boolean; message: string; statistics?: SystemStats }> {
+export async function getSystemStatistics(): Promise<{
+  success: boolean;
+  message: string;
+  statistics?: SystemStats;
+}> {
   try {
     await Promise.resolve();
     ensureDataStoresReady();
     const now = Date.now();
     const dayAgo = now - 24 * 60 * 60 * 1000;
-    const events24h = securityLogs.filter(l => new Date(l.timestamp).getTime() >= dayAgo);
-    const warnings24h = events24h.filter(l => normalizeSeverity(l.severity) === 'warning');
-    const errors24h = events24h.filter(l => normalizeSeverity(l.severity) === 'error');
+    const events24h = securityLogs.filter(
+      (l) => new Date(l.timestamp).getTime() >= dayAgo,
+    );
+    const warnings24h = events24h.filter(
+      (l) => normalizeSeverity(l.severity) === "warning",
+    );
+    const errors24h = events24h.filter(
+      (l) => normalizeSeverity(l.severity) === "error",
+    );
 
     const statistics = {
       users: {
-        active: users.filter(u => u.is_active).length,
-        inactive: users.filter(u => !u.is_active).length,
+        active: users.filter((u) => u.is_active).length,
+        inactive: users.filter((u) => !u.is_active).length,
         total: users.length,
       },
       employees: {
-        active: employees.filter(e => e.is_active).length,
-        inactive: employees.filter(e => !e.is_active).length,
+        active: employees.filter((e) => e.is_active).length,
+        inactive: employees.filter((e) => !e.is_active).length,
         total: employees.length,
       },
       transactions: {
-        pending: transactions.filter(t => t.status === 'pending').length,
-        approved: transactions.filter(t => t.status === 'approved').length,
-        denied: transactions.filter(t => t.status === 'denied').length,
+        pending: transactions.filter((t) => t.status === "pending").length,
+        approved: transactions.filter((t) => t.status === "approved").length,
+        denied: transactions.filter((t) => t.status === "denied").length,
         total: transactions.length,
       },
       security: {
@@ -260,50 +365,98 @@ export async function getSystemStatistics(): Promise<{ success: boolean; message
         errors24h: errors24h.length,
       },
     };
-    return { success: true, message: "System statistics retrieved successfully", statistics };
+    return {
+      success: true,
+      message: "System statistics retrieved successfully",
+      statistics,
+    };
   } catch (_error) {
     return { success: false, message: "Failed to retrieve system statistics" };
   }
 }
 
-export async function getFailedLoginAttemptsReport(hours: number = 24): Promise<{ success: boolean; message: string; report?: FailedLoginReportEntry[] }> {
+export async function getFailedLoginAttemptsReport(
+  hours: number = 24,
+): Promise<{
+  success: boolean;
+  message: string;
+  report?: FailedLoginReportEntry[];
+}> {
   try {
     await Promise.resolve();
     ensureDataStoresReady();
-    const windowMs = toSafeInt(hours, { min: 1, max: 168, defaultValue: 24 }) * 60 * 60 * 1000;
+    const windowMs =
+      toSafeInt(hours, { min: 1, max: 168, defaultValue: 24 }) * 60 * 60 * 1000;
     const cutoff = Date.now() - windowMs;
     const actions = new Set([
-      'USER_LOGIN_FAILED_INVALID_PASSWORD',
-      'EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD',
-      'PASSWORD_AUTH_FAILED',
+      "USER_LOGIN_FAILED_INVALID_PASSWORD",
+      "EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD",
+      "PASSWORD_AUTH_FAILED",
     ]);
-    const attempts = securityLogs.filter(l => actions.has(l.action) && new Date(l.timestamp).getTime() >= cutoff);
-    const grouped = new Map<string, { ipAddress: string; attemptCount: number; lastAttempt: string; usernames: Set<string> }>();
+    const attempts = securityLogs.filter(
+      (l) => actions.has(l.action) && new Date(l.timestamp).getTime() >= cutoff,
+    );
+    const grouped = new Map<
+      string,
+      {
+        ipAddress: string;
+        attemptCount: number;
+        lastAttempt: string;
+        usernames: Set<string>;
+      }
+    >();
 
     for (const a of attempts) {
-      const key = a.ip_address || 'unknown';
-      if (!grouped.has(key)) grouped.set(key, { ipAddress: key, attemptCount: 0, lastAttempt: a.timestamp, usernames: new Set() });
+      const key = a.ip_address || "unknown";
+      if (!grouped.has(key))
+        grouped.set(key, {
+          ipAddress: key,
+          attemptCount: 0,
+          lastAttempt: a.timestamp,
+          usernames: new Set(),
+        });
       const g = grouped.get(key)!;
       g.attemptCount += 1;
-      if (new Date(a.timestamp).getTime() > new Date(g.lastAttempt).getTime()) g.lastAttempt = a.timestamp;
-      if (typeof a.user_id === 'number') {
-        const u = users.find(x => x.id === a.user_id);
+      if (new Date(a.timestamp).getTime() > new Date(g.lastAttempt).getTime())
+        g.lastAttempt = a.timestamp;
+      if (typeof a.user_id === "number") {
+        const u = users.find((x) => x.id === a.user_id);
         if (u) g.usernames.add(u.username);
       }
     }
 
     const report: FailedLoginReportEntry[] = Array.from(grouped.values())
-      .filter(r => r.attemptCount >= 3)
-      .sort((a, b) => b.attemptCount - a.attemptCount || new Date(b.lastAttempt).getTime() - new Date(a.lastAttempt).getTime())
-      .map(r => ({ ipAddress: r.ipAddress, attemptCount: r.attemptCount, lastAttempt: r.lastAttempt, usernames: Array.from(r.usernames) }));
+      .filter((r) => r.attemptCount >= 3)
+      .sort(
+        (a, b) =>
+          b.attemptCount - a.attemptCount ||
+          new Date(b.lastAttempt).getTime() - new Date(a.lastAttempt).getTime(),
+      )
+      .map((r) => ({
+        ipAddress: r.ipAddress,
+        attemptCount: r.attemptCount,
+        lastAttempt: r.lastAttempt,
+        usernames: Array.from(r.usernames),
+      }));
 
-    return { success: true, message: "Failed login attempts report retrieved successfully", report };
+    return {
+      success: true,
+      message: "Failed login attempts report retrieved successfully",
+      report,
+    };
   } catch (_error) {
-    return { success: false, message: "Failed to retrieve failed login attempts report" };
+    return {
+      success: false,
+      message: "Failed to retrieve failed login attempts report",
+    };
   }
 }
 
-export async function cleanupOldLogs(daysToKeep: number = 90, employeeId: number, ipAddress: string): Promise<{ success: boolean; message: string; deletedCount?: number }> {
+export async function cleanupOldLogs(
+  daysToKeep: number = 90,
+  employeeId: number,
+  ipAddress: string,
+): Promise<{ success: boolean; message: string; deletedCount?: number }> {
   try {
     await Promise.resolve();
     ensureDataStoresReady();
@@ -325,7 +478,13 @@ export async function cleanupOldLogs(daysToKeep: number = 90, employeeId: number
       severity: "info",
     });
 
-    return { success: true, message: deleted ? `Successfully cleaned up ${deleted} old security logs` : "No old logs to clean up", deletedCount: deleted };
+    return {
+      success: true,
+      message: deleted
+        ? `Successfully cleaned up ${deleted} old security logs`
+        : "No old logs to clean up",
+      deletedCount: deleted,
+    };
   } catch (error) {
     recordAdminSecurityEvent({
       employeeId,
@@ -348,7 +507,10 @@ type AdminSecurityEvent = {
 
 function recordAdminSecurityEvent(event: AdminSecurityEvent): void {
   try {
-    const trimmedDetails = event.details.length > 1800 ? `${event.details.slice(0, 1797)}...` : event.details;
+    const trimmedDetails =
+      event.details.length > 1800
+        ? `${event.details.slice(0, 1797)}...`
+        : event.details;
     logSecurityEvent({
       employeeId: event.employeeId,
       action: event.action,
@@ -361,10 +523,8 @@ function recordAdminSecurityEvent(event: AdminSecurityEvent): void {
   }
 }
 
-/**
- * Creates a new user account (admin only)
- * Part 3 Requirement: Users are created by admin, no self-registration
- */
+const userCreationLocks = new Map<string, Promise<void>>();
+
 export async function createUser(
   userData: {
     fullName: string;
@@ -393,32 +553,69 @@ export async function createUser(
     cardHolderName: string;
   },
   employeeId: number,
-  ipAddress: string
+  ipAddress: string,
 ): Promise<{ success: boolean; message: string; userId?: number }> {
   try {
-    console.log('createUser called with username:', userData.username);
-    
-    // Import required functions
     await Promise.resolve();
-    const { hashPassword, validateInput } = await import('../auth/auth.ts');
-    const { addUser, getUserByUsername, users } = await import('../database/init.ts');
+    let hashPassword: (password: string) => Promise<string>;
+    let validateInput: (
+      data: Record<string, unknown>,
+      patterns: Record<string, RegExp>,
+    ) => { isValid: boolean; errors: string[] };
+    let addUser: (user: Omit<User, "id">) => User;
+    let getUserByUsername: (username: string) => User | undefined;
+    let users: User[];
 
-    console.log('Imports successful, current user count:', users.length);
+    try {
+      const authModule = await import("../auth/auth.ts");
+      hashPassword = authModule.hashPassword;
+      validateInput = authModule.validateInput;
+    } catch (importError) {
+      recordAdminSecurityEvent({
+        employeeId,
+        action: "USER_CREATION_IMPORT_FAILED",
+        ipAddress,
+        details: `Failed to import auth module: ${importError instanceof Error ? importError.message : String(importError)}`,
+        severity: "error",
+      });
+      return {
+        success: false,
+        message: "System configuration error",
+      };
+    }
 
-    // Define validation patterns (RegEx whitelisting per security requirements)
+    try {
+      const dbModule = await import("../database/init.ts");
+      addUser = dbModule.addUser;
+      getUserByUsername = dbModule.getUserByUsername;
+      users = dbModule.users;
+    } catch (importError) {
+      recordAdminSecurityEvent({
+        employeeId,
+        action: "USER_CREATION_IMPORT_FAILED",
+        ipAddress,
+        details: `Failed to import database module: ${importError instanceof Error ? importError.message : String(importError)}`,
+        severity: "error",
+      });
+      return {
+        success: false,
+        message: "System configuration error",
+      };
+    }
+
     const VALIDATION_PATTERNS = {
       fullName: /^[a-zA-Z\s]{2,50}$/,
       idNumber: /^[0-9]{13}$/,
       accountNumber: /^[0-9]{10,20}$/,
       username: /^[a-zA-Z0-9_]{3,20}$/,
-      password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      password:
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
       email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
       phoneNumber: /^[0-9+\-\s()]{10,20}$/,
       cardNumber: /^[0-9]{16}$/,
       cardExpiry: /^(0[1-9]|1[0-2])\/[0-9]{2}$/,
     };
 
-    // Validate required fields
     const validation = validateInput(
       {
         fullName: userData.fullName,
@@ -431,134 +628,162 @@ export async function createUser(
         cardNumber: userData.cardNumber,
         cardExpiry: userData.cardExpiry,
       },
-      VALIDATION_PATTERNS
+      VALIDATION_PATTERNS,
     );
 
     if (!validation.isValid) {
-      console.error('Validation failed:', validation.errors);
       recordAdminSecurityEvent({
         employeeId,
-        action: 'USER_CREATION_VALIDATION_FAILED',
+        action: "USER_CREATION_VALIDATION_FAILED",
         ipAddress,
-        details: `Validation failed: ${validation.errors.join(', ')}`,
-        severity: 'warning',
+        details: `Validation failed: ${validation.errors.join(", ")}`,
+        severity: "warning",
       });
       return {
         success: false,
-        message: `Validation failed: ${validation.errors.join(', ')}`,
+        message: `Validation failed: ${validation.errors.join(", ")}`,
       };
     }
 
-    console.log('Validation passed');
-
-    // Check for duplicate username
-    const existingUser = getUserByUsername(userData.username);
-    if (existingUser) {
-      console.error('Duplicate username:', userData.username);
-      recordAdminSecurityEvent({
-        employeeId,
-        action: 'USER_CREATION_DUPLICATE_USERNAME',
-        ipAddress,
-        details: `Attempted to create user with existing username: ${userData.username}`,
-        severity: 'warning',
-      });
-      return {
-        success: false,
-        message: 'Username already exists',
-      };
+    const lockKey = `user:${userData.username.toLowerCase()}`;
+    const existingLock = userCreationLocks.get(lockKey);
+    if (existingLock) {
+      try {
+        await Promise.race([
+          existingLock,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Lock timeout")), 5000),
+          ),
+        ]);
+      } catch {
+        recordAdminSecurityEvent({
+          employeeId,
+          action: "USER_CREATION_LOCK_TIMEOUT",
+          ipAddress,
+          details: `Lock timeout while creating user: ${userData.username}`,
+          severity: "warning",
+        });
+      }
     }
 
-    // Check for duplicate account number
-    const existingByAccount = users.find(
-      (u) => u.account_number === userData.accountNumber
-    );
-    if (existingByAccount) {
-      console.error('Duplicate account number:', userData.accountNumber);
-      recordAdminSecurityEvent({
-        employeeId,
-        action: 'USER_CREATION_DUPLICATE_ACCOUNT',
-        ipAddress,
-        details: `Attempted to create user with existing account number: ${userData.accountNumber}`,
-        severity: 'warning',
-      });
-      return {
-        success: false,
-        message: 'Account number already exists',
-      };
-    }
-
-    console.log('No duplicates found, hashing password...');
-
-    // Hash password (PBKDF2 with 100,000 iterations per security requirements)
-    const passwordHash = await hashPassword(userData.password);
-
-    console.log('Password hashed, creating user...');
-
-    // Create new user
-    const newUser = addUser({
-      full_name: userData.fullName,
-      id_number: userData.idNumber,
-      account_number: userData.accountNumber,
-      username: userData.username,
-      password_hash: passwordHash,
-      email: userData.email,
-      phone_number: userData.phoneNumber,
-      date_of_birth: userData.dateOfBirth,
-      nationality: userData.nationality,
-      address_line_1: userData.addressLine1,
-      address_line_2: userData.addressLine2 || undefined,
-      city: userData.city,
-      state_province: userData.stateProvince,
-      postal_code: userData.postalCode,
-      country: userData.country,
-      account_balance: userData.accountBalance,
-      currency: userData.currency,
-      account_type: userData.accountType,
-      preferred_language: userData.preferredLanguage,
-      occupation: userData.occupation,
-      annual_income: userData.annualIncome,
-      card_number: userData.cardNumber,
-      card_expiry: userData.cardExpiry,
-      card_holder_name: userData.cardHolderName,
-      created_at: new Date().toISOString(),
-      is_active: true,
-      failed_login_attempts: 0,
+    let lockResolve: () => void;
+    const lock = new Promise<void>((resolve) => {
+      lockResolve = resolve;
     });
+    userCreationLocks.set(lockKey, lock);
 
-    console.log('User created with ID:', newUser.id);
-    console.log('Total users now:', users.length);
+    try {
+      const existingUser = getUserByUsername(userData.username);
+      if (existingUser) {
+        recordAdminSecurityEvent({
+          employeeId,
+          action: "USER_CREATION_DUPLICATE_USERNAME",
+          ipAddress,
+          details: `Attempted to create user with existing username: ${userData.username}`,
+          severity: "warning",
+        });
+        return {
+          success: false,
+          message: "Username already exists",
+        };
+      }
 
-    // Log successful user creation
-    recordAdminSecurityEvent({
-      employeeId,
-      action: 'USER_CREATED_BY_ADMIN',
-      ipAddress,
-      details: `Created new user: ${userData.username} (${userData.fullName}) with account ${userData.accountNumber}`,
-      severity: 'info',
-    });
+      const existingByAccount = users.find(
+        (u) => u.account_number === userData.accountNumber,
+      );
+      if (existingByAccount) {
+        recordAdminSecurityEvent({
+          employeeId,
+          action: "USER_CREATION_DUPLICATE_ACCOUNT",
+          ipAddress,
+          details: `Attempted to create user with existing account number: ${userData.accountNumber}`,
+          severity: "warning",
+        });
+        return {
+          success: false,
+          message: "Account number already exists",
+        };
+      }
 
-    return {
-      success: true,
-      message: 'User created successfully',
-      userId: newUser.id,
-    };
+      let passwordHash: string;
+      try {
+        passwordHash = await hashPassword(userData.password);
+        if (!passwordHash || typeof passwordHash !== "string") {
+          throw new Error("Invalid password hash generated");
+        }
+      } catch (hashError) {
+        recordAdminSecurityEvent({
+          employeeId,
+          action: "USER_CREATION_HASH_FAILED",
+          ipAddress,
+          details: `Password hashing failed: ${hashError instanceof Error ? hashError.message : String(hashError)}`,
+          severity: "error",
+        });
+        return {
+          success: false,
+          message: "Failed to process user credentials",
+        };
+      }
+
+      const newUser = addUser({
+        full_name: userData.fullName,
+        id_number: userData.idNumber,
+        account_number: userData.accountNumber,
+        username: userData.username,
+        password_hash: passwordHash,
+        email: userData.email,
+        phone_number: userData.phoneNumber,
+        date_of_birth: userData.dateOfBirth,
+        nationality: userData.nationality,
+        address_line_1: userData.addressLine1,
+        address_line_2: userData.addressLine2 || undefined,
+        city: userData.city,
+        state_province: userData.stateProvince,
+        postal_code: userData.postalCode,
+        country: userData.country,
+        account_balance: userData.accountBalance,
+        currency: userData.currency,
+        account_type: userData.accountType,
+        preferred_language: userData.preferredLanguage,
+        occupation: userData.occupation,
+        annual_income: userData.annualIncome,
+        card_number: userData.cardNumber,
+        card_expiry: userData.cardExpiry,
+        card_holder_name: userData.cardHolderName,
+        created_at: new Date().toISOString(),
+        is_active: true,
+        failed_login_attempts: 0,
+      });
+
+      recordAdminSecurityEvent({
+        employeeId,
+        action: "USER_CREATED_BY_ADMIN",
+        ipAddress,
+        details: `Created new user: ${userData.username} (${userData.fullName}) with account ${userData.accountNumber}`,
+        severity: "info",
+      });
+
+      return {
+        success: true,
+        message: "User created successfully",
+        userId: newUser.id,
+      };
+    } finally {
+      lockResolve!();
+      userCreationLocks.delete(lockKey);
+    }
   } catch (error) {
-    console.error('createUser ERROR:', error);
-    console.error('Error details:', error instanceof Error ? error.message : String(error));
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
-    
-    // Log error
     recordAdminSecurityEvent({
       employeeId,
-      action: 'USER_CREATION_FAILED',
+      action: "USER_CREATION_FAILED",
       ipAddress,
       details: `Failed to create user: ${error instanceof Error ? error.message : String(error)}`,
-      severity: 'error',
+      severity: "error",
     });
 
     return {
       success: false,
-      message: 'Failed to create user account',
+      message: "Failed to create user account",
     };
   }
 }
