@@ -172,7 +172,7 @@ The admin portal includes a comprehensive user registration system (`CreateUser.
 
 
 
-## assignment topic
+## Assignment Topic
 
 You work as a developer in the internal development team for an international bank. Your team is
 working on the internal international payment system. Customers often must make international
