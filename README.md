@@ -5,6 +5,34 @@
 
 Delta pay is a mockup of an international payment solution. It features multiple security features and data security layers with a clean and structured layout. 
 
+## Access Control & User Roles
+
+Delta Pay implements a role-based access control system with two distinct user types:
+
+### Customer Users
+- **Access:** Payment portal only (customer-facing interface)
+- **Authentication:** Username, account number, and password (PBKDF2-hashed with 100,000 iterations)
+- **Capabilities:** 
+  - Make international payments
+  - Enter payment details and recipient information
+  - Submit transactions for employee verification
+- **Restrictions:** Cannot access the admin/backend portal
+
+### Employee/Administrator Users
+- **Access:** Backend/admin portal only
+- **Registration:** Pre-registered in the system when employed (no self-registration)
+- **Authentication:** Employee credentials with role verification
+- **Capabilities:**
+  - View all pending payment transactions
+  - Approve or deny customer payments
+  - Create new customer accounts via the "Create User" feature
+  - Monitor security logs and suspicious activities
+  - Track user behavior and IP addresses
+  - Manage account lockouts and security events
+- **Restrictions:** Dedicated employee interface separate from customer portal
+
+> **Security Note:** In production, access to the backend/admin view is strictly enforced through authentication middleware, role-based session tokens, and CSRF protection. Regular customers will never see or be able to access administrative functions. 
+
 ## UI Structure
 
 ### General Layout:
@@ -16,25 +44,81 @@ Delta pay is a mockup of an international payment solution. It features multiple
 - Interfaces must be up to standard for both mobile and desktop views
 
 ### Landing page
-- The landing page has 2 options. Backend view and Payment View
-- The page must only have those two options. Clean in the middle look 
-- Apply general layout formatting.
+- The landing page has 2 options: **Backend View** (Admin Only) and **Payment View** (Customer Portal)
+
+> **Note:** The Backend View is restricted to administrators only. In production, regular users will not be able to access this view. Access control is enforced through role-based authentication and session management.
 
 ### Payment page
-- The top right of the page is a user icon with the letter of the person's name.
-- When going from the landing page to this page, ask the user to select one of the users accounts. Not bank account (of the 5 users). (this needs to happen on the landing page actually)
-- once the user has select a user account to use ask them for a password. the password will use the same hashing anjd salting that was stated in the backend security features. Please also note that it needs to be a custom popup not a browser popup. 
-- Once the account is selected, show the page. 
-- general payment inputs with censoring for card inputs and more. Everything a normal payment gateway should have. IT needs to enter card info 
-- Clean slow animations to not overload the user, but give a strong, modern, secure look
-- Once the submit button is clicked, a clean prompt emerges with a tick animation saying payment sent.
+- The top right of the page displays a user icon with the first letter of the person's name
+- **User Selection Flow (from Landing Page):**
+  1. When navigating from landing page to payment view, user must first select one of the available user accounts (not bank accounts)
+  2. After account selection, a custom (non-browser) popup prompts for password authentication
+  3. Password is validated using the same Argon2/PBKDF2 hashing and salting as backend security features
+  4. Only after successful authentication is the payment page displayed
+- **Payment Interface:**
+  - Standard payment gateway inputs with appropriate field masking for sensitive data (card numbers, CVV, etc.)
+  - Multi-currency support with currency selection
+  - SWIFT provider selection for international transfers
+  - Account information and SWIFT code entry fields
+  - All features expected from a modern, secure payment gateway
+- **User Experience:**
+  - Clean, smooth animations that don't overwhelm the user
+  - Modern, secure visual design language
+  - Upon clicking submit, a clean animated prompt appears with a checkmark/tick animation confirming "Payment Sent"
+- Apply general layout formatting
 
-### Backend view.
-- The page is used to show the database and the payments, and then approve or deny them.
-- apply general layout rules
-- The admin has no users 
-- Have a log of users who have been kicked off the site or have attempted to exploit the page through the security measures we have discussed.
-- The log must have all redirections and user navigation with IP logging and user account tracking. 
+### Backend view (Admin Portal - Access Restricted)
+**Access Control:** This view is exclusively for pre-registered bank employees/administrators. Regular customers cannot access this portal in production. Authentication is enforced with employee-only credentials and role-based session tokens.
+
+#### Features:
+- **Payment Management:** View all pending international payments from customers and approve or deny them before forwarding to SWIFT
+- **User Management:** Access the "Create User" feature to register new customer accounts
+- **Security Monitoring:** Comprehensive security log displaying:
+  - Failed login attempts and account lockouts
+  - Suspicious activities and exploit attempts
+  - User navigation patterns with IP address tracking
+  - Account access history and user tracking
+  - All security events with severity levels (info, warning, error)
+
+#### Create User Feature:
+The admin portal includes a comprehensive user registration system (`CreateUser.html`) that allows administrators to create new customer accounts. This feature includes:
+
+**Personal Information:**
+- Full name (letters only, 2-50 characters)
+- ID number (13 digits)
+- Date of birth (DD/MM/YYYY format)
+- Nationality and occupation
+
+**Account Details:**
+- Username (3-20 alphanumeric characters)
+- Account number (10-20 digits, auto-formatted)
+- Password with real-time strength validation (minimum: Strong - 5/6 criteria)
+  - Must include: lowercase, uppercase, number, special character
+  - Minimum 8 characters (12+ recommended for "Very Strong")
+- Account type (Standard/Premium/Business)
+- Initial balance and annual income
+- Multi-currency support (ZAR, USD, EUR, GBP, AUD, CAD, CHF, JPY)
+
+**Contact Information:**
+- Email address and phone number (international format: +XX-XX-XXX-XXXX)
+- Full address (street, city, state/province, postal code, country)
+- Preferred language
+
+**Payment Card Information:**
+- Card number (16 digits, auto-formatted with spaces)
+- Card expiry (MM/YY format)
+- Cardholder name (auto-fills from full name)
+
+**Security Features:**
+- Real-time input validation with RegEx whitelisting
+- Password strength meter with visual feedback (Weak → Very Strong)
+- Password visibility toggle for both password fields
+- Submit button disabled until password meets minimum strength (Strong)
+- All sensitive data is hashed with PBKDF2 (100,000 iterations) before storage
+- Comprehensive error handling and user feedback via toast notifications
+- CSRF token protection on form submission
+
+> **Important:** Customer self-registration is not available. All user accounts must be created by administrators through this secure interface to ensure proper verification and compliance with banking regulations. 
 
 
 ## Frontend Technologies
