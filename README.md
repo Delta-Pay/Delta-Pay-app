@@ -2,8 +2,46 @@
   <img src="src/Icons/DeltaPayReadMELogo.svg" alt="Delta Pay Logo" width="1000" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));"/>
 </div>
 
-
 Delta pay is a mockup of an international payment solution. It features multiple security features and data security layers with a clean and structured layout. 
+
+## Contributors
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <a href="https://github.com/JMosselson">
+        <img src="https://github.com/JMosselson.png" width="100px" alt="Jordan Mosselson"/><br/>
+        <b>Jordan Mosselson</b>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/MatthewHubbard123">
+        <img src="https://github.com/MatthewHubbard123.png" width="100px" alt="Matthew Hubbard"/><br/>
+        <b>Matthew Hubbard</b>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Max0xDay">
+        <img src="https://github.com/Max0xDay.png" width="100px" alt="Max Day"/><br/>
+        <b>Max Day</b>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/SharDai">
+        <img src="https://github.com/ShortJai.png" width="100px" alt="Jaiyesh Pillay"/><br/>
+        <b>Jaiyesh Pillay</b>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Tashil10">
+        <img src="https://github.com/Tashil10.png" width="100px" alt="Tashil Koseelan"/><br/>
+        <b>Tashil Koseelan</b>
+      </a>
+    </td>
+  </tr>
+</table>
+
+---
 
 ## Access Control & User Roles
 
