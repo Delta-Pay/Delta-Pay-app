@@ -103,6 +103,12 @@ router.get("/", async (ctx) => {
   });
 });
 
+router.get("/favicon.ico", async (ctx) => {
+  await send(ctx, "favicon.ico", {
+    root: `${Deno.cwd()}/src/frontend/public`,
+  });
+});
+
 router.get("/styles/:file", async (ctx) => {
   await send(ctx, ctx.params.file, {
     root: `${Deno.cwd()}/src/frontend/styles`,
