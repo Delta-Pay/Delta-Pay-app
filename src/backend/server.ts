@@ -1,7 +1,11 @@
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
-import { Application, Context, Router, send } from "https://deno.land/x/oak@v12.6.1/mod.ts";
+import {
+  Application,
+  Context,
+  Router,
+  send,
+} from "https://deno.land/x/oak@v12.6.1/mod.ts";
 
-// {Employees log in to check transactions (README)} --> {Demo walkthrough keeps admin endpoints open; JWT/CSRF optional for future hardening}
 import {
   cleanupOldLogs,
   createUser,
@@ -10,21 +14,42 @@ import {
   getFailedLoginAttemptsReport,
   getSecurityLogs,
   getSystemStatistics,
-  toggleUserAccount
+  toggleUserAccount,
 } from "./admin/admin.ts";
-import { authenticateUserPassword, generateCSRFToken, loginEmployee, loginUser, logSecurityEvent, registerUser } from "./auth/auth.ts";
-import { initializeDatabase, seedDefaultEmployee, seedExampleUsers } from "./database/init.ts";
+import {
+  authenticateUserPassword,
+  generateCSRFToken,
+  loginEmployee,
+  loginUser,
+  logSecurityEvent,
+  registerUser,
+} from "./auth/auth.ts";
+import {
+  initializeDatabase,
+  seedDefaultEmployee,
+  seedExampleUsers,
+} from "./database/init.ts";
 import {
   authenticateToken,
   authenticateUser,
   csrfProtection,
   logRequests,
-  rateLimit
+  rateLimit,
 } from "./middleware/middleware.ts";
-import { approveTransaction, createPayment, denyTransaction, getAllTransactions, getTransactionStatistics, getUserTransactions } from "./payments/payments.ts";
+import {
+  approveTransaction,
+  createPayment,
+  denyTransaction,
+  getAllTransactions,
+  getTransactionStatistics,
+  getUserTransactions,
+} from "./payments/payments.ts";
 import { DatabaseUtils } from "./utils/database.ts";
 
-type MiddlewareFunction = (ctx: Context, next: () => Promise<unknown>) => Promise<void>;
+type MiddlewareFunction = (
+  ctx: Context,
+  next: () => Promise<unknown>,
+) => Promise<void>;
 
 const app = new Application();
 const router = new Router();
@@ -37,26 +62,40 @@ app.use(logRequests);
 app.use(rateLimit);
 
 app.use(async (ctx, next) => {
-  ctx.response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; form-action 'self';");
+  ctx.response.headers.set(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; form-action 'self';",
+  );
   ctx.response.headers.set("X-Frame-Options", "DENY");
   ctx.response.headers.set("X-Content-Type-Options", "nosniff");
   ctx.response.headers.set("X-XSS-Protection", "1; mode=block");
-  ctx.response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  ctx.response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  ctx.response.headers.set(
+    "Referrer-Policy",
+    "strict-origin-when-cross-origin",
+  );
+  ctx.response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
   await next();
 });
 
-const corsOrigins = (Deno.env.get('CORS_ORIGINS') || 'http://localhost:3000,http://localhost:5173,http://localhost:3623')
-  .split(',')
-  .map(s => s.trim())
+const corsOrigins = (
+  Deno.env.get("CORS_ORIGINS") ||
+  "http://localhost:3000,http://localhost:5173,http://localhost:3623"
+)
+  .split(",")
+  .map((s) => s.trim())
   .filter(Boolean);
 
-app.use(oakCors({
-  origin: corsOrigins,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
-}));
+app.use(
+  oakCors({
+    origin: corsOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+  }),
+);
 
 router.get("/", async (ctx) => {
   await send(ctx, "index.html", {
@@ -115,9 +154,9 @@ router.get("/api/users/all", async (ctx) => {
     const { getUsers } = await import("./database/init.ts");
     const users = getUsers();
 
-    console.log('GET /api/users/all - Total users:', users.length);
+    console.log("GET /api/users/all - Total users:", users.length);
 
-    const sanitizedUsers = users.map(user => ({
+    const sanitizedUsers = users.map((user) => ({
       id: user.id,
       full_name: user.full_name,
       username: user.username,
@@ -141,12 +180,12 @@ router.get("/api/users/all", async (ctx) => {
       annual_income: user.annual_income,
       created_at: user.created_at,
       is_active: user.is_active,
-      letter: user.full_name.charAt(0).toUpperCase()
+      letter: user.full_name.charAt(0).toUpperCase(),
     }));
 
     ctx.response.body = { success: true, users: sanitizedUsers };
   } catch (error) {
-    console.error('GET /api/users/all ERROR:', error);
+    console.error("GET /api/users/all ERROR:", error);
     ctx.response.status = 500;
     ctx.response.body = { success: false, message: "Server error" };
   }
@@ -154,10 +193,10 @@ router.get("/api/users/all", async (ctx) => {
 
 router.get("/api/health", async (ctx) => {
   const dbHealth = await DatabaseUtils.healthCheck();
-  ctx.response.body = { 
-    status: dbHealth.healthy ? "healthy" : "unhealthy", 
+  ctx.response.body = {
+    status: dbHealth.healthy ? "healthy" : "unhealthy",
     timestamp: new Date().toISOString(),
-    database: dbHealth
+    database: dbHealth,
   };
 });
 
@@ -165,7 +204,7 @@ router.post("/api/auth/register", async (ctx) => {
   try {
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-    
+
     const result = await registerUser(body, ip);
     ctx.response.status = result.success ? 201 : 400;
     ctx.response.body = result;
@@ -179,7 +218,7 @@ router.post("/api/auth/login", async (ctx) => {
   try {
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-    
+
     const result = await loginUser(body.username, body.password, ip);
     ctx.response.status = result.success ? 200 : 401;
     ctx.response.body = result;
@@ -208,7 +247,11 @@ router.post("/api/auth/authenticate-password", async (ctx) => {
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
 
-    const result = await authenticateUserPassword(body.username, body.password, ip);
+    const result = await authenticateUserPassword(
+      body.username,
+      body.password,
+      ip,
+    );
     ctx.response.status = result.success ? 200 : 401;
     ctx.response.body = result;
   } catch (_error) {
@@ -220,12 +263,18 @@ router.post("/api/auth/authenticate-password", async (ctx) => {
 router.get("/api/auth/csrf-token", authenticateToken, (ctx) => {
   try {
     const { userId, userType } = ctx.state.user;
-    const token = generateCSRFToken(userType === 'user' ? userId : undefined, userType === 'employee' ? userId : undefined);
-    
+    const token = generateCSRFToken(
+      userType === "user" ? userId : undefined,
+      userType === "employee" ? userId : undefined,
+    );
+
     ctx.response.body = { success: true, csrfToken: token };
   } catch (_error) {
     ctx.response.status = 500;
-    ctx.response.body = { success: false, message: "Failed to generate CSRF token" };
+    ctx.response.body = {
+      success: false,
+      message: "Failed to generate CSRF token",
+    };
   }
 });
 
@@ -235,7 +284,7 @@ router.get("/api/user/transactions", authenticateUser, async (ctx) => {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
-    
+
     const result = await getUserTransactions(userId, limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
@@ -245,27 +294,32 @@ router.get("/api/user/transactions", authenticateUser, async (ctx) => {
   }
 });
 
-router.post("/api/user/payments", authenticateUser, csrfProtection, async (ctx) => {
-  try {
-    const userId = ctx.state.user.userId;
-    const body = await ctx.request.body({ type: "json" }).value;
-    const ip = ctx.request.ip || "unknown";
-    
-    const result = await createPayment(body, userId, ip);
-    ctx.response.status = result.success ? 201 : 400;
-    ctx.response.body = result;
-  } catch (_error) {
-    ctx.response.status = 500;
-    ctx.response.body = { success: false, message: "Server error" };
-  }
-});
+router.post(
+  "/api/user/payments",
+  authenticateUser,
+  csrfProtection,
+  async (ctx) => {
+    try {
+      const userId = ctx.state.user.userId;
+      const body = await ctx.request.body({ type: "json" }).value;
+      const ip = ctx.request.ip || "unknown";
+
+      const result = await createPayment(body, userId, ip);
+      ctx.response.status = result.success ? 201 : 400;
+      ctx.response.body = result;
+    } catch (_error) {
+      ctx.response.status = 500;
+      ctx.response.body = { success: false, message: "Server error" };
+    }
+  },
+);
 
 router.get("/api/admin/transactions", async (ctx) => {
   try {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
-    
+
     const result = await getAllTransactions(limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
@@ -280,7 +334,7 @@ router.put("/api/admin/transactions/:id/approve", async (ctx) => {
     const transactionId = Number.parseInt(ctx.params.id);
     const employeeId = Number(ctx.state.user?.userId ?? 0);
     const ip = ctx.request.ip || "unknown";
-    
+
     const result = await approveTransaction(transactionId, employeeId, ip);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
@@ -296,8 +350,13 @@ router.put("/api/admin/transactions/:id/deny", async (ctx) => {
     const employeeId = Number(ctx.state.user?.userId ?? 0);
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-    
-    const result = await denyTransaction(transactionId, employeeId, body.reason, ip);
+
+    const result = await denyTransaction(
+      transactionId,
+      employeeId,
+      body.reason,
+      ip,
+    );
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
   } catch (_error) {
@@ -312,7 +371,7 @@ router.get("/api/admin/security-logs", async (ctx) => {
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
     const severity = ctx.request.url.searchParams.get("severity") || undefined;
-    
+
     const result = await getSecurityLogs(limit, offset, severity);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
@@ -327,7 +386,7 @@ router.get("/api/admin/users", async (ctx) => {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
-    
+
     const result = await getAllUsers(limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
@@ -342,7 +401,7 @@ router.get("/api/admin/employees", async (ctx) => {
     const page = parseInt(ctx.request.url.searchParams.get("page") || "1");
     const limit = parseInt(ctx.request.url.searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
-    
+
     const result = await getAllEmployees(limit, offset);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
@@ -358,8 +417,14 @@ router.put("/api/admin/users/:id/toggle", async (ctx) => {
     const employeeId = Number(ctx.state.user?.userId ?? 0);
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-    
-    const result = await toggleUserAccount(userId, body.lock, employeeId, ip, body.reason);
+
+    const result = await toggleUserAccount(
+      userId,
+      body.lock,
+      employeeId,
+      ip,
+      body.reason,
+    );
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
   } catch (_error) {
@@ -385,27 +450,31 @@ router.post("/api/admin/users/create", async (ctx) => {
     const body = await ctx.request.body({ type: "json" }).value;
     const employeeId = Number(ctx.state.user?.userId ?? 0); // 0 for demo mode
     const ip = ctx.request.ip || "unknown";
-    
-    console.log("Creating user with data:", { 
-      username: body.username, 
+
+    console.log("Creating user with data:", {
+      username: body.username,
       fullName: body.fullName,
-      employeeId 
+      employeeId,
     });
-    
+
     const result = await createUser(body, employeeId, ip);
-    
-    console.log("User creation result:", { 
-      success: result.success, 
+
+    console.log("User creation result:", {
+      success: result.success,
       message: result.message,
-      userId: result.userId 
+      userId: result.userId,
     });
-    
+
     ctx.response.status = result.success ? 201 : 400;
     ctx.response.body = result;
   } catch (error) {
     console.error("User creation endpoint error:", error);
     ctx.response.status = 500;
-    ctx.response.body = { success: false, message: "Server error", error: error instanceof Error ? error.message : String(error) };
+    ctx.response.body = {
+      success: false,
+      message: "Server error",
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 });
 
@@ -426,10 +495,10 @@ router.post("/api/admin/cleanup-logs", async (ctx) => {
     const employeeId = Number(ctx.state.user?.userId ?? 0);
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
-  let daysToKeep = Number(body.daysToKeep || 90);
-  if (!Number.isFinite(daysToKeep)) daysToKeep = 90;
-  daysToKeep = Math.min(365, Math.max(7, Math.floor(daysToKeep)));
-    
+    let daysToKeep = Number(body.daysToKeep || 90);
+    if (!Number.isFinite(daysToKeep)) daysToKeep = 90;
+    daysToKeep = Math.min(365, Math.max(7, Math.floor(daysToKeep)));
+
     const result = await cleanupOldLogs(daysToKeep, employeeId, ip);
     ctx.response.status = result.success ? 200 : 400;
     ctx.response.body = result;
@@ -455,25 +524,38 @@ router.post("/api/security/log", async (ctx) => {
     const body = await ctx.request.body({ type: "json" }).value;
     const ip = ctx.request.ip || "unknown";
 
-    const eventType = typeof body.eventType === 'string' && body.eventType.length <= 64 ? body.eventType : 'FRONTEND_EVENT';
-    const detailsObj = (body && typeof body.details === 'object' && body.details !== null) ? body.details : {};
+    const eventType =
+      typeof body.eventType === "string" && body.eventType.length <= 64
+        ? body.eventType
+        : "FRONTEND_EVENT";
+    const detailsObj =
+      body && typeof body.details === "object" && body.details !== null
+        ? body.details
+        : {};
     const safeDetails = JSON.stringify(detailsObj).slice(0, 2000);
-    const userAgent = body.userAgent || ctx.request.headers.get("user-agent") || undefined;
+    const userAgent =
+      body.userAgent || ctx.request.headers.get("user-agent") || undefined;
 
     logSecurityEvent({
       action: eventType,
       ipAddress: ip,
       details: safeDetails,
-      severity: 'info',
-      userAgent
+      severity: "info",
+      userAgent,
     });
 
     ctx.response.status = 200;
-    ctx.response.body = { success: true, message: "Security event logged successfully" };
+    ctx.response.body = {
+      success: true,
+      message: "Security event logged successfully",
+    };
   } catch (error) {
     console.error("Security logging error:", error);
     ctx.response.status = 500;
-    ctx.response.body = { success: false, message: "Failed to log security event" };
+    ctx.response.body = {
+      success: false,
+      message: "Failed to log security event",
+    };
   }
 });
 
@@ -495,14 +577,17 @@ app.use((ctx) => {
   ctx.response.body = { success: false, message: "Endpoint not found" };
 });
 
-const cleanupInterval = setInterval(async () => {
-  try {
-    await DatabaseUtils.cleanupExpiredRecords();
-    console.log("Periodic cleanup completed");
-  } catch (error) {
-    console.error("Periodic cleanup failed:", error);
-  }
-}, 60 * 60 * 1000);
+const cleanupInterval = setInterval(
+  async () => {
+    try {
+      await DatabaseUtils.cleanupExpiredRecords();
+      console.log("Periodic cleanup completed");
+    } catch (error) {
+      console.error("Periodic cleanup failed:", error);
+    }
+  },
+  60 * 60 * 1000,
+);
 
 const shutdownController = new AbortController();
 
@@ -515,9 +600,9 @@ const handleShutdown = (signal: Deno.Signal) => {
 try {
   Deno.addSignalListener("SIGTERM", () => handleShutdown("SIGTERM"));
   Deno.addSignalListener("SIGINT", () => handleShutdown("SIGINT"));
-} catch (_) {;}
+} catch (_) {}
 
-const port = Number(Deno.env.get('PORT') || 3623);
+const port = Number(Deno.env.get("PORT") || 3623);
 console.log(`Delta Pay API Server running on http://localhost:${port}`);
 console.log("Database initialized and ready");
 console.log("Default admin employee: username=admin, password=admin123");

@@ -1,5 +1,3 @@
-// "Backend view - Have a log of users who have been kicked off the site or have attempted to exploit the page through the security measures we have discussed." --> "Admin services serve structured log, user, and employee data with full IP/account tracking."
-
 import { logSecurityEvent } from "../auth/auth.ts";
 import {
   employees,
@@ -550,6 +548,7 @@ export async function createUser(
     annualIncome: number;
     cardNumber: string;
     cardExpiry: string;
+    cardCvv: string;
     cardHolderName: string;
   },
   employeeId: number,
@@ -614,6 +613,7 @@ export async function createUser(
       phoneNumber: /^[0-9+\-\s()]{10,20}$/,
       cardNumber: /^[0-9]{16}$/,
       cardExpiry: /^(0[1-9]|1[0-2])\/[0-9]{2}$/,
+      cardCvv: /^[0-9]{3}$/,
     };
 
     const validation = validateInput(
@@ -627,6 +627,7 @@ export async function createUser(
         phoneNumber: userData.phoneNumber,
         cardNumber: userData.cardNumber,
         cardExpiry: userData.cardExpiry,
+        cardCvv: userData.cardCvv,
       },
       VALIDATION_PATTERNS,
     );
@@ -749,6 +750,7 @@ export async function createUser(
         annual_income: userData.annualIncome,
         card_number: userData.cardNumber,
         card_expiry: userData.cardExpiry,
+        card_cvv: userData.cardCvv,
         card_holder_name: userData.cardHolderName,
         created_at: new Date().toISOString(),
         is_active: true,

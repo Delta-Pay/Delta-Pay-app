@@ -211,27 +211,15 @@ body {
 .option-button:hover {
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
     border-color: #ab92bf;
-    background: linear-gradient(
-        135deg,
-        rgba(171, 146, 191, 0.15) 0%,
-        rgba(255, 255, 255, 0.95) 100%
-    );
+    background: rgba(255, 255, 255, 1);
 }
 
 .payment-option:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(171, 146, 191, 0.15) 0%,
-        rgba(255, 255, 255, 0.95) 100%
-    );
+    background: rgba(255, 255, 255, 1);
 }
 
 .backend-option:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(171, 146, 191, 0.15) 0%,
-        rgba(255, 255, 255, 0.95) 100%
-    );
+    background: rgba(255, 255, 255, 1);
 }
 
 .option-content h2 {

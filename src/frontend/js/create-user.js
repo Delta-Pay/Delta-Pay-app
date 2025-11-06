@@ -1,14 +1,288 @@
-// {"Backend view - Have a log of users who have been kicked off the site or have attempted to exploit the page through the security measures we have discussed."} --> {Admin can create new users with comprehensive validation, password strength requirements, and security logging}
+const randomUserData = {
+  firstNames: [
+    "Liam",
+    "Aria",
+    "Ethan",
+    "Zara",
+    "Noah",
+    "Maya",
+    "Oliver",
+    "Luna",
+  ],
+  lastNames: [
+    "Thompson",
+    "Rodriguez",
+    "Patel",
+    "Chen",
+    "Anderson",
+    "Williams",
+    "Martinez",
+    "Johnson",
+  ],
+  nationalities: [
+    "Canadian",
+    "Australian",
+    "British",
+    "German",
+    "French",
+    "Irish",
+    "Swedish",
+    "Norwegian",
+  ],
+  occupations: [
+    "Data Analyst",
+    "Marketing Manager",
+    "Civil Engineer",
+    "Graphic Designer",
+    "Teacher",
+    "Accountant",
+    "Pharmacist",
+    "Architect",
+  ],
+  cities: [
+    "Toronto",
+    "Melbourne",
+    "Manchester",
+    "Berlin",
+    "Lyon",
+    "Dublin",
+    "Stockholm",
+    "Oslo",
+  ],
+  stateProvinces: [
+    "Ontario",
+    "Victoria",
+    "Lancashire",
+    "Bavaria",
+    "Auvergne",
+    "Leinster",
+    "Sodermanland",
+    "Viken",
+  ],
+  countries: [
+    "Canada",
+    "Australia",
+    "United Kingdom",
+    "Germany",
+    "France",
+    "Ireland",
+    "Sweden",
+    "Norway",
+  ],
+  streets: [
+    "Maple Avenue",
+    "Harbor View Drive",
+    "Oak Street",
+    "Riverside Road",
+    "Elm Boulevard",
+    "Park Lane",
+    "Cedar Court",
+    "Lake Drive",
+  ],
+  postalCodes: [
+    "M5H2N2",
+    "3000",
+    "M13PL",
+    "80331",
+    "69001",
+    "D02XY45",
+    "11122",
+    "0150",
+  ],
+  languages: [
+    "English",
+    "French",
+    "German",
+    "Spanish",
+    "Swedish",
+    "Norwegian",
+    "Italian",
+    "Portuguese",
+  ],
+  currencies: ["ZAR", "CAD", "AUD", "GBP", "EUR", "CHF", "SEK", "NOK"],
+  accountTypes: ["Standard", "Premium", "Business"],
+};
+
+function getRandomElement(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+function generateRandomDigits(length) {
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += Math.floor(Math.random() * 10);
+  }
+  return result;
+}
+
+function generateRandomDate() {
+  const year = 1960 + Math.floor(Math.random() * 43);
+  const month = (1 + Math.floor(Math.random() * 12))
+    .toString()
+    .padStart(2, "0");
+  const day = (1 + Math.floor(Math.random() * 28)).toString().padStart(2, "0");
+  return `${day}/${month}/${year}`;
+}
+
+function generateRandomCardExpiry() {
+  const month = (1 + Math.floor(Math.random() * 12))
+    .toString()
+    .padStart(2, "0");
+  const year = (25 + Math.floor(Math.random() * 8)).toString().padStart(2, "0");
+  return `${month}/${year}`;
+}
+
+function generateRandomPhoneNumber() {
+  const countryCodes = ["+1", "+61", "+44", "+49", "+33", "+353", "+46", "+47"];
+  const countryCode = getRandomElement(countryCodes);
+  const areaCode = generateRandomDigits(2);
+  const firstPart = generateRandomDigits(3);
+  const secondPart = generateRandomDigits(4);
+  return `${countryCode}-${areaCode}-${firstPart}-${secondPart}`;
+}
+
+function generateRandomEmail(firstName, lastName) {
+  const domains = [
+    "email.com",
+    "mail.com",
+    "inbox.com",
+    "webmail.com",
+    "post.com",
+  ];
+  const separators = [".", "_", ""];
+  const separator = getRandomElement(separators);
+  const domain = getRandomElement(domains);
+  return `${firstName.toLowerCase()}${separator}${lastName.toLowerCase()}@${domain}`;
+}
+
+function generateRandomUsername(firstName, lastName) {
+  const suffixes = [
+    "",
+    generateRandomDigits(2),
+    generateRandomDigits(3),
+    "_" + generateRandomDigits(2),
+  ];
+  const suffix = getRandomElement(suffixes);
+  const variations = [
+    firstName.toLowerCase() + suffix,
+    lastName.toLowerCase() + suffix,
+    (firstName.charAt(0) + lastName).toLowerCase() + suffix,
+    (firstName + lastName.charAt(0)).toLowerCase() + suffix,
+  ];
+  return getRandomElement(variations);
+}
+
+function generateStrongPassword() {
+  const lowercase = "abcdefghijklmnopqrstuvwxyz";
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const special = "@$!%*?&";
+
+  let password = "";
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+
+  const allChars = lowercase + uppercase + numbers + special;
+  for (let i = 0; i < 8; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  return password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+}
+
+function randomizeFormData() {
+  const firstName = getRandomElement(randomUserData.firstNames);
+  const lastName = getRandomElement(randomUserData.lastNames);
+  const fullName = `${firstName} ${lastName}`;
+  const username = generateRandomUsername(firstName, lastName);
+  const email = generateRandomEmail(firstName, lastName);
+  const password = generateStrongPassword();
+  const nationality = getRandomElement(randomUserData.nationalities);
+  const occupation = getRandomElement(randomUserData.occupations);
+  const city = getRandomElement(randomUserData.cities);
+  const stateProvince = getRandomElement(randomUserData.stateProvinces);
+  const country = getRandomElement(randomUserData.countries);
+  const street = getRandomElement(randomUserData.streets);
+  const postalCode = getRandomElement(randomUserData.postalCodes);
+  const language = getRandomElement(randomUserData.languages);
+  const currency = getRandomElement(randomUserData.currencies);
+  const accountType = getRandomElement(randomUserData.accountTypes);
+
+  document.getElementById("fullName").value = fullName;
+  document.getElementById("idNumber").value = generateRandomDigits(13);
+  document.getElementById("dateOfBirth").value = generateRandomDate();
+  document.getElementById("nationality").value = nationality;
+  document.getElementById("occupation").value = occupation;
+  document.getElementById("username").value = username;
+
+  const accountNum = generateRandomDigits(16);
+  const formattedAccountNum = accountNum.match(/.{1,4}/g).join(" ");
+  document.getElementById("accountNumber").value = formattedAccountNum;
+
+  document.getElementById("password").value = password;
+  document.getElementById("confirmPassword").value = password;
+
+  document
+    .getElementById("password")
+    .dispatchEvent(new Event("input", { bubbles: true }));
+
+  document.getElementById("accountType").value = accountType;
+  document.getElementById("currency").value = currency;
+
+  const balance = (Math.random() * 50000 + 1000).toFixed(2);
+  document.getElementById("accountBalance").value = balance;
+
+  const income = Math.floor(Math.random() * 150000 + 30000);
+  document.getElementById("annualIncome").value = income;
+
+  document.getElementById("email").value = email;
+  document.getElementById("phoneNumber").value = generateRandomPhoneNumber();
+
+  const streetNumber = Math.floor(Math.random() * 999 + 1);
+  document.getElementById("addressLine1").value = `${streetNumber} ${street}`;
+
+  const aptNumbers = ["", "Apt 2B", "Suite 100", "Unit 5", "Floor 3"];
+  document.getElementById("addressLine2").value = getRandomElement(aptNumbers);
+
+  document.getElementById("city").value = city;
+  document.getElementById("stateProvince").value = stateProvince;
+  document.getElementById("postalCode").value = postalCode;
+  document.getElementById("country").value = country;
+  document.getElementById("preferredLanguage").value = language;
+
+  const cardNum = generateRandomDigits(16);
+  const formattedCardNum = cardNum.match(/.{1,4}/g).join(" ");
+  document.getElementById("cardNumber").value = formattedCardNum;
+  document.getElementById("cardExpiry").value = generateRandomCardExpiry();
+  document.getElementById("cardCvv").value = generateRandomDigits(3);
+  document.getElementById("cardHolderName").value = fullName;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("createUserForm");
   const backBtn = document.getElementById("backToAdminBtn");
+  const randomizeBtn = document.getElementById("randomizeDataBtn");
 
   if (backBtn) {
     backBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       globalThis.location.href = "/view-payments";
+    });
+  }
+
+  if (randomizeBtn) {
+    randomizeBtn.addEventListener("click", () => {
+      randomizeFormData();
+      randomizeBtn.style.background = "#655A7C";
+      setTimeout(() => {
+        randomizeBtn.style.background = "#8DA8C7";
+      }, 200);
     });
   }
 
@@ -195,6 +469,11 @@ document.addEventListener("DOMContentLoaded", () => {
       e.target.value = value;
     });
 
+    const cardCvv = document.getElementById("cardCvv");
+    cardCvv.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);
+    });
+
     const postalCode = document.getElementById("postalCode");
     postalCode.addEventListener("input", (e) => {
       e.target.value = e.target.value
@@ -333,6 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .getElementById("cardNumber")
             .value.replace(/\s/g, ""),
           cardExpiry: document.getElementById("cardExpiry").value.trim(),
+          cardCvv: document.getElementById("cardCvv").value.trim(),
           cardHolderName: document
             .getElementById("cardHolderName")
             .value.trim(),
@@ -344,17 +624,61 @@ document.addEventListener("DOMContentLoaded", () => {
           email: formData.email,
         });
 
-        const response = await fetch("/api/admin/users/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        });
+        let response;
+        try {
+          response = await fetch("/api/admin/users/create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+        } catch (networkError) {
+          console.error("Network error during user creation:", networkError);
+          throw new Error(
+            "Network error: Unable to reach server. Please check your connection.",
+          );
+        }
+
+        if (!response) {
+          console.error("No response received from server");
+          throw new Error("No response from server. Please try again.");
+        }
+
+        if (!response.ok) {
+          console.error(
+            "HTTP error response:",
+            response.status,
+            response.statusText,
+          );
+          if (response.status === 500) {
+            throw new Error("Server error. Please contact support.");
+          } else if (response.status === 400) {
+            throw new Error("Invalid request data. Please check all fields.");
+          } else if (response.status === 401 || response.status === 403) {
+            throw new Error("Unauthorized. Please log in again.");
+          } else {
+            throw new Error(
+              `Request failed: ${response.status} ${response.statusText}`,
+            );
+          }
+        }
 
         console.log("Response status:", response.status);
 
-        const result = await response.json();
+        let result;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          console.error("Failed to parse response JSON:", parseError);
+          throw new Error("Invalid response format from server");
+        }
+
+        if (!result || typeof result !== "object") {
+          console.error("Invalid result object:", result);
+          throw new Error("Invalid response from server");
+        }
+
         console.log("Response data:", result);
 
         if (result.success) {

@@ -2,71 +2,72 @@ import { hashPassword } from "../auth/auth.ts";
 
 export interface User {
   id: number;
-  "full_name": string;
-  "id_number": string;
-  "account_number": string;
+  full_name: string;
+  id_number: string;
+  account_number: string;
   username: string;
-  "password_hash": string;
+  password_hash: string;
   email: string;
-  "phone_number": string;
-  "date_of_birth": string;
+  phone_number: string;
+  date_of_birth: string;
   nationality: string;
-  "address_line_1": string;
-  "address_line_2"?: string;
+  address_line_1: string;
+  address_line_2?: string;
   city: string;
-  "state_province": string;
-  "postal_code": string;
+  state_province: string;
+  postal_code: string;
   country: string;
-  "account_balance": number;
+  account_balance: number;
   currency: string;
-  "account_type": string;
-  "preferred_language": string;
+  account_type: string;
+  preferred_language: string;
   occupation: string;
-  "annual_income": number;
-  "card_number": string;
-  "card_expiry": string;
-  "card_holder_name": string;
-  "created_at": string;
-  "is_active": boolean;
-  "failed_login_attempts": number;
-  "last_login_attempt"?: string;
-  "account_locked_until"?: string;
+  annual_income: number;
+  card_number: string;
+  card_expiry: string;
+  card_cvv: string;
+  card_holder_name: string;
+  created_at: string;
+  is_active: boolean;
+  failed_login_attempts: number;
+  last_login_attempt?: string;
+  account_locked_until?: string;
 }
 
 export interface Employee {
   id: number;
   username: string;
-  "password_hash": string;
-  "full_name": string;
-  "employee_id": string;
-  "created_at": string;
-  "is_active": boolean;
-  "failed_login_attempts": number;
-  "last_login_attempt"?: string;
-  "account_locked_until"?: string;
+  password_hash: string;
+  full_name: string;
+  employee_id: string;
+  created_at: string;
+  is_active: boolean;
+  failed_login_attempts: number;
+  last_login_attempt?: string;
+  account_locked_until?: string;
 }
 
 export interface Transaction {
   id: number;
-  "user_id": number;
+  user_id: number;
   amount: number;
   currency: string;
   provider: string;
-  "recipient_account": string;
+  recipient_account: string;
   status: string;
-  "created_at": string;
-  "processed_at"?: string;
-  "processed_by"?: number;
+  created_at: string;
+  processed_at?: string;
+  processed_by?: number;
   notes?: string;
 }
 
 export interface SecurityLog {
   id: number;
-  "user_id"?: number;
-  "employee_id"?: number;
+  user_id?: number;
+  employee_id?: number;
   action: string;
-  "ip_address": string;
-  "user_agent"?: string;
+  ip_address: string;
+  user_agent?: string;
   details?: string;
   timestamp: string;
   severity: string;
@@ -76,9 +77,27 @@ const users: User[] = [];
 const employees: Employee[] = [];
 const transactions: Transaction[] = [];
 const securityLogs: SecurityLog[] = [];
-type SessionToken = { token: string; userId: number; userType: "user" | "employee"; "expires_at": string; "is_revoked": boolean };
-type CSRFToken = { token: string; "expires_at": string; "is_used"?: boolean; "user_id"?: number | null; "employee_id"?: number | null };
-type RateLimit = { "ip_address": string; endpoint: string; "request_count": number; "first_request": string; "last_request": string };
+type SessionToken = {
+  token: string;
+  userId: number;
+  userType: "user" | "employee";
+  expires_at: string;
+  is_revoked: boolean;
+};
+type CSRFToken = {
+  token: string;
+  expires_at: string;
+  is_used?: boolean;
+  user_id?: number | null;
+  employee_id?: number | null;
+};
+type RateLimit = {
+  ip_address: string;
+  endpoint: string;
+  request_count: number;
+  first_request: string;
+  last_request: string;
+};
 const sessionTokens: SessionToken[] = [];
 const csrfTokens: CSRFToken[] = [];
 const rateLimits: RateLimit[] = [];
@@ -87,7 +106,7 @@ const counters = {
   userId: 1,
   employeeId: 1,
   transactionId: 1,
-  logId: 1
+  logId: 1,
 };
 
 export function getNextUserId(): number {
@@ -112,7 +131,7 @@ export function initializeDatabase() {
 
 export async function seedDefaultEmployee() {
   try {
-    const existingAdmin = employees.find(emp => emp.username === "admin");
+    const existingAdmin = employees.find((emp) => emp.username === "admin");
 
     if (!existingAdmin) {
       const passwordHash = await hashPassword("admin123");
@@ -124,7 +143,7 @@ export async function seedDefaultEmployee() {
         employee_id: "EMP001",
         created_at: new Date().toISOString(),
         is_active: true,
-        failed_login_attempts: 0
+        failed_login_attempts: 0,
       });
 
       console.log("Default admin employee created");
@@ -154,12 +173,12 @@ export async function seedExampleUsers() {
           state_province: "New York",
           postal_code: "10001",
           country: "United States",
-          account_balance: 25000.50,
+          account_balance: 25000.5,
           currency: "USD",
           account_type: "Premium",
           preferred_language: "English",
           occupation: "Software Engineer",
-          annual_income: 95000
+          annual_income: 95000,
         },
         {
           full_name: "Sarah Johnson",
@@ -181,7 +200,7 @@ export async function seedExampleUsers() {
           account_type: "Standard",
           preferred_language: "English",
           occupation: "Marketing Manager",
-          annual_income: 72000
+          annual_income: 72000,
         },
         {
           full_name: "Mike Wilson",
@@ -203,7 +222,7 @@ export async function seedExampleUsers() {
           account_type: "Business",
           preferred_language: "English",
           occupation: "Financial Analyst",
-          annual_income: 85000
+          annual_income: 85000,
         },
         {
           full_name: "Emma Davis",
@@ -221,12 +240,12 @@ export async function seedExampleUsers() {
           state_province: "Victoria",
           postal_code: "3000",
           country: "Australia",
-          account_balance: 14500.00,
+          account_balance: 14500.0,
           currency: "AUD",
           account_type: "Standard",
           preferred_language: "English",
           occupation: "Graphic Designer",
-          annual_income: 58000
+          annual_income: 58000,
         },
         {
           full_name: "David Brown",
@@ -243,13 +262,13 @@ export async function seedExampleUsers() {
           state_province: "Gauteng",
           postal_code: "2196",
           country: "South Africa",
-          account_balance: 45300.80,
+          account_balance: 45300.8,
           currency: "ZAR",
           account_type: "Premium",
           preferred_language: "English",
           occupation: "Investment Consultant",
-          annual_income: 120000
-        }
+          annual_income: 120000,
+        },
       ];
 
       for (const user of exampleUsers) {
@@ -279,11 +298,11 @@ export async function seedExampleUsers() {
           occupation: user.occupation,
           annual_income: user.annual_income,
           card_number: "4532123456789012",
-          card_expiry: "12/27", 
+          card_expiry: "12/27",
           card_holder_name: user.full_name,
           created_at: new Date().toISOString(),
           is_active: true,
-          failed_login_attempts: 0
+          failed_login_attempts: 0,
         });
       }
     }
@@ -293,44 +312,58 @@ export async function seedExampleUsers() {
 }
 
 export function getUsers(): User[] {
-  return users.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  return users
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
 }
 
 export function getUserByUsername(username: string): User | null {
-  return users.find(user => user.username === username) || null;
+  return users.find((user) => user.username === username) || null;
 }
 
 export function getUserById(id: number): User | null {
-  return users.find(user => user.id === id) || null;
+  return users.find((user) => user.id === id) || null;
 }
 
-export function addUser(user: Omit<User, 'id'>): User {
+export function addUser(user: Omit<User, "id">): User {
   const newUser = { ...user, id: getNextUserId() };
   users.push(newUser);
   return newUser;
 }
 
-export function addEmployee(employee: Omit<Employee, 'id'>): Employee {
+export function addEmployee(employee: Omit<Employee, "id">): Employee {
   const newEmployee = { ...employee, id: getNextEmployeeId() };
   employees.push(newEmployee);
   return newEmployee;
 }
 
-export function addTransaction(transaction: Omit<Transaction, 'id'>): Transaction {
+export function addTransaction(
+  transaction: Omit<Transaction, "id">,
+): Transaction {
   const newTransaction = { ...transaction, id: getNextTransactionId() };
   transactions.push(newTransaction);
   return newTransaction;
 }
 
-export function addSecurityLog(log: Omit<SecurityLog, 'id'>): SecurityLog {
+export function addSecurityLog(log: Omit<SecurityLog, "id">): SecurityLog {
   const newLog = { ...log, id: getNextLogId() };
   securityLogs.push(newLog);
   return newLog;
 }
 
 export function getEmployeeByUsername(username: string): Employee | null {
-  return employees.find(emp => emp.username === username) || null;
+  return employees.find((emp) => emp.username === username) || null;
 }
 
-export { csrfTokens, employees, rateLimits, securityLogs, sessionTokens, transactions, users };
-
+export {
+  csrfTokens,
+  employees,
+  rateLimits,
+  securityLogs,
+  sessionTokens,
+  transactions,
+  users,
+};

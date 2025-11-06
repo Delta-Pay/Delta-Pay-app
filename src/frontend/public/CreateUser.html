@@ -1,296 +1,732 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeltaΔPay - Create User Account</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="styles/main.css">
-    <style>
-        #togglePassword:hover,
-        #toggleConfirmPassword:hover {
-            opacity: 1 !important;
-        }
-    </style>
-</head>
-<body>
-    <header class="header">
-        <div class="logo">
-            <svg viewBox="0 0 120 120">
-                <line x1="9" y1="102" x2="62" y2="17" stroke="#AB92BF" stroke-width="5"/>
-                <line x1="11" y1="102" x2="108" y2="102" stroke="#AB92BF" stroke-width="2.5"/>
-                <line x1="64" y1="14" x2="112" y2="101" stroke="#AB92BF" stroke-width="10"/>
-            </svg>
-        </div>
-        <div class="logo-container">
-            <span class="logo-text">DeltaΔPay</span>
-        </div>
-        <div class="tagline">Admin — Create User Account</div>
-    </header>
-
-    <main class="main-container" style="align-items: center; justify-content: center; min-height: calc(100vh - 120px);">
-        <div class="payment-container" style="max-width: 900px; width: 100%;">
-            <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
-            
-            <div class="payment-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
-                <div class="payment-title">Create New User Account</div>
-                <a href="/view-payments" class="btn-back" style="position:static; margin:0; text-decoration:none; display:inline-block;">← Back to Admin</a>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>DeltaΔPay - Create User Account</title>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="stylesheet" href="styles/main.css" />
+        <style>
+            #togglePassword:hover,
+            #toggleConfirmPassword:hover {
+                opacity: 1 !important;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="header">
+            <div class="logo">
+                <svg viewBox="0 0 120 120">
+                    <line
+                        x1="9"
+                        y1="102"
+                        x2="62"
+                        y2="17"
+                        stroke="#AB92BF"
+                        stroke-width="5"
+                    />
+                    <line
+                        x1="11"
+                        y1="102"
+                        x2="108"
+                        y2="102"
+                        stroke="#AB92BF"
+                        stroke-width="2.5"
+                    />
+                    <line
+                        x1="64"
+                        y1="14"
+                        x2="112"
+                        y2="101"
+                        stroke="#AB92BF"
+                        stroke-width="10"
+                    />
+                </svg>
             </div>
+            <div class="logo-container">
+                <span class="logo-text">DeltaΔPay</span>
+            </div>
+            <div class="tagline">Admin — Create User Account</div>
+        </header>
 
-            <form id="createUserForm" class="payment-form">
-                <!-- Personal Information -->
-                <div class="form-section">
-                    <h3 class="section-title">Personal Information</h3>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" name="fullName" class="form-input" 
-                               placeholder="John Smith" required pattern="[a-zA-Z\s]{2,50}"
-                               title="Only letters and spaces, 2-50 characters">
-                    </div>
+        <main
+            class="main-container"
+            style="
+                align-items: center;
+                justify-content: center;
+                min-height: calc(100vh - 120px);
+            "
+        >
+            <div
+                class="payment-container"
+                style="max-width: 900px; width: 100%"
+            >
+                <div
+                    id="toastContainer"
+                    class="toast-container"
+                    aria-live="polite"
+                    aria-atomic="true"
+                ></div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="idNumber">ID Number *</label>
-                            <input type="text" id="idNumber" name="idNumber" class="form-input" 
-                                   placeholder="0000000000000 (13 digits)" required 
-                                   title="Must be exactly 13 digits" maxlength="13" inputmode="numeric">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="dateOfBirth">Date of Birth *</label>
-                            <input type="text" id="dateOfBirth" name="dateOfBirth" class="form-input" 
-                                   placeholder="DD/MM/YYYY" required maxlength="10"
-                                   title="Format: DD/MM/YYYY">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="nationality">Nationality *</label>
-                            <input type="text" id="nationality" name="nationality" class="form-input" 
-                                   placeholder="American" required pattern="[a-zA-Z\s]{2,30}"
-                                   title="Only letters and spaces, 2-30 characters">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="occupation">Occupation</label>
-                            <input type="text" id="occupation" name="occupation" class="form-input" 
-                                   placeholder="Software Engineer" pattern="[a-zA-Z\s]{0,50}"
-                                   title="Only letters and spaces">
-                        </div>
+                <div
+                    class="payment-header"
+                    style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 1rem;
+                    "
+                >
+                    <div class="payment-title">Create New User Account</div>
+                    <div
+                        style="display: flex; gap: 0.75rem; align-items: center"
+                    >
+                        <button
+                            type="button"
+                            id="randomizeDataBtn"
+                            class="btn-back"
+                            style="
+                                position: static;
+                                margin: 0;
+                                background: #8da8c7;
+                                border: none;
+                                padding: 0.5rem 1rem;
+                                cursor: pointer;
+                                border-radius: 4px;
+                                color: #fff;
+                                font-weight: 500;
+                                transition: background 0.2s;
+                            "
+                        >
+                            Randomize Data
+                        </button>
+                        <a
+                            href="/view-payments"
+                            class="btn-back"
+                            style="
+                                position: static;
+                                margin: 0;
+                                text-decoration: none;
+                                display: inline-block;
+                            "
+                            >← Back to Admin</a
+                        >
                     </div>
                 </div>
 
-                <!-- Account Information -->
-                <div class="form-section">
-                    <h3 class="section-title">Account Information</h3>
-                    
-                    <div class="form-row">
+                <form id="createUserForm" class="payment-form">
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">Personal Information</h3>
+
                         <div class="form-group">
-                            <label class="form-label" for="username">Username *</label>
-                            <input type="text" id="username" name="username" class="form-input" 
-                                   placeholder="johnsmith" required pattern="[a-zA-Z0-9_]{3,20}"
-                                   title="3-20 characters, letters, numbers, underscore only">
+                            <label class="form-label" for="fullName"
+                                >Full Name *</label
+                            >
+                            <input
+                                type="text"
+                                id="fullName"
+                                name="fullName"
+                                class="form-input"
+                                placeholder="John Smith"
+                                required
+                                pattern="[a-zA-Z\s]{2,50}"
+                                title="Only letters and spaces, 2-50 characters"
+                            />
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="accountNumber">Account Number *</label>
-                            <input type="text" id="accountNumber" name="accountNumber" class="form-input" 
-                                   placeholder="0000 0000 0000 0000 (10-20 digits)" required 
-                                   title="10-20 digits" maxlength="24" inputmode="numeric">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="idNumber"
+                                    >ID Number *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="idNumber"
+                                    name="idNumber"
+                                    class="form-input"
+                                    placeholder="0000000000000 (13 digits)"
+                                    required
+                                    title="Must be exactly 13 digits"
+                                    maxlength="13"
+                                    inputmode="numeric"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dateOfBirth"
+                                    >Date of Birth *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="dateOfBirth"
+                                    name="dateOfBirth"
+                                    class="form-input"
+                                    placeholder="DD/MM/YYYY"
+                                    required
+                                    maxlength="10"
+                                    title="Format: DD/MM/YYYY"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="nationality"
+                                    >Nationality *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="nationality"
+                                    name="nationality"
+                                    class="form-input"
+                                    placeholder="American"
+                                    required
+                                    pattern="[a-zA-Z\s]{2,30}"
+                                    title="Only letters and spaces, 2-30 characters"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="occupation"
+                                    >Occupation</label
+                                >
+                                <input
+                                    type="text"
+                                    id="occupation"
+                                    name="occupation"
+                                    class="form-input"
+                                    placeholder="Software Engineer"
+                                    pattern="[a-zA-Z\s]{0,50}"
+                                    title="Only letters and spaces"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="password">Password *</label>
-                            <div style="position: relative;">
-                                <input type="password" id="password" name="password" class="form-input" 
-                                       placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special" required
-                                       pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                                       title="Min 8 chars with uppercase, lowercase, number, and special character"
-                                       style="padding-right: 3rem;">
-                                <button type="button" id="togglePassword" 
-                                        style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 0.25rem; display: flex; align-items: center; opacity: 0.6; transition: opacity 0.2s;"
-                                        aria-label="Toggle password visibility">
-                                    <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                </button>
+                    <!-- Account Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">Account Information</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="username"
+                                    >Username *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="username"
+                                    name="username"
+                                    class="form-input"
+                                    placeholder="johnsmith"
+                                    required
+                                    pattern="[a-zA-Z0-9_]{3,20}"
+                                    title="3-20 characters, letters, numbers, underscore only"
+                                />
                             </div>
-                            <div id="passwordStrength" style="margin-top: 0.5rem; display: none;">
-                                <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
-                                    <div id="passwordStrengthBar" style="height: 100%; width: 0%; transition: width 0.3s, background-color 0.3s; border-radius: 2px;"></div>
+                            <div class="form-group">
+                                <label class="form-label" for="accountNumber"
+                                    >Account Number *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="accountNumber"
+                                    name="accountNumber"
+                                    class="form-input"
+                                    placeholder="0000 0000 0000 0000 (10-20 digits)"
+                                    required
+                                    title="10-20 digits"
+                                    maxlength="24"
+                                    inputmode="numeric"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="password"
+                                    >Password *</label
+                                >
+                                <div style="position: relative">
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        name="password"
+                                        class="form-input"
+                                        placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
+                                        required
+                                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                                        title="Min 8 chars with uppercase, lowercase, number, and special character"
+                                        style="padding-right: 3rem"
+                                    />
+                                    <button
+                                        type="button"
+                                        id="togglePassword"
+                                        style="
+                                            position: absolute;
+                                            right: 0.75rem;
+                                            top: 50%;
+                                            transform: translateY(-50%);
+                                            background: none;
+                                            border: none;
+                                            cursor: pointer;
+                                            padding: 0.25rem;
+                                            display: flex;
+                                            align-items: center;
+                                            opacity: 0.6;
+                                            transition: opacity 0.2s;
+                                        "
+                                        aria-label="Toggle password visibility"
+                                    >
+                                        <svg
+                                            id="eyeIcon"
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path
+                                                d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                            ></path>
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="3"
+                                            ></circle>
+                                        </svg>
+                                    </button>
                                 </div>
-                                <div id="passwordStrengthText" style="font-size: 0.75rem; margin-top: 0.25rem; opacity: 0.8;"></div>
+                                <div
+                                    id="passwordStrength"
+                                    style="margin-top: 0.5rem; display: none"
+                                >
+                                    <div
+                                        style="
+                                            height: 4px;
+                                            background: rgba(
+                                                255,
+                                                255,
+                                                255,
+                                                0.1
+                                            );
+                                            border-radius: 2px;
+                                            overflow: hidden;
+                                        "
+                                    >
+                                        <div
+                                            id="passwordStrengthBar"
+                                            style="
+                                                height: 100%;
+                                                width: 0%;
+                                                transition:
+                                                    width 0.3s,
+                                                    background-color 0.3s;
+                                                border-radius: 2px;
+                                            "
+                                        ></div>
+                                    </div>
+                                    <div
+                                        id="passwordStrengthText"
+                                        style="
+                                            font-size: 0.75rem;
+                                            margin-top: 0.25rem;
+                                            opacity: 0.8;
+                                        "
+                                    ></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="confirmPassword"
+                                    >Confirm Password *</label
+                                >
+                                <div style="position: relative">
+                                    <input
+                                        type="password"
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        class="form-input"
+                                        placeholder="Re-enter password"
+                                        required
+                                        style="padding-right: 3rem"
+                                    />
+                                    <button
+                                        type="button"
+                                        id="toggleConfirmPassword"
+                                        style="
+                                            position: absolute;
+                                            right: 0.75rem;
+                                            top: 50%;
+                                            transform: translateY(-50%);
+                                            background: none;
+                                            border: none;
+                                            cursor: pointer;
+                                            padding: 0.25rem;
+                                            display: flex;
+                                            align-items: center;
+                                            opacity: 0.6;
+                                            transition: opacity 0.2s;
+                                        "
+                                        aria-label="Toggle confirm password visibility"
+                                    >
+                                        <svg
+                                            id="eyeIconConfirm"
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path
+                                                d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                            ></path>
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="3"
+                                            ></circle>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="confirmPassword">Confirm Password *</label>
-                            <div style="position: relative;">
-                                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" 
-                                       placeholder="Re-enter password" required
-                                       style="padding-right: 3rem;">
-                                <button type="button" id="toggleConfirmPassword" 
-                                        style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 0.25rem; display: flex; align-items: center; opacity: 0.6; transition: opacity 0.2s;"
-                                        aria-label="Toggle confirm password visibility">
-                                    <svg id="eyeIconConfirm" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                </button>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="accountType"
+                                    >Account Type *</label
+                                >
+                                <select
+                                    id="accountType"
+                                    name="accountType"
+                                    class="form-input"
+                                    required
+                                >
+                                    <option value="Standard">Standard</option>
+                                    <option value="Premium">Premium</option>
+                                    <option value="Business">Business</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="currency"
+                                    >Currency *</label
+                                >
+                                <select
+                                    id="currency"
+                                    name="currency"
+                                    class="form-input"
+                                    required
+                                >
+                                    <option value="ZAR" selected>
+                                        ZAR - South African Rand
+                                    </option>
+                                    <option value="USD">USD - US Dollar</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="GBP">
+                                        GBP - British Pound
+                                    </option>
+                                    <option value="AUD">
+                                        AUD - Australian Dollar
+                                    </option>
+                                    <option value="CAD">
+                                        CAD - Canadian Dollar
+                                    </option>
+                                    <option value="CHF">
+                                        CHF - Swiss Franc
+                                    </option>
+                                    <option value="JPY">
+                                        JPY - Japanese Yen
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="accountBalance"
+                                    >Initial Balance *</label
+                                >
+                                <input
+                                    type="number"
+                                    id="accountBalance"
+                                    name="accountBalance"
+                                    class="form-input"
+                                    placeholder="0.00"
+                                    required
+                                    min="0"
+                                    step="0.01"
+                                    value="0"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="annualIncome"
+                                    >Annual Income</label
+                                >
+                                <input
+                                    type="number"
+                                    id="annualIncome"
+                                    name="annualIncome"
+                                    class="form-input"
+                                    placeholder="0"
+                                    min="0"
+                                    step="1"
+                                    value="0"
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="accountType">Account Type *</label>
-                            <select id="accountType" name="accountType" class="form-input" required>
-                                <option value="Standard">Standard</option>
-                                <option value="Premium">Premium</option>
-                                <option value="Business">Business</option>
-                            </select>
+                    <!-- Contact Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">Contact Information</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="email"
+                                    >Email Address *</label
+                                >
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    class="form-input"
+                                    placeholder="john.smith@email.com"
+                                    required
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="phoneNumber"
+                                    >Phone Number *</label
+                                >
+                                <input
+                                    type="tel"
+                                    id="phoneNumber"
+                                    name="phoneNumber"
+                                    class="form-input"
+                                    placeholder="+00-00-000-0000"
+                                    required
+                                    title="Format: +country-area-number"
+                                    maxlength="20"
+                                />
+                            </div>
                         </div>
+
                         <div class="form-group">
-                            <label class="form-label" for="currency">Currency *</label>
-                            <select id="currency" name="currency" class="form-input" required>
-                                <option value="ZAR" selected>ZAR - South African Rand</option>
-                                <option value="USD">USD - US Dollar</option>
-                                <option value="EUR">EUR - Euro</option>
-                                <option value="GBP">GBP - British Pound</option>
-                                <option value="AUD">AUD - Australian Dollar</option>
-                                <option value="CAD">CAD - Canadian Dollar</option>
-                                <option value="CHF">CHF - Swiss Franc</option>
-                                <option value="JPY">JPY - Japanese Yen</option>
-                            </select>
+                            <label class="form-label" for="addressLine1"
+                                >Address Line 1 *</label
+                            >
+                            <input
+                                type="text"
+                                id="addressLine1"
+                                name="addressLine1"
+                                class="form-input"
+                                placeholder="123 Main Street"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="addressLine2"
+                                >Address Line 2</label
+                            >
+                            <input
+                                type="text"
+                                id="addressLine2"
+                                name="addressLine2"
+                                class="form-input"
+                                placeholder="Apt 4B"
+                            />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="city"
+                                    >City *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="city"
+                                    name="city"
+                                    class="form-input"
+                                    placeholder="New York"
+                                    required
+                                    pattern="[a-zA-Z\s]{2,50}"
+                                    title="Only letters and spaces, 2-50 characters"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="stateProvince"
+                                    >State/Province *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="stateProvince"
+                                    name="stateProvince"
+                                    class="form-input"
+                                    placeholder="New York"
+                                    required
+                                    pattern="[a-zA-Z\s]{2,50}"
+                                    title="Only letters and spaces, 2-50 characters"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="postalCode"
+                                    >Postal Code *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="postalCode"
+                                    name="postalCode"
+                                    class="form-input"
+                                    placeholder="10001"
+                                    required
+                                    maxlength="10"
+                                    title="Alphanumeric only"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="country"
+                                    >Country *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="country"
+                                    name="country"
+                                    class="form-input"
+                                    placeholder="United States"
+                                    required
+                                    pattern="[a-zA-Z\s]{2,50}"
+                                    title="Only letters and spaces, 2-50 characters"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="preferredLanguage"
+                                >Preferred Language</label
+                            >
+                            <input
+                                type="text"
+                                id="preferredLanguage"
+                                name="preferredLanguage"
+                                class="form-input"
+                                placeholder="English"
+                                value="English"
+                                pattern="[a-zA-Z\s]{0,30}"
+                                title="Only letters and spaces"
+                            />
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="accountBalance">Initial Balance *</label>
-                            <input type="number" id="accountBalance" name="accountBalance" class="form-input" 
-                                   placeholder="0.00" required min="0" step="0.01" value="0">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="annualIncome">Annual Income</label>
-                            <input type="number" id="annualIncome" name="annualIncome" class="form-input" 
-                                   placeholder="0" min="0" step="1" value="0">
-                        </div>
-                    </div>
-                </div>
+                    <!-- Payment Card Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">Payment Card Information</h3>
 
-                <!-- Contact Information -->
-                <div class="form-section">
-                    <h3 class="section-title">Contact Information</h3>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" class="form-input" 
-                                   placeholder="john.smith@email.com" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="cardNumber"
+                                    >Card Number *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="cardNumber"
+                                    name="cardNumber"
+                                    class="form-input"
+                                    placeholder="0000 0000 0000 0000 (16 digits)"
+                                    required
+                                    title="Must be 16 digits"
+                                    maxlength="19"
+                                    inputmode="numeric"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="cardExpiry"
+                                    >Card Expiry *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="cardExpiry"
+                                    name="cardExpiry"
+                                    class="form-input"
+                                    placeholder="MM/YY"
+                                    required
+                                    title="Format: MM/YY"
+                                    maxlength="5"
+                                    inputmode="numeric"
+                                />
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="phoneNumber">Phone Number *</label>
-                            <input type="tel" id="phoneNumber" name="phoneNumber" class="form-input" 
-                                   placeholder="+00-00-000-0000" required 
-                                   title="Format: +country-area-number" maxlength="20">
-                        </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="addressLine1">Address Line 1 *</label>
-                        <input type="text" id="addressLine1" name="addressLine1" class="form-input" 
-                               placeholder="123 Main Street" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="addressLine2">Address Line 2</label>
-                        <input type="text" id="addressLine2" name="addressLine2" class="form-input" 
-                               placeholder="Apt 4B">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="city">City *</label>
-                            <input type="text" id="city" name="city" class="form-input" 
-                                   placeholder="New York" required pattern="[a-zA-Z\s]{2,50}"
-                                   title="Only letters and spaces, 2-50 characters">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="cardCvv"
+                                    >CVV *</label
+                                >
+                                <input
+                                    type="text"
+                                    id="cardCvv"
+                                    name="cardCvv"
+                                    class="form-input"
+                                    placeholder="123 (3 digits)"
+                                    required
+                                    title="Must be 3 digits"
+                                    maxlength="3"
+                                    inputmode="numeric"
+                                />
+                            </div>
+                            <div class="form-group"></div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="stateProvince">State/Province *</label>
-                            <input type="text" id="stateProvince" name="stateProvince" class="form-input" 
-                                   placeholder="New York" required pattern="[a-zA-Z\s]{2,50}"
-                                   title="Only letters and spaces, 2-50 characters">
-                        </div>
-                    </div>
 
-                    <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label" for="postalCode">Postal Code *</label>
-                            <input type="text" id="postalCode" name="postalCode" class="form-input" 
-                                   placeholder="10001" required maxlength="10"
-                                   title="Alphanumeric only">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="country">Country *</label>
-                            <input type="text" id="country" name="country" class="form-input" 
-                                   placeholder="United States" required pattern="[a-zA-Z\s]{2,50}"
-                                   title="Only letters and spaces, 2-50 characters">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="preferredLanguage">Preferred Language</label>
-                        <input type="text" id="preferredLanguage" name="preferredLanguage" class="form-input" 
-                               placeholder="English" value="English" pattern="[a-zA-Z\s]{0,30}"
-                               title="Only letters and spaces">
-                    </div>
-                </div>
-
-                <!-- Payment Card Information -->
-                <div class="form-section">
-                    <h3 class="section-title">Payment Card Information</h3>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="cardNumber">Card Number *</label>
-                            <input type="text" id="cardNumber" name="cardNumber" class="form-input" 
-                                   placeholder="0000 0000 0000 0000 (16 digits)" required 
-                                   title="Must be 16 digits" maxlength="19" inputmode="numeric">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="cardExpiry">Card Expiry *</label>
-                            <input type="text" id="cardExpiry" name="cardExpiry" class="form-input" 
-                                   placeholder="MM/YY" required 
-                                   title="Format: MM/YY" maxlength="5" inputmode="numeric">
+                            <label class="form-label" for="cardHolderName"
+                                >Cardholder Name *</label
+                            >
+                            <input
+                                type="text"
+                                id="cardHolderName"
+                                name="cardHolderName"
+                                class="form-input"
+                                placeholder="John Smith"
+                                required
+                                pattern="[a-zA-Z\s]{2,50}"
+                                title="Only letters and spaces, 2-50 characters"
+                            />
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="cardHolderName">Cardholder Name *</label>
-                        <input type="text" id="cardHolderName" name="cardHolderName" class="form-input" 
-                               placeholder="John Smith" required pattern="[a-zA-Z\s]{2,50}"
-                               title="Only letters and spaces, 2-50 characters">
+                    <!-- Submit Button -->
+                    <div class="form-section">
+                        <button
+                            type="submit"
+                            class="submit-button ready"
+                            id="submitBtn"
+                        >
+                            <div class="button-content">
+                                <span class="button-text"
+                                    >Create User Account</span
+                                >
+                            </div>
+                        </button>
+                        <p
+                            class="security-note"
+                            style="text-align: center; margin-top: 1rem"
+                        >
+                            * Required fields. All data is encrypted and
+                            securely stored.
+                        </p>
                     </div>
-                </div>
+                </form>
+            </div>
+        </main>
 
-                <!-- Submit Button -->
-                <div class="form-section">
-                    <button type="submit" class="submit-button ready" id="submitBtn">
-                        <div class="button-content">
-                            <span class="button-text">Create User Account</span>
-                        </div>
-                    </button>
-                    <p class="security-note" style="text-align: center; margin-top: 1rem;">
-                        * Required fields. All data is encrypted and securely stored.
-                    </p>
-                </div>
-            </form>
-        </div>
-    </main>
-
-    <script src="js/main.js"></script>
-    <script src="js/create-user.js"></script>
-</body>
+        <script src="js/main.js"></script>
+        <script src="js/create-user.js"></script>
+    </body>
 </html>

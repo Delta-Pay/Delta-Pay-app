@@ -2,7 +2,7 @@
   <img src="src/Icons/DeltaPayReadMELogo.svg" alt="Delta Pay Logo" width="1000" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));"/>
 </div>
 
-Delta pay is a mockup of an international payment solution. It features multiple security features and data security layers with a clean and structured layout. 
+Delta pay is a mockup of an international payment solution. It features multiple security features and data security layers with a clean and structured layout.
 
 ## Contributors
 
@@ -50,7 +50,7 @@ Delta Pay implements a role-based access control system with two distinct user t
 ### Customer Users
 - **Access:** Payment portal only (customer-facing interface)
 - **Authentication:** Username, account number, and password (PBKDF2-hashed with 100,000 iterations)
-- **Capabilities:** 
+- **Capabilities:**
   - Make international payments
   - Enter payment details and recipient information
   - Submit transactions for employee verification
@@ -69,7 +69,7 @@ Delta Pay implements a role-based access control system with two distinct user t
   - Manage account lockouts and security events
 - **Restrictions:** Dedicated employee interface separate from customer portal
 
-> **Security Note:** In production, access to the backend/admin view is strictly enforced through authentication middleware, role-based session tokens, and CSRF protection. Regular customers will never see or be able to access administrative functions. 
+> **Security Note:** In production, access to the backend/admin view is strictly enforced through authentication middleware, role-based session tokens, and CSRF protection. Regular customers will never see or be able to access administrative functions.
 
 ## UI Structure
 
@@ -156,7 +156,7 @@ The admin portal includes a comprehensive user registration system (`CreateUser.
 - Comprehensive error handling and user feedback via toast notifications
 - CSRF token protection on form submission
 
-> **Important:** Customer self-registration is not available. All user accounts must be created by administrators through this secure interface to ensure proper verification and compliance with banking regulations. 
+> **Important:** Customer self-registration is not available. All user accounts must be created by administrators through this secure interface to ensure proper verification and compliance with banking regulations.
 
 
 ## Frontend Technologies
@@ -230,4 +230,4 @@ No registration is necessary; however, they do need to log on to the system to c
 and forward them to SWIFT for payment. This is done by checking the payee's account information
 and verifying that the SWIFT code is correct. The employees complete the transaction by clicking a
 verified button next to each entry and finally by clicking submit to SWIFT – your job ends when that
-button is clicked. 
+button is clicked.

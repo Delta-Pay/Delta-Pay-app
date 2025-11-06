@@ -1,8 +1,14 @@
-// "Customers need to log on to the website by providing their username, account number and password." --> "Authentication services validate credentials, issue tokens, and log suspicious behaviour without leaking sensitive identifiers."
-
 import { crypto } from "https://deno.land/std@0.200.0/crypto/mod.ts";
 import { create, verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
-import { addSecurityLog, addUser, csrfTokens, getEmployeeByUsername, getUserByUsername, sessionTokens, type User } from "../database/init.ts";
+import {
+  addSecurityLog,
+  addUser,
+  csrfTokens,
+  getEmployeeByUsername,
+  getUserByUsername,
+  sessionTokens,
+  type User,
+} from "../database/init.ts";
 
 const JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
 
@@ -22,16 +28,20 @@ const VALIDATION_PATTERNS = {
   idNumber: /^[0-9]{13}$/,
   accountNumber: /^[0-9]{10,20}$/,
   username: /^[a-zA-Z0-9_]{3,20}$/,
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-  accountNumberRecipient: /^[A-Z0-9]{8,30}$/
+  password:
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+  accountNumberRecipient: /^[A-Z0-9]{8,30}$/,
 };
 
-export function validateInput(data: Record<string, string>, patterns: Record<string, RegExp>): { isValid: boolean; errors: string[] } {
+export function validateInput(
+  data: Record<string, string>,
+  patterns: Record<string, RegExp>,
+): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   for (const [field, value] of Object.entries(data)) {
     if (patterns[field] && !patterns[field].test(value)) {
-      errors.push(`Invalid ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+      errors.push(`Invalid ${field.replace(/([A-Z])/g, " $1").toLowerCase()}`);
     }
   }
 
@@ -49,14 +59,10 @@ export async function hashPassword(password: string): Promise<string> {
       iterations: 100000,
       hash: "SHA-256",
     },
-    await crypto.subtle.importKey(
-      "raw",
-      data,
-      { name: "PBKDF2" },
-      false,
-      ["deriveBits"]
-    ),
-    256
+    await crypto.subtle.importKey("raw", data, { name: "PBKDF2" }, false, [
+      "deriveBits",
+    ]),
+    256,
   );
 
   const keyArray = new Uint8Array(key);
@@ -67,11 +73,66 @@ export async function hashPassword(password: string): Promise<string> {
   return btoa(String.fromCharCode(...combined));
 }
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword(
+  password: string,
+  hash: string,
+): Promise<boolean> {
   try {
-    const combined = new Uint8Array(atob(hash).split('').map(c => c.charCodeAt(0)));
+    if (!password || typeof password !== "string") {
+      console.error("verifyPassword: Invalid password parameter");
+      return false;
+    }
+
+    if (!hash || typeof hash !== "string") {
+      console.error("verifyPassword: Invalid hash parameter");
+      return false;
+    }
+
+    let decodedHash: string;
+    try {
+      decodedHash = atob(hash);
+    } catch (decodeError) {
+      console.error(
+        "verifyPassword: Failed to decode base64 hash:",
+        decodeError,
+      );
+      return false;
+    }
+
+    if (!decodedHash || decodedHash.length < 48) {
+      console.error(
+        "verifyPassword: Decoded hash is too short, expected at least 48 bytes (16 salt + 32 key)",
+      );
+      return false;
+    }
+
+    const combined = new Uint8Array(
+      decodedHash.split("").map((c) => c.charCodeAt(0)),
+    );
+
+    if (combined.length < 48) {
+      console.error(
+        "verifyPassword: Combined array is too short, expected at least 48 bytes",
+      );
+      return false;
+    }
+
     const salt = combined.slice(0, 16);
     const key = combined.slice(16);
+
+    if (salt.length !== 16) {
+      console.error(
+        "verifyPassword: Salt extraction failed, expected 16 bytes",
+      );
+      return false;
+    }
+
+    if (key.length < 32) {
+      console.error(
+        "verifyPassword: Key extraction failed, expected at least 32 bytes",
+      );
+      return false;
+    }
 
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -82,17 +143,19 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
         iterations: 100000,
         hash: "SHA-256",
       },
-      await crypto.subtle.importKey(
-        "raw",
-        data,
-        { name: "PBKDF2" },
-        false,
-        ["deriveBits"]
-      ),
-      256
+      await crypto.subtle.importKey("raw", data, { name: "PBKDF2" }, false, [
+        "deriveBits",
+      ]),
+      256,
     );
 
     const derivedKeyArray = new Uint8Array(derivedKey);
+
+    if (derivedKeyArray.length !== key.length) {
+      console.error("verifyPassword: Key length mismatch");
+      return false;
+    }
+
     return derivedKeyArray.every((byte, index) => byte === key[index]);
   } catch (error) {
     console.error("Password verification error:", error);
@@ -113,11 +176,33 @@ interface LoginResult {
   message?: string;
   token?: string;
   csrfToken?: string;
-  user?: Pick<User, "id" | "username" | "full_name" | "account_number" | "email" | "phone_number" | "address_line_1" | "address_line_2" | "city" | "state_province" | "postal_code" | "country" | "currency" | "account_balance" | "card_number" | "card_expiry" | "card_holder_name">;
+  user?: Pick<
+    User,
+    | "id"
+    | "username"
+    | "full_name"
+    | "account_number"
+    | "email"
+    | "phone_number"
+    | "address_line_1"
+    | "address_line_2"
+    | "city"
+    | "state_province"
+    | "postal_code"
+    | "country"
+    | "currency"
+    | "account_balance"
+    | "card_number"
+    | "card_expiry"
+    | "card_holder_name"
+  >;
   employee?: { id: number; username: string; fullName: string };
 }
 
-export async function registerUser(userData: RegisterUserInput, ip: string): Promise<LoginResult> {
+export async function registerUser(
+  userData: RegisterUserInput,
+  ip: string,
+): Promise<LoginResult> {
   try {
     const { fullName, idNumber, accountNumber, username, password } = userData;
 
@@ -130,7 +215,10 @@ export async function registerUser(userData: RegisterUserInput, ip: string): Pro
       VALIDATION_PATTERNS,
     );
     if (!validation.isValid) {
-      return { success: false, message: `Validation failed: ${validation.errors.join(", ")}` };
+      return {
+        success: false,
+        message: `Validation failed: ${validation.errors.join(", ")}`,
+      };
     }
 
     const existingUser = getUserByUsername(username);
@@ -171,11 +259,11 @@ export async function registerUser(userData: RegisterUserInput, ip: string): Pro
     });
 
     logSecurityEvent({
-      action: 'USER_REGISTERED',
+      action: "USER_REGISTERED",
       ip_address: ip,
       details: JSON.stringify({ username, fullName }),
-      severity: 'info',
-      timestamp: new Date().toISOString()
+      severity: "info",
+      timestamp: new Date().toISOString(),
     });
 
     return { success: true, message: "User registered successfully" };
@@ -185,41 +273,58 @@ export async function registerUser(userData: RegisterUserInput, ip: string): Pro
   }
 }
 
-async function issueJwtForUser(user: User, userType: "user" | "employee"): Promise<string> {
+async function issueJwtForUser(
+  user: User,
+  userType: "user" | "employee",
+): Promise<string> {
   const key = await getJwtKey();
-  return await create({ alg: "HS256", typ: "JWT" }, {
-    userId: user.id,
-    username: user.username,
-    userType,
-  }, key);
+  return await create(
+    { alg: "HS256", typ: "JWT" },
+    {
+      userId: user.id,
+      username: user.username,
+      userType,
+    },
+    key,
+  );
 }
 
-export async function loginUser(username: string, password: string, ip: string): Promise<LoginResult> {
+export async function loginUser(
+  username: string,
+  password: string,
+  ip: string,
+): Promise<LoginResult> {
   try {
     const user = getUserByUsername(username);
     if (!user) {
       const timestamp = new Date().toISOString();
       logSecurityEvent({
-        action: 'USER_LOGIN_FAILED_UNKNOWN_USERNAME',
+        action: "USER_LOGIN_FAILED_UNKNOWN_USERNAME",
         ip_address: ip,
         details: `Login attempt for unknown username: ${maskIdentifier(username)}`,
-        severity: 'warning',
+        severity: "warning",
         timestamp,
       });
       return { success: false, message: "Invalid credentials" };
     }
 
     const now = Date.now();
-    if (user.account_locked_until && new Date(user.account_locked_until).getTime() > now) {
+    if (
+      user.account_locked_until &&
+      new Date(user.account_locked_until).getTime() > now
+    ) {
       logSecurityEvent({
-        action: 'USER_LOGIN_BLOCKED',
+        action: "USER_LOGIN_BLOCKED",
         user_id: user.id,
         ip_address: ip,
         details: `Blocked login during lock window for user: ${username}`,
-        severity: 'warning',
-        timestamp: new Date().toISOString()
+        severity: "warning",
+        timestamp: new Date().toISOString(),
       });
-      return { success: false, message: "Account temporarily locked. Please try again later." };
+      return {
+        success: false,
+        message: "Account temporarily locked. Please try again later.",
+      };
     }
 
     const isValidPassword = await verifyPassword(password, user.password_hash);
@@ -228,23 +333,23 @@ export async function loginUser(username: string, password: string, ip: string):
       user.failed_login_attempts = next;
       user.last_login_attempt = new Date().toISOString();
       logSecurityEvent({
-        action: 'USER_LOGIN_FAILED_INVALID_PASSWORD',
+        action: "USER_LOGIN_FAILED_INVALID_PASSWORD",
         user_id: user.id,
         ip_address: ip,
         details: `Invalid password for username: ${username}`,
-        severity: 'warning',
-        timestamp: new Date().toISOString()
+        severity: "warning",
+        timestamp: new Date().toISOString(),
       });
       if (next >= 5) {
         user.account_locked_until = new Date(now + 2 * 60 * 1000).toISOString();
         user.failed_login_attempts = 0;
         logSecurityEvent({
-          action: 'USER_ACCOUNT_TEMP_LOCKED',
+          action: "USER_ACCOUNT_TEMP_LOCKED",
           user_id: user.id,
           ip_address: ip,
-          details: 'Too many failed login attempts',
-          severity: 'warning',
-          timestamp: new Date().toISOString()
+          details: "Too many failed login attempts",
+          severity: "warning",
+          timestamp: new Date().toISOString(),
         });
       }
       return { success: false, message: "Invalid credentials" };
@@ -253,26 +358,48 @@ export async function loginUser(username: string, password: string, ip: string):
     user.failed_login_attempts = 0;
     user.account_locked_until = undefined;
 
-  const token = await issueJwtForUser(user, "user");
+    const token = await issueJwtForUser(user, "user");
 
     sessionTokens.push({
       token,
       userId: user.id,
       userType: "user",
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      is_revoked: false
+      is_revoked: false,
     });
 
     logSecurityEvent({
-      action: 'USER_LOGIN_SUCCESS',
+      action: "USER_LOGIN_SUCCESS",
       user_id: user.id,
       ip_address: ip,
       details: JSON.stringify({ username }),
-      severity: 'info',
-      timestamp: new Date().toISOString()
+      severity: "info",
+      timestamp: new Date().toISOString(),
     });
 
-    return { success: true, token, user: { id: user.id, username: user.username, full_name: user.full_name, account_number: user.account_number, email: user.email, phone_number: user.phone_number, address_line_1: user.address_line_1, address_line_2: user.address_line_2, city: user.city, state_province: user.state_province, postal_code: user.postal_code, country: user.country, currency: user.currency, account_balance: user.account_balance, card_number: user.card_number, card_expiry: user.card_expiry, card_holder_name: user.card_holder_name } };
+    return {
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        full_name: user.full_name,
+        account_number: user.account_number,
+        email: user.email,
+        phone_number: user.phone_number,
+        address_line_1: user.address_line_1,
+        address_line_2: user.address_line_2,
+        city: user.city,
+        state_province: user.state_province,
+        postal_code: user.postal_code,
+        country: user.country,
+        currency: user.currency,
+        account_balance: user.account_balance,
+        card_number: user.card_number,
+        card_expiry: user.card_expiry,
+        card_holder_name: user.card_holder_name,
+      },
+    };
   } catch (error) {
     console.error("Login error:", error);
     return { success: false, message: "Login failed" };
@@ -288,56 +415,71 @@ function maskIdentifier(identifier: string): string {
   return `${start}***${end}`;
 }
 
-export async function loginEmployee(username: string, password: string, ip: string): Promise<LoginResult> {
+export async function loginEmployee(
+  username: string,
+  password: string,
+  ip: string,
+): Promise<LoginResult> {
   try {
     const employee = getEmployeeByUsername(username);
     if (!employee) {
       logSecurityEvent({
-        action: 'EMPLOYEE_LOGIN_FAILED_UNKNOWN_USERNAME',
+        action: "EMPLOYEE_LOGIN_FAILED_UNKNOWN_USERNAME",
         ip_address: ip,
         details: `Employee login attempt for non-existent username: ${username}`,
-        severity: 'warning',
-        timestamp: new Date().toISOString()
+        severity: "warning",
+        timestamp: new Date().toISOString(),
       });
       return { success: false, message: "Invalid credentials" };
     }
 
     const now = Date.now();
-    if (employee.account_locked_until && new Date(employee.account_locked_until).getTime() > now) {
+    if (
+      employee.account_locked_until &&
+      new Date(employee.account_locked_until).getTime() > now
+    ) {
       logSecurityEvent({
-        action: 'EMPLOYEE_LOGIN_BLOCKED',
+        action: "EMPLOYEE_LOGIN_BLOCKED",
         employee_id: employee.id,
         ip_address: ip,
         details: `Blocked employee login during lock window for user: ${username}`,
-        severity: 'warning',
-        timestamp: new Date().toISOString()
+        severity: "warning",
+        timestamp: new Date().toISOString(),
       });
-      return { success: false, message: "Account temporarily locked. Please try again later." };
+      return {
+        success: false,
+        message: "Account temporarily locked. Please try again later.",
+      };
     }
 
-    const isValidPassword = await verifyPassword(password, employee.password_hash);
+    const isValidPassword = await verifyPassword(
+      password,
+      employee.password_hash,
+    );
     if (!isValidPassword) {
       const next = (employee.failed_login_attempts || 0) + 1;
       employee.failed_login_attempts = next;
       employee.last_login_attempt = new Date().toISOString();
       logSecurityEvent({
-        action: 'EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD',
+        action: "EMPLOYEE_LOGIN_FAILED_INVALID_PASSWORD",
         employee_id: employee.id,
         ip_address: ip,
         details: `Invalid password for employee username: ${username}`,
-        severity: 'warning',
-        timestamp: new Date().toISOString()
+        severity: "warning",
+        timestamp: new Date().toISOString(),
       });
       if (next >= 5) {
-        employee.account_locked_until = new Date(now + 2 * 60 * 1000).toISOString();
+        employee.account_locked_until = new Date(
+          now + 2 * 60 * 1000,
+        ).toISOString();
         employee.failed_login_attempts = 0;
         logSecurityEvent({
-          action: 'EMPLOYEE_ACCOUNT_TEMP_LOCKED',
+          action: "EMPLOYEE_ACCOUNT_TEMP_LOCKED",
           employee_id: employee.id,
           ip_address: ip,
-          details: 'Too many failed employee login attempts',
-          severity: 'warning',
-          timestamp: new Date().toISOString()
+          details: "Too many failed employee login attempts",
+          severity: "warning",
+          timestamp: new Date().toISOString(),
         });
       }
       return { success: false, message: "Invalid credentials" };
@@ -346,49 +488,63 @@ export async function loginEmployee(username: string, password: string, ip: stri
     employee.failed_login_attempts = 0;
     employee.account_locked_until = undefined;
 
-  const token = await issueJwtForUser(employee as unknown as User, "employee");
+    const token = await issueJwtForUser(
+      employee as unknown as User,
+      "employee",
+    );
 
     sessionTokens.push({
       token,
       userId: employee.id,
       userType: "employee",
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      is_revoked: false
+      is_revoked: false,
     });
 
     logSecurityEvent({
-      action: 'EMPLOYEE_LOGIN_SUCCESS',
+      action: "EMPLOYEE_LOGIN_SUCCESS",
       employee_id: employee.id,
       ip_address: ip,
       details: JSON.stringify({ username }),
-      severity: 'info',
-      timestamp: new Date().toISOString()
+      severity: "info",
+      timestamp: new Date().toISOString(),
     });
 
-    return { success: true, token, employee: { id: employee.id, username: employee.username, fullName: employee.full_name } };
+    return {
+      success: true,
+      token,
+      employee: {
+        id: employee.id,
+        username: employee.username,
+        fullName: employee.full_name,
+      },
+    };
   } catch (error) {
     console.error("Employee login error:", error);
     return { success: false, message: "Login failed" };
   }
 }
 
-export function generateCSRFToken(userId?: number, employeeId?: number): string {
+export function generateCSRFToken(
+  userId?: number,
+  employeeId?: number,
+): string {
   const token = crypto.randomUUID();
   csrfTokens.push({
     token,
-  user_id: userId,
-  employee_id: employeeId,
-    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    user_id: userId,
+    employee_id: employeeId,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   });
   return token;
 }
 
 type SecurityEventInput = {
-  "user_id"?: number;
-  "employee_id"?: number;
+  user_id?: number;
+  employee_id?: number;
   action: string;
-  "ip_address"?: string;
-  "user_agent"?: string;
+  ip_address?: string;
+  user_agent?: string;
   details?: string;
   severity?: string;
   timestamp?: string;
@@ -400,36 +556,50 @@ type SecurityEventInput = {
 
 export function logSecurityEvent(eventData: SecurityEventInput): void {
   try {
-    const safeAction = String(eventData.action || 'UNKNOWN').slice(0, 64);
-    const safeSeverity = (eventData.severity || 'info').toLowerCase();
-    const normalizedSeverity = safeSeverity === 'warning' ? 'warning' : safeSeverity === 'error' ? 'error' : 'info';
+    const safeAction = String(eventData.action || "UNKNOWN").slice(0, 64);
+    const safeSeverity = (eventData.severity || "info").toLowerCase();
+    const normalizedSeverity =
+      safeSeverity === "warning"
+        ? "warning"
+        : safeSeverity === "error"
+          ? "error"
+          : "info";
     const rawDetails = eventData.details ?? undefined;
-    const safeDetails = typeof rawDetails === 'string' ? rawDetails.slice(0, 2000) : (rawDetails ? JSON.stringify(rawDetails).slice(0, 2000) : undefined);
+    const safeDetails =
+      typeof rawDetails === "string"
+        ? rawDetails.slice(0, 2000)
+        : rawDetails
+          ? JSON.stringify(rawDetails).slice(0, 2000)
+          : undefined;
 
     addSecurityLog({
       user_id: eventData["user_id"] ?? eventData.userId ?? undefined,
-      employee_id: eventData["employee_id"] ?? eventData.employeeId ?? undefined,
+      employee_id:
+        eventData["employee_id"] ?? eventData.employeeId ?? undefined,
       action: safeAction,
       ip_address: eventData["ip_address"] ?? eventData.ipAddress ?? "unknown",
       user_agent: eventData["user_agent"] ?? eventData.userAgent ?? undefined,
       details: safeDetails,
       severity: normalizedSeverity,
-      timestamp: eventData.timestamp || new Date().toISOString()
+      timestamp: eventData.timestamp || new Date().toISOString(),
     });
   } catch (error) {
     console.error("Security logging error:", error);
   }
 }
 
-export async function verifyToken(token: string): Promise<Record<string, unknown> | null> {
+export async function verifyToken(
+  token: string,
+): Promise<Record<string, unknown> | null> {
   try {
-  const key = await getJwtKey();
-  const payload = await verify(token, key);
+    const key = await getJwtKey();
+    const payload = await verify(token, key);
 
-    const sessionToken = sessionTokens.find(t =>
-      t.token === token &&
-      !t.is_revoked &&
-      new Date(t.expires_at) > new Date()
+    const sessionToken = sessionTokens.find(
+      (t) =>
+        t.token === token &&
+        !t.is_revoked &&
+        new Date(t.expires_at) > new Date(),
     );
 
     if (!sessionToken) {
@@ -443,34 +613,44 @@ export async function verifyToken(token: string): Promise<Record<string, unknown
   }
 }
 
-export async function authenticateUserPassword(username: string, password: string, ip: string): Promise<LoginResult> {
+export async function authenticateUserPassword(
+  username: string,
+  password: string,
+  ip: string,
+): Promise<LoginResult> {
   try {
     const user = getUserByUsername(username);
     if (!user || !user.is_active) {
       logSecurityEvent({
-        action: 'PASSWORD_AUTH_FAILED',
+        action: "PASSWORD_AUTH_FAILED",
         ip_address: ip,
         details: `Authentication failed for username: ${username}`,
-        severity: 'warning',
-        timestamp: new Date().toISOString()
+        severity: "warning",
+        timestamp: new Date().toISOString(),
       });
       return { success: false, message: "Invalid credentials" };
     }
 
     const now = Date.now();
-    if (user.account_locked_until && new Date(user.account_locked_until).getTime() > now) {
-      return { success: false, message: "Account temporarily locked. Please try again later." };
+    if (
+      user.account_locked_until &&
+      new Date(user.account_locked_until).getTime() > now
+    ) {
+      return {
+        success: false,
+        message: "Account temporarily locked. Please try again later.",
+      };
     }
 
     const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
       logSecurityEvent({
-        action: 'PASSWORD_AUTH_FAILED',
+        action: "PASSWORD_AUTH_FAILED",
         user_id: user.id,
         ip_address: ip,
         details: `Password authentication failed for user: ${username}`,
-        severity: 'warning',
-        timestamp: new Date().toISOString()
+        severity: "warning",
+        timestamp: new Date().toISOString(),
       });
       const next = (user.failed_login_attempts || 0) + 1;
       user.failed_login_attempts = next;
@@ -483,12 +663,12 @@ export async function authenticateUserPassword(username: string, password: strin
     }
 
     logSecurityEvent({
-      action: 'PASSWORD_AUTH_SUCCESS',
+      action: "PASSWORD_AUTH_SUCCESS",
       user_id: user.id,
       ip_address: ip,
       details: `Password authentication successful for user: ${username}`,
-      severity: 'info',
-      timestamp: new Date().toISOString()
+      severity: "info",
+      timestamp: new Date().toISOString(),
     });
 
     const token = await issueJwtForUser(user, "user");
@@ -499,7 +679,7 @@ export async function authenticateUserPassword(username: string, password: strin
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       is_revoked: false,
     });
-  const csrfToken = generateCSRFToken(user.id, undefined);
+    const csrfToken = generateCSRFToken(user.id, undefined);
 
     return {
       success: true,
@@ -528,11 +708,11 @@ export async function authenticateUserPassword(username: string, password: strin
   } catch (error) {
     console.error("Password authentication error:", error);
     logSecurityEvent({
-      action: 'PASSWORD_AUTH_ERROR',
+      action: "PASSWORD_AUTH_ERROR",
       ip_address: ip,
       details: `Authentication error: ${error instanceof Error ? error.message : String(error)}`,
-      severity: 'error',
-      timestamp: new Date().toISOString()
+      severity: "error",
+      timestamp: new Date().toISOString(),
     });
     return { success: false, message: "Authentication failed" };
   }

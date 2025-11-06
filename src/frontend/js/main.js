@@ -1,5 +1,3 @@
-// "Backend view - The page is used to show the database and the payments, and then approve or deny them." --> "Main client script keeps admin walkthrough open in demo mode while still supporting future auth hardening."
-
 let users = [];
 let selectedUser = null;
 let authenticatedUser = null;
@@ -8,20 +6,33 @@ let paymentReference = null;
 let csrfToken = null;
 const DEMO_MODE = true;
 let employeeAuth = DEMO_MODE
-  ? { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() }
+  ? {
+      token: null,
+      csrfToken: null,
+      employee: { id: 0, username: "demoAdmin", fullName: "Demo Admin" },
+      obtainedAt: Date.now(),
+    }
   : null;
 
-const EMPLOYEE_SESSION_KEY = 'employeeAuth';
+const EMPLOYEE_SESSION_KEY = "employeeAuth";
 
-async function fetchWithTimeout(resource, options = {}, timeoutMs = 8000, retry = 1) {
+async function fetchWithTimeout(
+  resource,
+  options = {},
+  timeoutMs = 8000,
+  retry = 1,
+) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(resource, { ...options, signal: controller.signal });
+    const res = await fetch(resource, {
+      ...options,
+      signal: controller.signal,
+    });
     return res;
   } catch (err) {
     if (retry > 0) {
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 400));
       return fetchWithTimeout(resource, options, timeoutMs, retry - 1);
     }
     throw err;
@@ -32,26 +43,40 @@ async function fetchWithTimeout(resource, options = {}, timeoutMs = 8000, retry 
 
 async function loadUsers() {
   try {
-  const response = await fetchWithTimeout('/api/users/all');
+    const response = await fetchWithTimeout("/api/users/all");
+    if (!response || !response.ok) {
+      console.error("Failed to fetch users: Invalid response");
+      return;
+    }
+
     const data = await response.json();
+    if (!data || typeof data !== "object") {
+      console.error("Failed to load users: Invalid data format");
+      return;
+    }
 
     if (data.success) {
+      if (!Array.isArray(data.users)) {
+        console.error("Failed to load users: users field is not an array");
+        return;
+      }
       users = data.users;
-      console.log('Users loaded from database:', users.length);
+      console.log("Users loaded from database:", users.length);
     } else {
-      console.error('Failed to load users');
+      console.error("Failed to load users");
     }
   } catch (error) {
-    console.error('Error loading users:', error);
+    console.error("Error loading users:", error);
   }
 }
 
 function generateRandomCharge() {
   const minAmount = 50;
   const maxAmount = 5000;
-  const randomAmount = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
+  const randomAmount =
+    Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
   const cents = Math.floor(Math.random() * 100);
-  return parseFloat(`${randomAmount}.${cents.toString().padStart(2, '0')}`);
+  return parseFloat(`${randomAmount}.${cents.toString().padStart(2, "0")}`);
 }
 
 function generatePaymentReference() {
@@ -63,40 +88,42 @@ function generatePaymentReference() {
 function navigateToSelectAccount() {
   try {
     showAccountModal();
-    logSecurityEvent('ACCOUNT_MODAL_SHOWN', { timestamp: new Date().toISOString() });
+    logSecurityEvent("ACCOUNT_MODAL_SHOWN", {
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
-    console.error('Error showing account selection:', error);
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/SelectAccount.html';
+    console.error("Error showing account selection:", error);
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+      globalThis.location.href = "/SelectAccount.html";
     }
   }
 }
 
 function navigateToViewPayments() {
   try {
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/view-payments';
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+      globalThis.location.href = "/view-payments";
     }
   } catch (error) {
-    console.error('Navigation error:', error);
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/ViewPayments.html';
+    console.error("Navigation error:", error);
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+      globalThis.location.href = "/ViewPayments.html";
     }
   }
 }
 
 function _navigateToMakePayment() {
   try {
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/make-payment';
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+      globalThis.location.href = "/make-payment";
     } else {
       console.error("Cannot navigate - window.location not available");
     }
   } catch (error) {
-    console.error('Navigation error:', error);
+    console.error("Navigation error:", error);
     try {
-      if (typeof globalThis !== 'undefined' && globalThis.location) {
-        globalThis.location.href = '/MakePayment.html';
+      if (typeof globalThis !== "undefined" && globalThis.location) {
+        globalThis.location.href = "/MakePayment.html";
       } else {
         console.error("Cannot navigate - window.location not available");
       }
@@ -112,7 +139,7 @@ function navigateToPayment() {
       throw new Error("Document object not available");
     }
 
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
+    if (typeof globalThis !== "undefined" && globalThis.location) {
       globalThis.location.href = "/select-account";
     } else {
       console.error("Cannot navigate - window.location not available");
@@ -120,7 +147,7 @@ function navigateToPayment() {
   } catch (error) {
     console.error("Error navigating to payment:", error);
     try {
-      if (typeof globalThis !== 'undefined' && globalThis.location) {
+      if (typeof globalThis !== "undefined" && globalThis.location) {
         globalThis.location.href = "/select-account";
       } else {
         console.error("Cannot navigate - window.location not available");
@@ -133,45 +160,64 @@ function navigateToPayment() {
 
 function navigateToSecurityLogs() {
   try {
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/security-logs';
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+      globalThis.location.href = "/security-logs";
     }
   } catch (error) {
-    console.error('Navigation error:', error);
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/SecurityLogs.html';
+    console.error("Navigation error:", error);
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+      globalThis.location.href = "/SecurityLogs.html";
     }
   }
 }
 
-function showAccountModal() {
-  const modal = document.getElementById('accountSelectionModal');
+async function showAccountModal() {
+  const modal = document.getElementById("accountSelectionModal");
   if (!modal) {
-    throw new Error('Account selection modal not found');
+    throw new Error("Account selection modal not found");
   }
+
+  await loadUsers();
 
   updateAccountModalWithUsers();
 
   if (modal.classList) {
-    modal.classList.add('active');
+    modal.classList.add("active");
   } else {
-    modal.className += ' active';
+    modal.className += " active";
   }
 }
 
 function updateAccountModalWithUsers() {
-  const accountGrid = document.querySelector('.account-grid');
+  const accountGrid = document.querySelector(".account-grid");
   if (!accountGrid) return;
 
-  accountGrid.innerHTML = '';
+  accountGrid.innerHTML = "";
 
-  users.forEach(user => {
-    const accountCard = document.createElement('div');
-    accountCard.className = 'account-card';
+  if (!Array.isArray(users) || users.length === 0) {
+    const emptyMessage = document.createElement("div");
+    emptyMessage.textContent = "No user accounts available";
+    emptyMessage.style.padding = "2rem";
+    emptyMessage.style.textAlign = "center";
+    emptyMessage.style.opacity = "0.7";
+    accountGrid.appendChild(emptyMessage);
+    console.error(
+      "updateAccountModalWithUsers: users array is empty or invalid",
+    );
+    return;
+  }
+
+  users.forEach((user) => {
+    const accountCard = document.createElement("div");
+    accountCard.className = "account-card";
     accountCard.onclick = () => selectUserFromPopup(user.username);
 
-    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
-    const maskedAccount = user.account_number ? `****${user.account_number.slice(-4)}` : '****0000';
+    const letter = user.full_name
+      ? user.full_name.charAt(0).toUpperCase()
+      : "U";
+    const maskedAccount = user.account_number
+      ? `****${user.account_number.slice(-4)}`
+      : "****0000";
 
     accountCard.innerHTML = `
       <div class="account-icon">${letter}</div>
@@ -179,7 +225,7 @@ function updateAccountModalWithUsers() {
         <h4>${user.full_name}</h4>
         <p>ID: ${user.id_number}</p>
         <p class="account-number">Account: ${maskedAccount}</p>
-        <p class="account-balance">${user.currency} ${user.account_balance?.toLocaleString() || '0.00'}</p>
+        <p class="account-balance">${user.currency} ${user.account_balance?.toLocaleString() || "0.00"}</p>
         <p class="account-type">${user.account_type}</p>
       </div>
     `;
@@ -189,45 +235,71 @@ function updateAccountModalWithUsers() {
 }
 
 function closeAccountModal() {
-  const modal = document.getElementById('accountSelectionModal');
+  const modal = document.getElementById("accountSelectionModal");
   if (!modal) return;
 
   if (modal.classList) {
-    modal.classList.remove('active');
+    modal.classList.remove("active");
   } else {
-    modal.className = modal.className.replace(/\s*active\s*/g, '');
+    modal.className = modal.className.replace(/\s*active\s*/g, "");
   }
 }
 
 function selectUserFromPopup(username) {
   try {
-    const user = users.find(u => u.username === username);
+    if (!Array.isArray(users) || users.length === 0) {
+      console.error("selectUserFromPopup: users array not populated");
+      throw new Error("User data not available. Please refresh the page.");
+    }
+
+    if (!username || typeof username !== "string") {
+      console.error("selectUserFromPopup: invalid username parameter");
+      throw new Error("Invalid user selection");
+    }
+
+    const user = users.find((u) => u.username === username);
     if (!user) {
       throw new Error(`User not found: ${username}`);
     }
 
-    logSecurityEvent('USER_SELECTED_FROM_POPUP', {
+    logSecurityEvent("USER_SELECTED_FROM_POPUP", {
       username: user.username,
       fullName: user.full_name,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    sessionStorage.setItem('selectedUser', JSON.stringify(user));
-    closeAccountModal();
+    sessionStorage.setItem("selectedUser", JSON.stringify(user));
 
-    setTimeout(() => {
-      if (typeof globalThis !== 'undefined' && globalThis.location) {
-        globalThis.location.href = '/make-payment';
+    const modal = document.getElementById("accountSelectionModal");
+    if (modal) {
+      const handleTransitionEnd = () => {
+        modal.removeEventListener("transitionend", handleTransitionEnd);
+        if (typeof globalThis !== "undefined" && globalThis.location) {
+          globalThis.location.href = "/make-payment";
+        }
+      };
+
+      if (modal.classList.contains("active")) {
+        modal.addEventListener("transitionend", handleTransitionEnd);
+        closeAccountModal();
+      } else {
+        if (typeof globalThis !== "undefined" && globalThis.location) {
+          globalThis.location.href = "/make-payment";
+        }
       }
-    }, 300);
-
+    } else {
+      console.error("selectUserFromPopup: Modal element not found");
+      if (typeof globalThis !== "undefined" && globalThis.location) {
+        globalThis.location.href = "/make-payment";
+      }
+    }
   } catch (error) {
-    console.error('User selection failed:', error);
-    logSecurityEvent('USER_SELECTION_ERROR', {
+    console.error("User selection failed:", error);
+    logSecurityEvent("USER_SELECTION_ERROR", {
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    alert('Invalid user selection. Please try again.');
+    alert("Invalid user selection. Please try again.");
   }
 }
 
@@ -235,47 +307,48 @@ async function initializePaymentPage() {
   try {
     await loadUsers();
 
-    const selectedUserData = JSON.parse(sessionStorage.getItem('selectedUser') || '{}');
+    const selectedUserData = JSON.parse(
+      sessionStorage.getItem("selectedUser") || "{}",
+    );
 
-  if (!selectedUserData.username) {
-      alert('Please select a user account first.');
-      if (typeof globalThis !== 'undefined' && globalThis.location) {
-        globalThis.location.href = '/select-account';
+    if (!selectedUserData.username) {
+      alert("Please select a user account first.");
+      if (typeof globalThis !== "undefined" && globalThis.location) {
+        globalThis.location.href = "/select-account";
       }
       return;
     }
 
-    selectedUser = users.find(u => u.username === selectedUserData.username);
+    selectedUser = users.find((u) => u.username === selectedUserData.username);
     if (!selectedUser) {
-      alert('Selected user not found. Please try again.');
-      if (typeof globalThis !== 'undefined' && globalThis.location) {
-        globalThis.location.href = '/select-account';
+      alert("Selected user not found. Please try again.");
+      if (typeof globalThis !== "undefined" && globalThis.location) {
+        globalThis.location.href = "/select-account";
       }
       return;
     }
 
     showPasswordModal();
 
-    logSecurityEvent('PAYMENT_PAGE_INITIALIZED', {
+    logSecurityEvent("PAYMENT_PAGE_INITIALIZED", {
       username: selectedUserData.username,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    console.error('Error initializing payment page:', error);
-    alert('Failed to initialize payment page. Please try again.');
-    if (typeof globalThis !== 'undefined' && globalThis.location) {
-      globalThis.location.href = '/';
+    console.error("Error initializing payment page:", error);
+    alert("Failed to initialize payment page. Please try again.");
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+      globalThis.location.href = "/";
     }
   }
 }
 
 function showPasswordModal() {
-  const modal = document.getElementById('passwordModal');
+  const modal = document.getElementById("passwordModal");
   if (modal) {
-  modal.classList.add('active');
-  modal.style.display = 'flex';
-    const passwordInput = document.getElementById('authPassword');
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    const passwordInput = document.getElementById("authPassword");
     if (passwordInput) {
       passwordInput.focus();
     }
@@ -283,69 +356,75 @@ function showPasswordModal() {
 }
 
 function closePasswordModal() {
-  const modal = document.getElementById('passwordModal');
+  const modal = document.getElementById("passwordModal");
   if (modal) {
-    modal.classList.remove('active');
-    modal.style.display = 'none';
+    modal.classList.remove("active");
+    modal.style.display = "none";
   }
-  const passwordForm = document.getElementById('passwordForm');
+  const passwordForm = document.getElementById("passwordForm");
   if (passwordForm) {
     passwordForm.reset();
   }
-  sessionStorage.removeItem('pendingUser');
+  sessionStorage.removeItem("pendingUser");
   if (
     !authenticatedUser &&
-    (typeof globalThis !== 'undefined' && globalThis.location && (
-      globalThis.location.pathname.includes('MakePayment.html') ||
-      globalThis.location.pathname === '/make-payment'
-    ))
+    typeof globalThis !== "undefined" &&
+    globalThis.location &&
+    (globalThis.location.pathname.includes("MakePayment.html") ||
+      globalThis.location.pathname === "/make-payment")
   ) {
-    globalThis.location.href = '/select-account';
+    globalThis.location.href = "/select-account";
   }
 }
 
 async function handlePasswordAuthentication(event) {
   event.preventDefault();
 
-  const key = `pwdAttempts:${selectedUser?.username || 'unknown'}`;
+  const key = `pwdAttempts:${selectedUser?.username || "unknown"}`;
   const attemptsRaw = sessionStorage.getItem(key);
-  const attempts = attemptsRaw ? JSON.parse(attemptsRaw) : { count: 0, until: 0 };
+  const attempts = attemptsRaw
+    ? JSON.parse(attemptsRaw)
+    : { count: 0, until: 0 };
   const now = Date.now();
   if (attempts.until && now < attempts.until) {
-    alert('Too many attempts. Please wait a moment and try again.');
+    alert("Too many attempts. Please wait a moment and try again.");
     return;
   }
 
-  const password = document.getElementById('authPassword').value.trim();
+  const password = document.getElementById("authPassword").value.trim();
   if (!password) {
-    alert('Please enter your password.');
-    logSecurityEvent('PASSWORD_AUTH_EMPTY_INPUT', {
-      username: selectedUser?.username || 'unknown',
-      timestamp: new Date().toISOString()
+    alert("Please enter your password.");
+    logSecurityEvent("PASSWORD_AUTH_EMPTY_INPUT", {
+      username: selectedUser?.username || "unknown",
+      timestamp: new Date().toISOString(),
     });
     return;
   }
 
   if (password.length < 3 || password.length > 100) {
-    alert('Invalid password format.');
-    logSecurityEvent('PASSWORD_AUTH_INVALID_FORMAT', {
-      username: selectedUser?.username || 'unknown',
-      timestamp: new Date().toISOString()
+    alert("Invalid password format.");
+    logSecurityEvent("PASSWORD_AUTH_INVALID_FORMAT", {
+      username: selectedUser?.username || "unknown",
+      timestamp: new Date().toISOString(),
     });
     return;
   }
 
   try {
-    const response = await fetchWithTimeout('/api/auth/authenticate-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+    const response = await fetchWithTimeout(
+      "/api/auth/authenticate-password",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: selectedUser.username,
+          password: password,
+        }),
       },
-      body: JSON.stringify({
-        username: selectedUser.username,
-        password: password
-      })
-    }, 8000);
+      8000,
+    );
 
     const result = await response.json();
 
@@ -353,35 +432,38 @@ async function handlePasswordAuthentication(event) {
       sessionStorage.setItem(key, JSON.stringify({ count: 0, until: 0 }));
       authenticatedUser = result.user;
       if (result.token) {
-        sessionStorage.setItem('authToken', result.token);
+        sessionStorage.setItem("authToken", result.token);
       }
       if (result.csrfToken) {
         csrfToken = result.csrfToken;
-        sessionStorage.setItem('csrfToken', csrfToken);
+        sessionStorage.setItem("csrfToken", csrfToken);
       }
-      
+
       closePasswordModal();
       initializeSecurePaymentForm();
 
-      logSecurityEvent('USER_AUTHENTICATED_FOR_PAYMENT', {
+      logSecurityEvent("USER_AUTHENTICATED_FOR_PAYMENT", {
         username: authenticatedUser.username,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
-  const next = { count: (attempts.count || 0) + 1, until: 0 };
-  if (next.count >= 5) { next.count = 0; next.until = Date.now() + 2 * 60 * 1000; }
-  sessionStorage.setItem(key, JSON.stringify(next));
-      alert('Invalid password. Please try again.');
-      document.getElementById('authPassword').value = '';
-      document.getElementById('authPassword').focus();
+      const next = { count: (attempts.count || 0) + 1, until: 0 };
+      if (next.count >= 5) {
+        next.count = 0;
+        next.until = Date.now() + 2 * 60 * 1000;
+      }
+      sessionStorage.setItem(key, JSON.stringify(next));
+      alert("Invalid password. Please try again.");
+      document.getElementById("authPassword").value = "";
+      document.getElementById("authPassword").focus();
     }
   } catch (error) {
-    console.error('Authentication error:', error);
-    alert('Authentication failed. Please try again.');
-    logSecurityEvent('PASSWORD_AUTH_SYSTEM_ERROR', {
-      username: selectedUser?.username || 'unknown',
-      error: error.message || 'Unknown error',
-      timestamp: new Date().toISOString()
+    console.error("Authentication error:", error);
+    alert("Authentication failed. Please try again.");
+    logSecurityEvent("PASSWORD_AUTH_SYSTEM_ERROR", {
+      username: selectedUser?.username || "unknown",
+      error: error.message || "Unknown error",
+      timestamp: new Date().toISOString(),
     });
   }
 }
@@ -398,22 +480,23 @@ function initializeSecurePaymentForm() {
 
   setupFormValidation();
 
-  logSecurityEvent('PAYMENT_FORM_INITIALIZED', {
+  logSecurityEvent("PAYMENT_FORM_INITIALIZED", {
     username: authenticatedUser.username,
     chargeAmount: currentCharge,
     reference: paymentReference,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
 function updateAccountDisplay() {
-  const accountHolderName = document.getElementById('accountHolderName');
-  const displayAccountNumber = document.getElementById('displayAccountNumber');
-  const displayBalance = document.getElementById('displayBalance');
-  const accountAvatar = document.getElementById('accountAvatar');
-  const userIcon = document.getElementById('userIcon');
+  const accountHolderName = document.getElementById("accountHolderName");
+  const displayAccountNumber = document.getElementById("displayAccountNumber");
+  const displayBalance = document.getElementById("displayBalance");
+  const accountAvatar = document.getElementById("accountAvatar");
+  const userIcon = document.getElementById("userIcon");
 
-  if (accountHolderName) accountHolderName.textContent = authenticatedUser.full_name;
+  if (accountHolderName)
+    accountHolderName.textContent = authenticatedUser.full_name;
   if (displayAccountNumber) {
     const maskedAccount = `••••••••••••${authenticatedUser.account_number.slice(-4)}`;
     displayAccountNumber.textContent = maskedAccount;
@@ -432,22 +515,26 @@ function updateAccountDisplay() {
 }
 
 function autoFillPaymentDetails() {
-  const amountField = document.getElementById('amount');
-  const currencyField = document.getElementById('currency');
-  const serviceDescription = document.getElementById('serviceDescription');
-  const paymentReferenceField = document.getElementById('paymentReference');
-  const buttonAmount = document.getElementById('buttonAmount');
+  const amountField = document.getElementById("amount");
+  const currencyField = document.getElementById("currency");
+  const serviceDescription = document.getElementById("serviceDescription");
+  const paymentReferenceField = document.getElementById("paymentReference");
+  const buttonAmount = document.getElementById("buttonAmount");
 
-  if (amountField) amountField.textContent = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
+  if (amountField)
+    amountField.textContent = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
   if (currencyField) currencyField.textContent = authenticatedUser.currency;
-  if (serviceDescription) serviceDescription.textContent = 'International Payment Processing Fee';
-  if (paymentReferenceField) paymentReferenceField.textContent = paymentReference;
-  if (buttonAmount) buttonAmount.textContent = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
+  if (serviceDescription)
+    serviceDescription.textContent = "International Payment Processing Fee";
+  if (paymentReferenceField)
+    paymentReferenceField.textContent = paymentReference;
+  if (buttonAmount)
+    buttonAmount.textContent = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
 
-  const cardNumber = document.getElementById('cardNumber');
-  const expiryDate = document.getElementById('expiryDate');
-  const cardholderName = document.getElementById('cardholderName');
-  const billingAddress = document.getElementById('billingAddress');
+  const cardNumber = document.getElementById("cardNumber");
+  const expiryDate = document.getElementById("expiryDate");
+  const cardholderName = document.getElementById("cardholderName");
+  const billingAddress = document.getElementById("billingAddress");
 
   if (cardNumber && authenticatedUser.card_number) {
     const maskedCardNumber = `•••• •••• •••• ${authenticatedUser.card_number.slice(-4)}`;
@@ -460,25 +547,26 @@ function autoFillPaymentDetails() {
     cardholderName.textContent = authenticatedUser.card_holder_name;
   }
   if (billingAddress) {
-    const address = `${authenticatedUser.address_line_1}\n${authenticatedUser.address_line_2 ? authenticatedUser.address_line_2 + '\n' : ''}${authenticatedUser.city}, ${authenticatedUser.state_province} ${authenticatedUser.postal_code}\n${authenticatedUser.country}`;
+    const address = `${authenticatedUser.address_line_1}\n${authenticatedUser.address_line_2 ? authenticatedUser.address_line_2 + "\n" : ""}${authenticatedUser.city}, ${authenticatedUser.state_province} ${authenticatedUser.postal_code}\n${authenticatedUser.country}`;
     billingAddress.textContent = address;
   }
 }
 
 function setupFormValidation() {
-  const cvvInput = document.getElementById('cvv');
-  const termsCheckbox = document.getElementById('acceptTerms');
-  const submitButton = document.getElementById('processPaymentBtn');
+  const cvvInput = document.getElementById("cvv");
+  const termsCheckbox = document.getElementById("acceptTerms");
+  const submitButton = document.getElementById("processPaymentBtn");
 
   function validateForm() {
-    const cvvValid = cvvInput && cvvInput.value.length === 3 && /^\d{3}$/.test(cvvInput.value);
+    const cvvValid =
+      cvvInput && cvvInput.value.length === 3 && /^\d{3}$/.test(cvvInput.value);
     const termsAccepted = termsCheckbox && termsCheckbox.checked;
 
     if (cvvInput && cvvInput.value && !cvvValid) {
-      logSecurityEvent('CVV_VALIDATION_FAILED', {
-        username: authenticatedUser?.username || 'unknown',
-        reason: 'Invalid CVV format',
-        timestamp: new Date().toISOString()
+      logSecurityEvent("CVV_VALIDATION_FAILED", {
+        username: authenticatedUser?.username || "unknown",
+        reason: "Invalid CVV format",
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -486,40 +574,44 @@ function setupFormValidation() {
       submitButton.disabled = !(cvvValid && termsAccepted);
 
       if (cvvValid && termsAccepted) {
-        submitButton.classList.add('ready');
+        submitButton.classList.add("ready");
       } else {
-        submitButton.classList.remove('ready');
+        submitButton.classList.remove("ready");
       }
     }
   }
 
   if (cvvInput) {
-    cvvInput.addEventListener('input', (e) => {
-      e.target.value = e.target.value.replace(/\D/g, '').substring(0, 3);
+    cvvInput.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "").substring(0, 3);
       validateForm();
     });
   }
 
   if (termsCheckbox) {
-    termsCheckbox.addEventListener('change', validateForm);
+    termsCheckbox.addEventListener("change", validateForm);
   }
 
   validateForm();
 }
 
 function _populateUsersOnPaymentPage() {
-  const usersList = document.getElementById('usersList');
+  const usersList = document.getElementById("usersList");
   if (!usersList || users.length === 0) return;
 
-  usersList.innerHTML = '';
+  usersList.innerHTML = "";
 
-  users.forEach(user => {
-    const userCard = document.createElement('div');
-    userCard.className = 'user-card';
+  users.forEach((user) => {
+    const userCard = document.createElement("div");
+    userCard.className = "user-card";
     userCard.onclick = () => selectUserOnPaymentPage(user);
 
-    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
-    const maskedAccount = user.account_number ? `****${user.account_number.slice(-4)}` : '****0000';
+    const letter = user.full_name
+      ? user.full_name.charAt(0).toUpperCase()
+      : "U";
+    const maskedAccount = user.account_number
+      ? `****${user.account_number.slice(-4)}`
+      : "****0000";
 
     userCard.innerHTML = `
       <div class="user-card-header">
@@ -532,7 +624,7 @@ function _populateUsersOnPaymentPage() {
       <div class="user-card-details">
         <p>ID: ${user.id_number}</p>
         <p>Account: ${maskedAccount}</p>
-        <p>Balance: ${user.currency} ${user.account_balance?.toLocaleString() || '0.00'}</p>
+        <p>Balance: ${user.currency} ${user.account_balance?.toLocaleString() || "0.00"}</p>
         <p>Type: ${user.account_type}</p>
       </div>
     `;
@@ -542,20 +634,22 @@ function _populateUsersOnPaymentPage() {
 }
 
 function selectUserOnPaymentPage(user) {
-  document.querySelectorAll('.user-card').forEach(card => {
-    card.classList.remove('selected');
+  document.querySelectorAll(".user-card").forEach((card) => {
+    card.classList.remove("selected");
   });
 
-  event.currentTarget.classList.add('selected');
+  event.currentTarget.classList.add("selected");
 
-  sessionStorage.setItem('selectedUser', JSON.stringify(user));
+  sessionStorage.setItem("selectedUser", JSON.stringify(user));
 
-  const userIcon = document.getElementById('userIcon');
-  const usernameField = document.getElementById('username');
-  const accountNumberField = document.getElementById('accountNumber');
+  const userIcon = document.getElementById("userIcon");
+  const usernameField = document.getElementById("username");
+  const accountNumberField = document.getElementById("accountNumber");
 
   if (userIcon) {
-    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+    const letter = user.full_name
+      ? user.full_name.charAt(0).toUpperCase()
+      : "U";
     userIcon.textContent = letter;
   }
 
@@ -567,10 +661,10 @@ function selectUserOnPaymentPage(user) {
     accountNumberField.value = user.account_number;
   }
 
-  logSecurityEvent('USER_SELECTED_ON_PAYMENT_PAGE', {
+  logSecurityEvent("USER_SELECTED_ON_PAYMENT_PAGE", {
     username: user.username,
     fullName: user.full_name,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -579,196 +673,232 @@ async function handlePaymentSubmit(event) {
     event.preventDefault();
 
     if (!authenticatedUser || !currentCharge) {
-      alert('Authentication required. Please refresh and try again.');
+      alert("Authentication required. Please refresh and try again.");
       return;
     }
 
-    const cvv = document.getElementById('cvv').value;
-    const termsAccepted = document.getElementById('acceptTerms').checked;
+    const cvv = document.getElementById("cvv").value;
+    const termsAccepted = document.getElementById("acceptTerms").checked;
 
     if (!cvv || cvv.length !== 3 || !/^\d{3}$/.test(cvv)) {
-      alert('Please enter a valid 3-digit CVV.');
-      logSecurityEvent('PAYMENT_INVALID_CVV', {
+      alert("Please enter a valid 3-digit CVV.");
+      logSecurityEvent("PAYMENT_INVALID_CVV", {
         username: authenticatedUser.username,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       return;
     }
 
     if (!termsAccepted) {
-      alert('Please accept the Terms of Service to continue.');
-      logSecurityEvent('PAYMENT_TERMS_NOT_ACCEPTED', {
+      alert("Please accept the Terms of Service to continue.");
+      logSecurityEvent("PAYMENT_TERMS_NOT_ACCEPTED", {
         username: authenticatedUser.username,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       return;
     }
 
-    const submitButton = document.getElementById('processPaymentBtn');
+    const submitButton = document.getElementById("processPaymentBtn");
     if (submitButton) {
       submitButton.disabled = true;
-  const amountText = `${authenticatedUser?.currency || ''} ${currentCharge?.toFixed(2) || '0.00'}`;
-  submitButton.innerHTML = '<div class="button-content"><span class="button-text">Processing...</span><span class="button-amount">' + amountText + '</span></div><div class="button-security"><span class="loading-spinner"></span></div>';
+      const amountText = `${authenticatedUser?.currency || ""} ${currentCharge?.toFixed(2) || "0.00"}`;
+      submitButton.innerHTML =
+        '<div class="button-content"><span class="button-text">Processing...</span><span class="button-amount">' +
+        amountText +
+        '</span></div><div class="button-security"><span class="loading-spinner"></span></div>';
     }
 
-    logSecurityEvent('PAYMENT_SUBMISSION_ATTEMPT', {
+    logSecurityEvent("PAYMENT_SUBMISSION_ATTEMPT", {
       username: authenticatedUser.username,
       amount: currentCharge,
       currency: authenticatedUser.currency,
       reference: paymentReference,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const paymentSuccess = await processSecurePayment({
       userId: authenticatedUser.id,
       amount: currentCharge,
       currency: authenticatedUser.currency,
       reference: paymentReference,
-      cvv: cvv
+      cvv: cvv,
     });
 
     if (paymentSuccess) {
       showSuccessModal();
-      logSecurityEvent('PAYMENT_SUCCESS', {
+      logSecurityEvent("PAYMENT_SUCCESS", {
         username: authenticatedUser.username,
         amount: currentCharge,
         currency: authenticatedUser.currency,
         reference: paymentReference,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
-      throw new Error('Payment processing failed');
+      throw new Error("Payment processing failed");
     }
-
   } catch (error) {
-    console.error('Payment processing failed:', error);
-    logSecurityEvent('PAYMENT_ERROR', {
-      username: authenticatedUser?.username || 'unknown',
+    console.error("Payment processing failed:", error);
+    logSecurityEvent("PAYMENT_ERROR", {
+      username: authenticatedUser?.username || "unknown",
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    alert('Payment processing failed. Please try again.');
+    alert("Payment processing failed. Please try again.");
 
-    const submitButton = document.getElementById('processPaymentBtn');
+    const submitButton = document.getElementById("processPaymentBtn");
     if (submitButton) {
       submitButton.disabled = false;
-      submitButton.innerHTML = '<div class="button-content"><span class="button-text">Secure Payment</span><span class="button-amount">' + `${authenticatedUser?.currency || ''} ${currentCharge?.toFixed(2) || '0.00'}` + '</span></div><div class="button-security"><svg class="security-badge-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11H16V16H8V11H9.2V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.4,8.7 10.4,10V11H13.6V10C13.6,8.7 12.8,8.2 12,8.2Z"/></svg></div>';
+      submitButton.innerHTML =
+        '<div class="button-content"><span class="button-text">Secure Payment</span><span class="button-amount">' +
+        `${authenticatedUser?.currency || ""} ${currentCharge?.toFixed(2) || "0.00"}` +
+        '</span></div><div class="button-security"><svg class="security-badge-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11H16V16H8V11H9.2V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.4,8.7 10.4,10V11H13.6V10C13.6,8.7 12.8,8.2 12,8.2Z"/></svg></div>';
     }
   }
 }
 
 async function processSecurePayment(paymentData) {
   try {
-    const authToken = sessionStorage.getItem('authToken');
-    const storedCsrf = sessionStorage.getItem('csrfToken');
+    const authToken = sessionStorage.getItem("authToken");
+    const storedCsrf = sessionStorage.getItem("csrfToken");
     if (!csrfToken && storedCsrf) csrfToken = storedCsrf;
     if (authToken && !csrfToken) {
       try {
-        const csrfRes = await fetch('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${authToken}` } });
+        const csrfRes = await fetch("/api/auth/csrf-token", {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
         if (csrfRes.ok) {
           const csrfJson = await csrfRes.json();
           if (csrfJson.success && csrfJson.csrfToken) {
             csrfToken = csrfJson.csrfToken;
-            sessionStorage.setItem('csrfToken', csrfToken);
+            sessionStorage.setItem("csrfToken", csrfToken);
           }
         }
-  } catch (_) {;}
+      } catch (_) {}
     }
     const headers = {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     };
-    
+
     if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
+      headers["Authorization"] = `Bearer ${authToken}`;
     }
     if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
+      headers["X-CSRF-Token"] = csrfToken;
     }
 
-    const RECIPIENT_ACCOUNT = (globalThis.DELTA_CONFIG && globalThis.DELTA_CONFIG.recipientAccount) || 'DELTAPAYPROC01';
+    const RECIPIENT_ACCOUNT =
+      (globalThis.DELTA_CONFIG && globalThis.DELTA_CONFIG.recipientAccount) ||
+      "DELTAPAYPROC01";
     const body = {
       amount: Number(paymentData.amount).toFixed(2),
-      currency: String(paymentData.currency || '').toUpperCase(),
-      provider: 'WIRE',
+      currency: String(paymentData.currency || "").toUpperCase(),
+      provider: "WIRE",
       recipientAccount: RECIPIENT_ACCOUNT,
-      notes: `Payment processing fee - Reference: ${paymentData.reference}`
+      notes: `Payment processing fee - Reference: ${paymentData.reference}`,
     };
 
     if (authToken && !csrfToken) {
       try {
-        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${authToken}` } }, 6000);
+        const csrfRes = await fetchWithTimeout(
+          "/api/auth/csrf-token",
+          { headers: { Authorization: `Bearer ${authToken}` } },
+          6000,
+        );
         if (csrfRes.ok) {
           const csrfJson = await csrfRes.json();
           if (csrfJson.success && csrfJson.csrfToken) {
             csrfToken = csrfJson.csrfToken;
-            sessionStorage.setItem('csrfToken', csrfToken);
-            headers['X-CSRF-Token'] = csrfToken;
+            sessionStorage.setItem("csrfToken", csrfToken);
+            headers["X-CSRF-Token"] = csrfToken;
           }
         }
-  } catch (_) {;}
+      } catch (_) {}
     }
 
     if (authToken && !csrfToken) {
-      showToast && showToast('Secure token missing. Please retry or re-authenticate.', 'error');
+      showToast &&
+        showToast(
+          "Secure token missing. Please retry or re-authenticate.",
+          "error",
+        );
       return false;
     }
 
-    const response = await fetchWithTimeout('/api/user/payments', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    }, 10000);
+    const response = await fetchWithTimeout(
+      "/api/user/payments",
+      {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(body),
+      },
+      10000,
+    );
 
     let result = await response.json();
     if (response.status === 401) {
-      showToast && showToast('Session expired or not authorized. Please re-authenticate.', 'error');
+      showToast &&
+        showToast(
+          "Session expired or not authorized. Please re-authenticate.",
+          "error",
+        );
       return false;
     }
     if (response.status === 403 && authToken) {
       try {
-        const csrfRes = await fetchWithTimeout('/api/auth/csrf-token', { headers: { Authorization: `Bearer ${authToken}` } }, 6000);
+        const csrfRes = await fetchWithTimeout(
+          "/api/auth/csrf-token",
+          { headers: { Authorization: `Bearer ${authToken}` } },
+          6000,
+        );
         const csrfJson = await csrfRes.json();
         if (csrfJson.success && csrfJson.csrfToken) {
           csrfToken = csrfJson.csrfToken;
-          sessionStorage.setItem('csrfToken', csrfToken);
-          headers['X-CSRF-Token'] = csrfToken;
-          const retryRes = await fetchWithTimeout('/api/user/payments', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body)
-          }, 10000);
+          sessionStorage.setItem("csrfToken", csrfToken);
+          headers["X-CSRF-Token"] = csrfToken;
+          const retryRes = await fetchWithTimeout(
+            "/api/user/payments",
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify(body),
+            },
+            10000,
+          );
           result = await retryRes.json();
           if (!retryRes.ok) {
-            showToast && showToast(result.message || 'Payment request rejected', 'error');
+            showToast &&
+              showToast(result.message || "Payment request rejected", "error");
             return false;
           }
           return !!result.success;
         }
-  } catch (_) {;}
-      showToast && showToast(result.message || 'CSRF validation failed', 'error');
+      } catch (_) {}
+      showToast &&
+        showToast(result.message || "CSRF validation failed", "error");
       return false;
     }
     if (!result.success) {
-      showToast && showToast(result.message || 'Payment request rejected', 'error');
+      showToast &&
+        showToast(result.message || "Payment request rejected", "error");
     }
     return !!result.success;
   } catch (error) {
-    console.error('Payment storage failed:', error);
-    logSecurityEvent('PAYMENT_STORAGE_ERROR', {
-      username: authenticatedUser?.username || 'unknown',
+    console.error("Payment storage failed:", error);
+    logSecurityEvent("PAYMENT_STORAGE_ERROR", {
+      username: authenticatedUser?.username || "unknown",
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     return false;
   }
 }
 
 function showSuccessModal() {
-  const modal = document.getElementById('successModal');
-  const successAmount = document.getElementById('successAmount');
-  const successReference = document.getElementById('successReference');
+  const modal = document.getElementById("successModal");
+  const successAmount = document.getElementById("successAmount");
+  const successReference = document.getElementById("successReference");
 
   if (successAmount && currentCharge && authenticatedUser) {
     successAmount.textContent = `${authenticatedUser.currency} ${currentCharge.toFixed(2)}`;
@@ -779,18 +909,18 @@ function showSuccessModal() {
   }
 
   if (modal) {
-    modal.classList.add('active');
-    modal.style.display = 'flex';
+    modal.classList.add("active");
+    modal.style.display = "flex";
 
     setTimeout(() => {
-      const checkmarkCircle = modal.querySelector('.checkmark-circle');
+      const checkmarkCircle = modal.querySelector(".checkmark-circle");
       if (checkmarkCircle) {
-        checkmarkCircle.classList.add('animate');
+        checkmarkCircle.classList.add("animate");
       }
     }, 100);
 
     setTimeout(() => {
-      if (modal.classList.contains('active')) {
+      if (modal.classList.contains("active")) {
         closeSuccessModal();
       }
     }, 5000);
@@ -798,22 +928,22 @@ function showSuccessModal() {
 }
 
 function closeSuccessModal() {
-  const modal = document.getElementById('successModal');
+  const modal = document.getElementById("successModal");
   if (modal) {
-  modal.classList.remove('active');
-  modal.style.display = 'none';
+    modal.classList.remove("active");
+    modal.style.display = "none";
   }
 
-  sessionStorage.removeItem('selectedUser');
-  sessionStorage.removeItem('authenticatedUser');
+  sessionStorage.removeItem("selectedUser");
+  sessionStorage.removeItem("authenticatedUser");
 
-  logSecurityEvent('USER_RETURNED_TO_DASHBOARD', {
-    username: authenticatedUser?.username || 'unknown',
-    timestamp: new Date().toISOString()
+  logSecurityEvent("USER_RETURNED_TO_DASHBOARD", {
+    username: authenticatedUser?.username || "unknown",
+    timestamp: new Date().toISOString(),
   });
 
-  if (typeof globalThis !== 'undefined' && globalThis.location) {
-    globalThis.location.href = '/';
+  if (typeof globalThis !== "undefined" && globalThis.location) {
+    globalThis.location.href = "/";
   }
 }
 
@@ -823,110 +953,154 @@ async function logSecurityEvent(eventType, details) {
       eventType,
       details,
       timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent || 'unknown',
-  url: (typeof globalThis !== 'undefined' && globalThis.location ? globalThis.location.href : 'unknown')
+      userAgent: navigator.userAgent || "unknown",
+      url:
+        typeof globalThis !== "undefined" && globalThis.location
+          ? globalThis.location.href
+          : "unknown",
     };
 
-    await fetch('/api/security/log', {
-      method: 'POST',
+    await fetch("/api/security/log", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(logData)
+      body: JSON.stringify(logData),
     });
   } catch (error) {
-    console.error('Failed to log security event:', error);
+    console.error("Failed to log security event:", error);
   }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   try {
     ensureEmployeeLoginModal();
     restoreEmployeeSession();
 
     await loadUsers();
 
-    logSecurityEvent('PAGE_LOAD', {
-      page: (typeof globalThis !== 'undefined' && globalThis.location ? globalThis.location.pathname : 'unknown'),
-      referrer: document.referrer || ''
+    logSecurityEvent("PAGE_LOAD", {
+      page:
+        typeof globalThis !== "undefined" && globalThis.location
+          ? globalThis.location.pathname
+          : "unknown",
+      referrer: document.referrer || "",
     });
 
-    const paymentOption = document.getElementById('payment-option');
-    const backendOption = document.getElementById('backend-option');
+    const paymentOption = document.getElementById("payment-option");
+    const backendOption = document.getElementById("backend-option");
 
-  if (paymentOption) paymentOption.addEventListener('click', navigateToSelectAccount);
+    if (paymentOption)
+      paymentOption.addEventListener("click", navigateToSelectAccount);
 
-  if (backendOption) backendOption.addEventListener('click', navigateToViewPayments);
+    if (backendOption)
+      backendOption.addEventListener("click", navigateToViewPayments);
 
-  const backBtn = document.getElementById('backBtn');
-  if (backBtn) backBtn.addEventListener('click', () => { if (globalThis.location) globalThis.location.href = '/'; });
+    const backBtn = document.getElementById("backBtn");
+    if (backBtn)
+      backBtn.addEventListener("click", () => {
+        if (globalThis.location) globalThis.location.href = "/";
+      });
 
-  const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
-  if (cancelPasswordBtn) cancelPasswordBtn.addEventListener('click', closePasswordModal);
+    const cancelPasswordBtn = document.getElementById("cancelPasswordBtn");
+    if (cancelPasswordBtn)
+      cancelPasswordBtn.addEventListener("click", closePasswordModal);
 
-  const closeSuccessBtn = document.getElementById('closeSuccessBtn');
-  if (closeSuccessBtn) closeSuccessBtn.addEventListener('click', closeSuccessModal);
+    const closeSuccessBtn = document.getElementById("closeSuccessBtn");
+    if (closeSuccessBtn)
+      closeSuccessBtn.addEventListener("click", closeSuccessModal);
 
-  const closeAccountModalBtn = document.getElementById('closeAccountModalBtn');
-  if (closeAccountModalBtn) closeAccountModalBtn.addEventListener('click', closeAccountModal);
+    const closeAccountModalBtn = document.getElementById(
+      "closeAccountModalBtn",
+    );
+    if (closeAccountModalBtn)
+      closeAccountModalBtn.addEventListener("click", closeAccountModal);
 
-  const goToLogsBtn = document.getElementById('goToLogsBtn');
-  if (goToLogsBtn) goToLogsBtn.addEventListener('click', navigateToSecurityLogs);
+    const goToLogsBtn = document.getElementById("goToLogsBtn");
+    if (goToLogsBtn)
+      goToLogsBtn.addEventListener("click", navigateToSecurityLogs);
 
-  const createUserBtn = document.getElementById('createUserBtn');
-  if (createUserBtn) createUserBtn.addEventListener('click', () => {
-    globalThis.location.href = '/create-user';
-  });
+    const createUserBtn = document.getElementById("createUserBtn");
+    if (createUserBtn)
+      createUserBtn.addEventListener("click", () => {
+        globalThis.location.href = "/create-user";
+      });
 
-  const denyClose = document.getElementById('denyClose');
-  if (denyClose) denyClose.addEventListener('click', closeDenyModal);
+    const backToHomeBtn = document.getElementById("backToHomeBtn");
+    if (backToHomeBtn)
+      backToHomeBtn.addEventListener("click", () => {
+        globalThis.location.href = "/";
+      });
 
-  const goToPaymentBtn = document.getElementById('goToPaymentBtn');
-  if (goToPaymentBtn) goToPaymentBtn.addEventListener('click', navigateToPayment);
+    const denyClose = document.getElementById("denyClose");
+    if (denyClose) denyClose.addEventListener("click", closeDenyModal);
 
-  const passwordCancelBtn = document.getElementById('passwordCancelBtn');
-  if (passwordCancelBtn) passwordCancelBtn.addEventListener('click', closePasswordModal);
+    const goToPaymentBtn = document.getElementById("goToPaymentBtn");
+    if (goToPaymentBtn)
+      goToPaymentBtn.addEventListener("click", navigateToPayment);
 
-  if (typeof globalThis !== 'undefined' && globalThis.location && (globalThis.location.pathname.includes('MakePayment.html') || globalThis.location.pathname === '/make-payment')) {
+    const passwordCancelBtn = document.getElementById("passwordCancelBtn");
+    if (passwordCancelBtn)
+      passwordCancelBtn.addEventListener("click", closePasswordModal);
+
+    if (
+      typeof globalThis !== "undefined" &&
+      globalThis.location &&
+      (globalThis.location.pathname.includes("MakePayment.html") ||
+        globalThis.location.pathname === "/make-payment")
+    ) {
       initializePaymentPage();
     }
 
-    const paymentForm = document.getElementById('paymentForm');
+    const paymentForm = document.getElementById("paymentForm");
     if (paymentForm) {
-      paymentForm.addEventListener('submit', handlePaymentSubmit);
+      paymentForm.addEventListener("submit", handlePaymentSubmit);
     }
 
-    const passwordForm = document.getElementById('passwordForm');
+    const passwordForm = document.getElementById("passwordForm");
     if (passwordForm) {
-      passwordForm.addEventListener('submit', handlePasswordAuthentication);
+      passwordForm.addEventListener("submit", handlePasswordAuthentication);
     }
 
-  if (typeof globalThis !== 'undefined' && globalThis.location && (globalThis.location.pathname.includes('SelectAccount.html') || globalThis.location.pathname === '/select-account')) {
+    if (
+      typeof globalThis !== "undefined" &&
+      globalThis.location &&
+      (globalThis.location.pathname.includes("SelectAccount.html") ||
+        globalThis.location.pathname === "/select-account")
+    ) {
       initializeSelectAccountPage();
     }
 
-    if (typeof globalThis !== 'undefined' && globalThis.location && (globalThis.location.pathname.includes('ViewPayments.html') || globalThis.location.pathname === '/view-payments')) {
+    if (
+      typeof globalThis !== "undefined" &&
+      globalThis.location &&
+      (globalThis.location.pathname.includes("ViewPayments.html") ||
+        globalThis.location.pathname === "/view-payments")
+    ) {
       initializeAdminTransactionsPage();
     }
-
   } catch (error) {
-    console.error('Error during initialization:', error);
+    console.error("Error during initialization:", error);
   }
 });
 
 function initializeSelectAccountPage() {
-  const accountsGrid = document.getElementById('accountsGrid');
+  const accountsGrid = document.getElementById("accountsGrid");
   if (!accountsGrid || users.length === 0) return;
 
-  accountsGrid.innerHTML = '';
+  accountsGrid.innerHTML = "";
 
-  users.forEach(user => {
-    const accountCard = document.createElement('div');
-    accountCard.className = 'account-card';
+  users.forEach((user) => {
+    const accountCard = document.createElement("div");
+    accountCard.className = "account-card";
     accountCard.onclick = () => selectUser(user.username);
 
-    const letter = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
-    const maskedAccount = user.account_number ? `****${user.account_number.slice(-4)}` : '****0000';
+    const letter = user.full_name
+      ? user.full_name.charAt(0).toUpperCase()
+      : "U";
+    const maskedAccount = user.account_number
+      ? `****${user.account_number.slice(-4)}`
+      : "****0000";
 
     accountCard.innerHTML = `
       <div class="account-icon">${letter}</div>
@@ -934,7 +1108,7 @@ function initializeSelectAccountPage() {
         <h3>${user.full_name}</h3>
         <p>ID: ${user.id_number}</p>
         <p class="account-balance">Account: ${maskedAccount}</p>
-        <p class="account-type">${user.account_type} - ${user.currency} ${user.account_balance?.toLocaleString() || '0.00'}</p>
+        <p class="account-type">${user.account_type} - ${user.currency} ${user.account_balance?.toLocaleString() || "0.00"}</p>
       </div>
       <div class="account-arrow">→</div>
     `;
@@ -944,40 +1118,39 @@ function initializeSelectAccountPage() {
 }
 
 function selectUser(username) {
-  const user = users.find(u => u.username === username);
+  const user = users.find((u) => u.username === username);
   if (!user) {
-    console.error('User not found:', username);
+    console.error("User not found:", username);
     return;
   }
 
-  const selectedUserName = document.getElementById('selectedUserName');
+  const selectedUserName = document.getElementById("selectedUserName");
   if (selectedUserName) {
     selectedUserName.textContent = user.full_name;
   }
 
-  const passwordModal = document.getElementById('passwordModal');
+  const passwordModal = document.getElementById("passwordModal");
   if (passwordModal) {
-    passwordModal.style.display = 'flex';
+    passwordModal.style.display = "flex";
   }
 
-  sessionStorage.setItem('pendingUser', JSON.stringify(user));
+  sessionStorage.setItem("pendingUser", JSON.stringify(user));
 
-  logSecurityEvent('USER_SELECTION_ATTEMPT', {
+  logSecurityEvent("USER_SELECTION_ATTEMPT", {
     username: user.username,
     fullName: user.full_name,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
-
 function ensureEmployeeLoginModal() {
   if (DEMO_MODE) return;
-  if (document.getElementById('employeeLoginModal')) return;
+  if (document.getElementById("employeeLoginModal")) return;
 
-  const overlay = document.createElement('div');
-  overlay.id = 'employeeLoginModal';
-  overlay.className = 'modal-overlay';
-  overlay.style.display = 'none';
+  const overlay = document.createElement("div");
+  overlay.id = "employeeLoginModal";
+  overlay.className = "modal-overlay";
+  overlay.style.display = "none";
   overlay.innerHTML = `
     <div class="modal" style="max-width: 420px;">
       <div class="modal-header">
@@ -1008,21 +1181,26 @@ function ensureEmployeeLoginModal() {
 
   document.body.appendChild(overlay);
 
-  const form = overlay.querySelector('#employeeLoginForm');
-  if (form) form.addEventListener('submit', handleEmployeeLoginSubmit, { passive: false });
-  const closeBtn = overlay.querySelector('#employeeLoginClose');
-  if (closeBtn) closeBtn.addEventListener('click', () => closeEmployeeLoginModal());
-  const cancelBtn = overlay.querySelector('#employeeLoginCancel');
-  if (cancelBtn) cancelBtn.addEventListener('click', () => closeEmployeeLoginModal());
+  const form = overlay.querySelector("#employeeLoginForm");
+  if (form)
+    form.addEventListener("submit", handleEmployeeLoginSubmit, {
+      passive: false,
+    });
+  const closeBtn = overlay.querySelector("#employeeLoginClose");
+  if (closeBtn)
+    closeBtn.addEventListener("click", () => closeEmployeeLoginModal());
+  const cancelBtn = overlay.querySelector("#employeeLoginCancel");
+  if (cancelBtn)
+    cancelBtn.addEventListener("click", () => closeEmployeeLoginModal());
 }
 
 function openEmployeeLoginModal() {
   if (DEMO_MODE) return;
   ensureEmployeeLoginModal();
-  const modal = document.getElementById('employeeLoginModal');
+  const modal = document.getElementById("employeeLoginModal");
   if (modal) {
-    modal.style.display = 'flex';
-    const usernameInput = modal.querySelector('#employeeUsername');
+    modal.style.display = "flex";
+    const usernameInput = modal.querySelector("#employeeUsername");
     if (usernameInput instanceof HTMLInputElement) {
       usernameInput.focus();
       usernameInput.select();
@@ -1032,10 +1210,10 @@ function openEmployeeLoginModal() {
 
 function closeEmployeeLoginModal() {
   if (DEMO_MODE) return;
-  const modal = document.getElementById('employeeLoginModal');
+  const modal = document.getElementById("employeeLoginModal");
   if (modal) {
-    modal.style.display = 'none';
-    const form = modal.querySelector('#employeeLoginForm');
+    modal.style.display = "none";
+    const form = modal.querySelector("#employeeLoginForm");
     if (form instanceof HTMLFormElement) {
       form.reset();
     }
@@ -1053,7 +1231,12 @@ function persistEmployeeSession() {
 
 function restoreEmployeeSession() {
   if (DEMO_MODE) {
-    employeeAuth = { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() };
+    employeeAuth = {
+      token: null,
+      csrfToken: null,
+      employee: { id: 0, username: "demoAdmin", fullName: "Demo Admin" },
+      obtainedAt: Date.now(),
+    };
     return;
   }
   const raw = sessionStorage.getItem(EMPLOYEE_SESSION_KEY);
@@ -1063,7 +1246,7 @@ function restoreEmployeeSession() {
   }
   try {
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed.token === 'string') {
+    if (parsed && typeof parsed.token === "string") {
       employeeAuth = parsed;
     } else {
       employeeAuth = null;
@@ -1077,14 +1260,14 @@ function restoreEmployeeSession() {
 
 function logoutEmployee(openModalAfter = true) {
   if (DEMO_MODE) {
-    showToast('Demo session is always active.', 'info');
+    showToast("Demo session is always active.", "info");
     return;
   }
   const wasAuthenticated = Boolean(employeeAuth);
   employeeAuth = null;
   sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
   updateAdminAuthStatus();
-  if (wasAuthenticated) showToast('Signed out of admin session', 'info');
+  if (wasAuthenticated) showToast("Signed out of admin session", "info");
   if (openModalAfter) openEmployeeLoginModal();
 }
 
@@ -1094,85 +1277,105 @@ async function handleEmployeeLoginSubmit(event) {
   const form = event.currentTarget;
   if (!(form instanceof HTMLFormElement)) return;
 
-  const usernameField = form.querySelector('#employeeUsername');
-  const passwordField = form.querySelector('#employeePassword');
+  const usernameField = form.querySelector("#employeeUsername");
+  const passwordField = form.querySelector("#employeePassword");
 
-  const username = usernameField instanceof HTMLInputElement ? usernameField.value.trim() : '';
-  const password = passwordField instanceof HTMLInputElement ? passwordField.value : '';
+  const username =
+    usernameField instanceof HTMLInputElement ? usernameField.value.trim() : "";
+  const password =
+    passwordField instanceof HTMLInputElement ? passwordField.value : "";
 
   if (!username || !password) {
-    showToast('Please provide your employee credentials.', 'error');
+    showToast("Please provide your employee credentials.", "error");
     return;
   }
 
   try {
-    const res = await fetchWithTimeout('/api/auth/employee-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    }, 10000);
+    const res = await fetchWithTimeout(
+      "/api/auth/employee-login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      },
+      10000,
+    );
 
     const data = await res.json();
     if (!data.success || !data.token) {
-      throw new Error(data.message || 'Authentication failed');
+      throw new Error(data.message || "Authentication failed");
     }
 
     employeeAuth = {
       token: data.token,
       employee: data.employee || null,
       csrfToken: null,
-      obtainedAt: Date.now()
+      obtainedAt: Date.now(),
     };
     persistEmployeeSession();
     await refreshEmployeeCsrf();
     closeEmployeeLoginModal();
     updateAdminAuthStatus();
-    showToast('Employee authenticated', 'success');
+    showToast("Employee authenticated", "success");
     await loadAndRenderTransactions();
   } catch (error) {
-    console.error('Employee authentication failed:', error);
-    showToast('Employee authentication failed. Please retry.', 'error');
+    console.error("Employee authentication failed:", error);
+    showToast("Employee authentication failed. Please retry.", "error");
   }
 }
 
 async function refreshEmployeeCsrf() {
   if (DEMO_MODE) {
-    employeeAuth = employeeAuth || { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() };
+    employeeAuth = employeeAuth || {
+      token: null,
+      csrfToken: null,
+      employee: { id: 0, username: "demoAdmin", fullName: "Demo Admin" },
+      obtainedAt: Date.now(),
+    };
     employeeAuth.csrfToken = null;
     return;
   }
-  if (!employeeAuth) throw new Error('No active employee session');
+  if (!employeeAuth) throw new Error("No active employee session");
   try {
-    const res = await fetchWithTimeout('/api/auth/csrf-token', {
-      headers: { Authorization: `Bearer ${employeeAuth.token}` }
-    }, 8000);
+    const res = await fetchWithTimeout(
+      "/api/auth/csrf-token",
+      {
+        headers: { Authorization: `Bearer ${employeeAuth.token}` },
+      },
+      8000,
+    );
 
     if (res.status === 401 || res.status === 403) {
       handleAdminUnauthorized();
-      throw new Error('Admin session expired');
+      throw new Error("Admin session expired");
     }
 
     const data = await res.json();
     if (!data.success || !data.csrfToken) {
-      throw new Error('Invalid CSRF token payload');
+      throw new Error("Invalid CSRF token payload");
     }
 
     employeeAuth.csrfToken = data.csrfToken;
     persistEmployeeSession();
   } catch (error) {
-    console.error('Failed to refresh employee CSRF token:', error);
+    console.error("Failed to refresh employee CSRF token:", error);
     throw error;
   }
 }
 
 async function requireEmployeeAuth({ requireCsrf = false } = {}) {
   if (DEMO_MODE) {
-    employeeAuth = employeeAuth || { token: null, csrfToken: null, employee: { id: 0, username: 'demoAdmin', fullName: 'Demo Admin' }, obtainedAt: Date.now() };
+    employeeAuth = employeeAuth || {
+      token: null,
+      csrfToken: null,
+      employee: { id: 0, username: "demoAdmin", fullName: "Demo Admin" },
+      obtainedAt: Date.now(),
+    };
     return employeeAuth;
   }
   if (!employeeAuth) {
     openEmployeeLoginModal();
-    throw new Error('Employee authentication required');
+    throw new Error("Employee authentication required");
   }
   if (requireCsrf) {
     await refreshEmployeeCsrf();
@@ -1187,11 +1390,10 @@ function handleAdminUnauthorized() {
   employeeAuth = null;
   sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
   updateAdminAuthStatus();
-  showToast('Admin session expired. Please sign in again.', 'error');
+  showToast("Admin session expired. Please sign in again.", "error");
   openEmployeeLoginModal();
 }
 
- 
 async function initializeAdminTransactionsPage() {
   try {
     restoreEmployeeSession();
@@ -1203,58 +1405,61 @@ async function initializeAdminTransactionsPage() {
     }
     await loadAndRenderTransactions();
   } catch (error) {
-    console.error('Admin init failed:', error);
+    console.error("Admin init failed:", error);
   }
 }
 
 function bindAdminControls() {
-  const refreshBtn = document.getElementById('refreshTransactionsBtn');
-  if (refreshBtn) refreshBtn.addEventListener('click', loadAndRenderTransactions);
+  const refreshBtn = document.getElementById("refreshTransactionsBtn");
+  if (refreshBtn)
+    refreshBtn.addEventListener("click", loadAndRenderTransactions);
 
-  const denyForm = document.getElementById('denyForm');
-  if (denyForm) denyForm.addEventListener('submit', submitDenyReason);
+  const denyForm = document.getElementById("denyForm");
+  if (denyForm) denyForm.addEventListener("submit", submitDenyReason);
 }
 
 function updateAdminAuthStatus() {
-  const toolbarRight = document.querySelector('.toolbar .toolbar-right');
+  const toolbarRight = document.querySelector(".toolbar .toolbar-right");
   if (!toolbarRight) return;
 
-  let statusLabel = toolbarRight.querySelector('[data-admin-auth-status]');
-  let actionBtn = toolbarRight.querySelector('[data-admin-auth-action]');
+  let statusLabel = toolbarRight.querySelector("[data-admin-auth-status]");
+  let actionBtn = toolbarRight.querySelector("[data-admin-auth-action]");
 
   if (!statusLabel) {
-    statusLabel = document.createElement('span');
-    statusLabel.dataset.adminAuthStatus = 'true';
-    statusLabel.className = 'form-label';
-    statusLabel.style.opacity = '0.9';
-    toolbarRight.innerHTML = '';
+    statusLabel = document.createElement("span");
+    statusLabel.dataset.adminAuthStatus = "true";
+    statusLabel.className = "form-label";
+    statusLabel.style.opacity = "0.9";
+    toolbarRight.innerHTML = "";
     toolbarRight.appendChild(statusLabel);
   }
 
   if (!actionBtn) {
-    actionBtn = document.createElement('button');
-    actionBtn.dataset.adminAuthAction = 'true';
-    actionBtn.type = 'button';
-    actionBtn.className = 'option-button backend-option';
-    actionBtn.style.padding = '0.6rem 0.9rem';
-    actionBtn.style.minWidth = '120px';
+    actionBtn = document.createElement("button");
+    actionBtn.dataset.adminAuthAction = "true";
+    actionBtn.type = "button";
+    actionBtn.className = "option-button backend-option";
+    actionBtn.style.padding = "0.6rem 0.9rem";
+    actionBtn.style.minWidth = "120px";
     toolbarRight.appendChild(actionBtn);
   }
 
   if (employeeAuth && employeeAuth.employee) {
     const { employee } = employeeAuth;
-    const displayName = employee.fullName || employee.full_name || employee.username;
+    const displayName =
+      employee.fullName || employee.full_name || employee.username;
     statusLabel.textContent = `Signed in as ${displayName}`;
-    actionBtn.textContent = 'Sign out';
+    actionBtn.textContent = "Sign out";
     actionBtn.onclick = () => logoutEmployee(true);
   } else {
     if (DEMO_MODE) {
-      statusLabel.textContent = 'Demo admin session active';
-      actionBtn.textContent = 'Demo info';
-      actionBtn.onclick = () => showToast('Demo mode: approvals/denials work without sign-in.', 'info');
+      statusLabel.textContent = "Demo admin session active";
+      actionBtn.textContent = "Demo info";
+      actionBtn.onclick = () =>
+        showToast("Demo mode: approvals/denials work without sign-in.", "info");
     } else {
-      statusLabel.textContent = 'Employee authentication required';
-      actionBtn.textContent = 'Sign in';
+      statusLabel.textContent = "Employee authentication required";
+      actionBtn.textContent = "Sign in";
       actionBtn.onclick = () => openEmployeeLoginModal();
     }
   }
@@ -1262,44 +1467,65 @@ function updateAdminAuthStatus() {
 
 async function loadAndRenderTransactions() {
   try {
-    const headers = employeeAuth?.token ? { Authorization: `Bearer ${employeeAuth.token}` } : undefined;
-    const res = await fetchWithTimeout('/api/admin/transactions', headers ? { headers } : {}, 10000);
+    const headers = employeeAuth?.token
+      ? { Authorization: `Bearer ${employeeAuth.token}` }
+      : undefined;
+    const res = await fetchWithTimeout(
+      "/api/admin/transactions",
+      headers ? { headers } : {},
+      10000,
+    );
 
     if (res.status === 401 || res.status === 403) {
-      console.warn('Admin transactions endpoint requires authentication. Continuing in demo mode.');
-      showToast('Sign in to approve/deny. Viewing continues in demo mode.', 'warning');
-      const fallback = await fetchWithTimeout('/api/admin/transactions', {}, 10000);
+      console.warn(
+        "Admin transactions endpoint requires authentication. Continuing in demo mode.",
+      );
+      showToast(
+        "Sign in to approve/deny. Viewing continues in demo mode.",
+        "warning",
+      );
+      const fallback = await fetchWithTimeout(
+        "/api/admin/transactions",
+        {},
+        10000,
+      );
       const fallbackData = await fallback.json();
-      if (!fallbackData.success) throw new Error('Failed to load transactions');
-      renderTransactions(Array.isArray(fallbackData.transactions) ? fallbackData.transactions : []);
+      if (!fallbackData.success) throw new Error("Failed to load transactions");
+      renderTransactions(
+        Array.isArray(fallbackData.transactions)
+          ? fallbackData.transactions
+          : [],
+      );
       return;
     }
 
     const data = await res.json();
-    if (!data.success) throw new Error('Failed to load transactions');
-    renderTransactions(Array.isArray(data.transactions) ? data.transactions : []);
+    if (!data.success) throw new Error("Failed to load transactions");
+    renderTransactions(
+      Array.isArray(data.transactions) ? data.transactions : [],
+    );
   } catch (error) {
-    console.error('Load transactions failed:', error);
-    showToast('Unable to load transactions. Check your connection.', 'error');
+    console.error("Load transactions failed:", error);
+    showToast("Unable to load transactions. Check your connection.", "error");
   }
 }
 
 function renderTransactions(rows) {
-  const tbody = document.getElementById('transactionsBody');
+  const tbody = document.getElementById("transactionsBody");
   if (!tbody) return;
-  tbody.innerHTML = '';
+  tbody.innerHTML = "";
   if (!rows.length) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
     td.colSpan = 10;
-    td.textContent = 'No transactions found';
+    td.textContent = "No transactions found";
     tr.appendChild(td);
     tbody.appendChild(tr);
     return;
   }
-  rows.forEach(tx => {
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid rgba(101,90,124,0.1)';
+  rows.forEach((tx) => {
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid rgba(101,90,124,0.1)";
     const amountFmt = `${tx.currency} ${Number(tx.amount).toFixed(2)}`;
     const dateFmt = new Date(tx.createdAt).toLocaleString();
     tr.innerHTML = `
@@ -1310,62 +1536,62 @@ function renderTransactions(rows) {
       <td>${tx.provider}</td>
       <td>${tx.recipientAccount}</td>
       <td>${tx.status}</td>
-      <td>${tx.processedByFullName || '-'}</td>
+      <td>${tx.processedByFullName || "-"}</td>
       <td>
         <div style="display:flex;gap:.5rem;">
-          <button class="option-button" style="padding:.4rem .6rem;min-width:90px;${tx.status!=='pending'?'opacity:.5;pointer-events:none;':''}" data-action="approve" data-id="${tx.id}">Approve</button>
-          <button class="option-button backend-option" style="padding:.4rem .6rem;min-width:90px;${tx.status!=='pending'?'opacity:.5;pointer-events:none;':''}" data-action="deny" data-id="${tx.id}">Deny</button>
+          <button class="option-button" style="padding:.4rem .6rem;min-width:90px;${tx.status !== "pending" ? "opacity:.5;pointer-events:none;" : ""}" data-action="approve" data-id="${tx.id}">Approve</button>
+          <button class="option-button backend-option" style="padding:.4rem .6rem;min-width:90px;${tx.status !== "pending" ? "opacity:.5;pointer-events:none;" : ""}" data-action="deny" data-id="${tx.id}">Deny</button>
         </div>
       </td>`;
     tbody.appendChild(tr);
   });
 
-  tbody.querySelectorAll('button[data-action]').forEach(btn => {
-    btn.addEventListener('click', onTransactionActionClick);
+  tbody.querySelectorAll("button[data-action]").forEach((btn) => {
+    btn.addEventListener("click", onTransactionActionClick);
   });
 }
 
 function onTransactionActionClick(e) {
   const btn = e.currentTarget;
-  const id = Number(btn.getAttribute('data-id'));
-  const action = btn.getAttribute('data-action');
-  if (action === 'approve') approveTransactionAdmin(id);
-  else if (action === 'deny') openDenyModal(id);
+  const id = Number(btn.getAttribute("data-id"));
+  const action = btn.getAttribute("data-action");
+  if (action === "approve") approveTransactionAdmin(id);
+  else if (action === "deny") openDenyModal(id);
 }
 
 function openDenyModal(id) {
-  const modal = document.getElementById('denyModal');
-  const input = document.getElementById('denyTransactionId');
+  const modal = document.getElementById("denyModal");
+  const input = document.getElementById("denyTransactionId");
   if (input) input.value = String(id);
-  if (modal) modal.style.display = 'flex';
+  if (modal) modal.style.display = "flex";
 }
 
 function closeDenyModal() {
-  const modal = document.getElementById('denyModal');
-  if (modal) modal.style.display = 'none';
+  const modal = document.getElementById("denyModal");
+  if (modal) modal.style.display = "none";
 }
 
 async function submitDenyReason(e) {
   e.preventDefault();
-  const id = Number(document.getElementById('denyTransactionId').value);
-  const reason = document.getElementById('denyReason').value.trim();
+  const id = Number(document.getElementById("denyTransactionId").value);
+  const reason = document.getElementById("denyReason").value.trim();
   if (!reason) return;
   await denyTransactionAdmin(id, reason);
   closeDenyModal();
 }
 
-function showToast(message, type = 'info', timeout = 3000) {
-  const container = document.getElementById('toastContainer');
+function showToast(message, type = "info", timeout = 3000) {
+  const container = document.getElementById("toastContainer");
   if (!container) return;
-  const toast = document.createElement('div');
+  const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  const msg = document.createElement('div');
-  msg.className = 'toast-message';
+  const msg = document.createElement("div");
+  msg.className = "toast-message";
   msg.textContent = message;
-  const close = document.createElement('button');
-  close.className = 'toast-close';
-  close.innerHTML = '×';
-  close.addEventListener('click', () => container.removeChild(toast));
+  const close = document.createElement("button");
+  close.className = "toast-close";
+  close.innerHTML = "×";
+  close.addEventListener("click", () => container.removeChild(toast));
   toast.appendChild(msg);
   toast.appendChild(close);
   container.appendChild(toast);
@@ -1378,11 +1604,15 @@ async function approveTransactionAdmin(id) {
   try {
     const auth = await requireEmployeeAuth({ requireCsrf: true });
     const headers = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${auth.token}`,
-      'X-CSRF-Token': auth.csrfToken
+      "X-CSRF-Token": auth.csrfToken,
     };
-    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/approve`, { method: 'PUT', headers }, 10000);
+    const res = await fetchWithTimeout(
+      `/api/admin/transactions/${id}/approve`,
+      { method: "PUT", headers },
+      10000,
+    );
 
     if (res.status === 401 || res.status === 403) {
       handleAdminUnauthorized();
@@ -1390,16 +1620,16 @@ async function approveTransactionAdmin(id) {
     }
 
     const data = await res.json();
-    if (!data.success) throw new Error('Approve failed');
+    if (!data.success) throw new Error("Approve failed");
     if (employeeAuth) {
       employeeAuth.csrfToken = null;
       persistEmployeeSession();
     }
-    showToast('Transaction approved', 'success');
+    showToast("Transaction approved", "success");
     await loadAndRenderTransactions();
   } catch (error) {
-    console.error('Approve error:', error);
-    showToast('Failed to approve', 'error');
+    console.error("Approve error:", error);
+    showToast("Failed to approve", "error");
   }
 }
 
@@ -1407,11 +1637,15 @@ async function denyTransactionAdmin(id, reason) {
   try {
     const auth = await requireEmployeeAuth({ requireCsrf: true });
     const headers = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${auth.token}`,
-      'X-CSRF-Token': auth.csrfToken
+      "X-CSRF-Token": auth.csrfToken,
     };
-    const res = await fetchWithTimeout(`/api/admin/transactions/${id}/deny`, { method: 'PUT', headers, body: JSON.stringify({ reason }) }, 10000);
+    const res = await fetchWithTimeout(
+      `/api/admin/transactions/${id}/deny`,
+      { method: "PUT", headers, body: JSON.stringify({ reason }) },
+      10000,
+    );
 
     if (res.status === 401 || res.status === 403) {
       handleAdminUnauthorized();
@@ -1419,15 +1653,15 @@ async function denyTransactionAdmin(id, reason) {
     }
 
     const data = await res.json();
-    if (!data.success) throw new Error('Deny failed');
+    if (!data.success) throw new Error("Deny failed");
     if (employeeAuth) {
       employeeAuth.csrfToken = null;
       persistEmployeeSession();
     }
-    showToast('Transaction denied', 'success');
+    showToast("Transaction denied", "success");
     await loadAndRenderTransactions();
   } catch (error) {
-    console.error('Deny error:', error);
-    showToast('Failed to deny', 'error');
+    console.error("Deny error:", error);
+    showToast("Failed to deny", "error");
   }
 }

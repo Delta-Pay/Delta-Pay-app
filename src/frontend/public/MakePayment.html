@@ -1,227 +1,322 @@
-<!-- // {General Layout - delta pay logo in the top right corner of the page.} -&gt; {Head now references shared favicon for consistent branding to keep visuals aligned.} -->
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeltaΔPay - Make Payment</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="styles/main.css" />
-  </head>
-  <body>
-    <header class="header">
-      <div class="logo">
-        <svg viewBox="0 0 120 120">
-          <line
-            x1="9"
-            y1="102"
-            x2="62"
-            y2="17"
-            stroke="#AB92BF"
-            stroke-width="5"
-          />
-          <line
-            x1="11"
-            y1="102"
-            x2="108"
-            y2="102"
-            stroke="#AB92BF"
-            stroke-width="2.5"
-          />
-          <line
-            x1="64"
-            y1="14"
-            x2="112"
-            y2="101"
-            stroke="#AB92BF"
-            stroke-width="10"
-          />
-        </svg>
-      </div>
-      <div class="logo-container">
-        <span class="logo-text">DeltaΔPay</span>
-      </div>
-      <div class="tagline">Secure Payment Gateway</div>
-      <div class="user-icon" id="userIcon">U</div>
-    </header>
-
-    <main class="main-container">
-      <div class="payment-gateway-container">
-        <div class="payment-gateway-header">
-          <button id="backBtn" class="btn-back">Back</button>
-          <h1 class="gateway-title">DeltaΔPay Secure Gateway</h1>
-          <p class="gateway-subtitle">Complete your international payment securely</p>
-        </div>
-
-        <form class="payment-gateway-form" id="paymentForm">
-          <div class="payment-section">
-            <div class="section-header">
-              <h3>Account Information</h3>
-            </div>
-            <div class="section-content">
-              <div class="account-display" id="accountDisplay">
-                <div class="account-details">
-                  <h4 id="accountHolderName">Account Holder</h4>
-                  <p><strong>Account:</strong> <span id="displayAccountNumber">••••••••••••0000</span></p>
-                  <p><strong>Available Balance:</strong> <span id="displayBalance" class="balance-amount">R 0.00</span></p>
-                </div>
-                <div class="account-avatar" id="accountAvatar">U</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="payment-section">
-            <div class="section-header">
-              <h3>Payment Details</h3>
-            </div>
-            <div class="section-content">
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Amount Due</label>
-                  <div id="amount" class="form-static amount-display"></div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Currency</label>
-                  <div id="currency" class="form-static"></div>
-                </div>
-              </div>
-              <div class="charge-description">
-                <p><strong>Service:</strong> <span id="serviceDescription">International Payment Processing</span></p>
-                <p><strong>Reference:</strong> <span id="paymentReference">REF-000000</span></p>
-              </div>
-            </div>
-          </div>
-
-          <div class="payment-section">
-            <div class="section-header">
-              <h3>Payment Method</h3>
-            </div>
-            <div class="section-content">
-              <div class="form-group">
-                <label class="form-label">Card Number</label>
-                <div id="cardNumber" class="form-static secure-input"></div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Expiry Date</label>
-                  <div id="expiryDate" class="form-static"></div>
-                </div>
-        <div class="form-group">
-                  <label class="form-label">CVV *</label>
-                  <input
-                    type="text"
-                    class="form-input cvv-input"
-                    id="cvv"
-                    name="cvv"
-                    placeholder="123"
-                    maxlength="3"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Cardholder Name</label>
-                <div id="cardholderName" class="form-static"></div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Billing Address</label>
-                <div id="billingAddress" class="form-static address-input"></div>
-              </div>
-              <p class="security-note">* Only enter your CVV. All other details have been securely pre-filled.</p>
-            </div>
-          </div>
-
-          <div class="payment-section">
-            <div class="section-header">
-              <h3>Agreement</h3>
-            </div>
-            <div class="section-content">
-              <div class="form-group terms-agreement compact">
-                <label class="checkbox-container">
-                  <input type="checkbox" id="acceptTerms" name="acceptTerms" required />
-                  <span class="checkmark"></span>
-                  <span class="checkbox-label">I agree to the Terms of Service and Privacy Policy</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="payment-submit-section">
-            <button type="submit" class="submit-button" id="processPaymentBtn" disabled>
-              <div class="button-content">
-                <span class="button-text">Secure Payment</span>
-                <span class="button-amount" id="buttonAmount">R 0.00</span>
-              </div>
-              <div class="button-security">
-                <svg class="security-badge-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11H16V16H8V11H9.2V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.4,8.7 10.4,10V11H13.6V10C13.6,8.7 12.8,8.2 12,8.2Z"/>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>DeltaΔPay - Make Payment</title>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="stylesheet" href="styles/main.css" />
+    </head>
+    <body>
+        <header class="header">
+            <div class="logo">
+                <svg viewBox="0 0 120 120">
+                    <line
+                        x1="9"
+                        y1="102"
+                        x2="62"
+                        y2="17"
+                        stroke="#AB92BF"
+                        stroke-width="5"
+                    />
+                    <line
+                        x1="11"
+                        y1="102"
+                        x2="108"
+                        y2="102"
+                        stroke="#AB92BF"
+                        stroke-width="2.5"
+                    />
+                    <line
+                        x1="64"
+                        y1="14"
+                        x2="112"
+                        y2="101"
+                        stroke="#AB92BF"
+                        stroke-width="10"
+                    />
                 </svg>
-              </div>
-            </button>
-            <p class="payment-security-notice">
-              Your payment is secured with 256-bit SSL encryption and processed through our secure payment gateway.
-            </p>
-          </div>
-        </form>
-      </div>
-    </main>
-
-    <div class="modal-overlay" id="passwordModal">
-      <div class="auth-modal">
-        <div class="auth-header">
-          <h3>Secure Authentication</h3>
-          <p>Please enter your account password to proceed with payment</p>
-        </div>
-        <form id="passwordForm" class="auth-form">
-          <div class="form-group">
-            <label class="form-label">Account Password</label>
-            <input
-              type="password"
-              class="form-input password-input"
-              id="authPassword"
-              name="authPassword"
-              placeholder="Enter your account password"
-              required
-            />
-          </div>
-          <div class="auth-buttons">
-            <button type="button" class="auth-btn cancel-btn" id="cancelPasswordBtn">
-              Cancel
-            </button>
-            <button type="submit" class="auth-btn authenticate-btn">
-              Authenticate
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="successModal">
-      <div class="success-modal">
-        <div class="success-animation">
-          <div class="checkmark-circle">
-            <div class="checkmark">
-              <svg viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-              </svg>
             </div>
-          </div>
-        </div>
-        <h2 class="success-title">Payment Processed Successfully</h2>
-        <div class="success-details">
-          <p><strong>Amount:</strong> <span id="successAmount">R 0.00</span></p>
-          <p><strong>Reference:</strong> <span id="successReference">REF-000000</span></p>
-          <p><strong>Status:</strong> <span class="status-approved">Approved</span></p>
-        </div>
-        <p class="success-message">
-          Your payment has been securely processed and will be reviewed by our team before final transmission.
-        </p>
-  <button class="close-modal-button" id="closeSuccessBtn">
-          Return to Dashboard
-        </button>
-      </div>
-    </div>
+            <div class="logo-container">
+                <span class="logo-text">DeltaΔPay</span>
+            </div>
+            <div class="tagline">Secure Payment Gateway</div>
+            <div class="user-icon" id="userIcon">U</div>
+        </header>
 
-    <script src="js/main.js"></script>
-  </body>
+        <main class="main-container">
+            <div class="payment-gateway-container">
+                <div class="payment-gateway-header">
+                    <button id="backBtn" class="btn-back">Back</button>
+                    <h1 class="gateway-title">DeltaΔPay Secure Gateway</h1>
+                    <p class="gateway-subtitle">
+                        Complete your international payment securely
+                    </p>
+                </div>
+
+                <form class="payment-gateway-form" id="paymentForm">
+                    <div class="payment-section">
+                        <div class="section-header">
+                            <h3>Account Information</h3>
+                        </div>
+                        <div class="section-content">
+                            <div class="account-display" id="accountDisplay">
+                                <div class="account-details">
+                                    <h4 id="accountHolderName">
+                                        Account Holder
+                                    </h4>
+                                    <p>
+                                        <strong>Account:</strong>
+                                        <span id="displayAccountNumber"
+                                            >••••••••••••0000</span
+                                        >
+                                    </p>
+                                    <p>
+                                        <strong>Available Balance:</strong>
+                                        <span
+                                            id="displayBalance"
+                                            class="balance-amount"
+                                            >R 0.00</span
+                                        >
+                                    </p>
+                                </div>
+                                <div class="account-avatar" id="accountAvatar">
+                                    U
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-section">
+                        <div class="section-header">
+                            <h3>Payment Details</h3>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Amount Due</label>
+                                    <div
+                                        id="amount"
+                                        class="form-static amount-display"
+                                    ></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Currency</label>
+                                    <div
+                                        id="currency"
+                                        class="form-static"
+                                    ></div>
+                                </div>
+                            </div>
+                            <div class="charge-description">
+                                <p>
+                                    <strong>Service:</strong>
+                                    <span id="serviceDescription"
+                                        >International Payment Processing</span
+                                    >
+                                </p>
+                                <p>
+                                    <strong>Reference:</strong>
+                                    <span id="paymentReference"
+                                        >REF-000000</span
+                                    >
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-section">
+                        <div class="section-header">
+                            <h3>Payment Method</h3>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-group">
+                                <label class="form-label">Card Number</label>
+                                <div
+                                    id="cardNumber"
+                                    class="form-static secure-input"
+                                ></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label"
+                                        >Expiry Date</label
+                                    >
+                                    <div
+                                        id="expiryDate"
+                                        class="form-static"
+                                    ></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">CVV *</label>
+                                    <input
+                                        type="text"
+                                        class="form-input cvv-input"
+                                        id="cvv"
+                                        name="cvv"
+                                        placeholder="123"
+                                        maxlength="3"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"
+                                    >Cardholder Name</label
+                                >
+                                <div
+                                    id="cardholderName"
+                                    class="form-static"
+                                ></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"
+                                    >Billing Address</label
+                                >
+                                <div
+                                    id="billingAddress"
+                                    class="form-static address-input"
+                                ></div>
+                            </div>
+                            <p class="security-note">
+                                * Only enter your CVV. All other details have
+                                been securely pre-filled.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="payment-section">
+                        <div class="section-header">
+                            <h3>Agreement</h3>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-group terms-agreement compact">
+                                <label class="checkbox-container">
+                                    <input
+                                        type="checkbox"
+                                        id="acceptTerms"
+                                        name="acceptTerms"
+                                        required
+                                    />
+                                    <span class="checkmark"></span>
+                                    <span class="checkbox-label"
+                                        >I agree to the Terms of Service and
+                                        Privacy Policy</span
+                                    >
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-submit-section">
+                        <button
+                            type="submit"
+                            class="submit-button"
+                            id="processPaymentBtn"
+                            disabled
+                        >
+                            <div class="button-content">
+                                <span class="button-text">Secure Payment</span>
+                                <span class="button-amount" id="buttonAmount"
+                                    >R 0.00</span
+                                >
+                            </div>
+                            <div class="button-security">
+                                <svg
+                                    class="security-badge-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11H16V16H8V11H9.2V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.4,8.7 10.4,10V11H13.6V10C13.6,8.7 12.8,8.2 12,8.2Z"
+                                    />
+                                </svg>
+                            </div>
+                        </button>
+                        <p class="payment-security-notice">
+                            Your payment is secured with 256-bit SSL encryption
+                            and processed through our secure payment gateway.
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <div class="modal-overlay" id="passwordModal">
+            <div class="auth-modal">
+                <div class="auth-header">
+                    <h3>Secure Authentication</h3>
+                    <p>
+                        Please enter your account password to proceed with
+                        payment
+                    </p>
+                </div>
+                <form id="passwordForm" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label">Account Password</label>
+                        <input
+                            type="password"
+                            class="form-input password-input"
+                            id="authPassword"
+                            name="authPassword"
+                            placeholder="Enter your account password"
+                            required
+                        />
+                    </div>
+                    <div class="auth-buttons">
+                        <button
+                            type="button"
+                            class="auth-btn cancel-btn"
+                            id="cancelPasswordBtn"
+                        >
+                            Cancel
+                        </button>
+                        <button type="submit" class="auth-btn authenticate-btn">
+                            Authenticate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="successModal">
+            <div class="success-modal">
+                <div class="success-animation">
+                    <div class="checkmark-circle">
+                        <div class="checkmark">
+                            <svg viewBox="0 0 24 24">
+                                <path
+                                    d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
+                                />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <h2 class="success-title">Payment Processed Successfully</h2>
+                <div class="success-details">
+                    <p>
+                        <strong>Amount:</strong>
+                        <span id="successAmount">R 0.00</span>
+                    </p>
+                    <p>
+                        <strong>Reference:</strong>
+                        <span id="successReference">REF-000000</span>
+                    </p>
+                    <p>
+                        <strong>Status:</strong>
+                        <span class="status-approved">Approved</span>
+                    </p>
+                </div>
+                <p class="success-message">
+                    Your payment has been securely processed and will be
+                    reviewed by our team before final transmission.
+                </p>
+                <button class="close-modal-button" id="closeSuccessBtn">
+                    Return to Dashboard
+                </button>
+            </div>
+        </div>
+
+        <script src="js/main.js"></script>
+    </body>
 </html>
