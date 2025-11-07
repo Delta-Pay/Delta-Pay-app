@@ -42,6 +42,38 @@ Delta pay is a mockup of an international payment solution. It features multiple
 </table>
 
 ---
+## Getting Started & Development
+
+### Prerequisites
+
+Before running Delta Pay, ensure you have the following installed:
+
+- **Deno** (v1.30 or higher) - Backend runtime
+  - Install: Visit [https://deno.land/#installation](https://deno.land/#installation)
+  - Verify: `deno --version`
+- **Node.js** (v16 or higher) - Frontend development
+  - Install: Visit [https://nodejs.org/](https://nodejs.org/)
+  - Verify: `node --version`
+
+### Quick Start Scripts
+
+Delta Pay includes convenient start scripts for different platforms:
+
+#### Windows
+```cmd
+start.bat
+```
+This script will:
+- Verify Deno installation
+- Check for Node.js (warns if missing)
+- Start the backend server on port 3623
+- Display the server URL: `http://localhost:3623`
+
+#### macOS/Linux
+```bash
+./start.sh
+```
+This script performs the same checks and starts the backend server.
 
 ## Access Control & User Roles
 
@@ -177,22 +209,22 @@ The admin portal includes a comprehensive user registration system (`CreateUser.
 - Parameterised queries - [SQL injection]
 - CSRF tokens - [Cross-Site Request Forgery]
 - Rate limiting - [Brute force attacks]
-- Database - SQLite (Not ideal for this use case, but simplifies it)
+- Database - SQLite 
 
 ## Security Infrastructure
 
-- Cloudflare - [DDoS attacks] (Implement later)
-- Cloudflare Tunnel - [MITM attacks] (Implement later)
-- WAF (Web Application Firewall) - Application protection (Implement later)
-- PCI DSS compliance - Payment security (Implement later)
+- Cloudflare - [DDoS attacks] 
+- Cloudflare Tunnel - [MITM attacks] 
+- WAF (Web Application Firewall) - Application protection 
+- PCI DSS compliance - Payment security 
 - Tokenisation - Sensitive data protection
 
 ## DevSecOps Pipeline
 
 - GitHub - Version control
-- CircleCI - CI/CD pipeline (Implement later)
-- SonarQube - Static code analysis (Implement later)
-- ScoutSuite - Cloud security auditing (Implement later)
+- CircleCI - CI/CD pipeline 
+- SonarQube - Static code analysis 
+- ScoutSuite - Cloud security auditing 
 
 ## Data Security
 
@@ -200,10 +232,3 @@ The admin portal includes a comprehensive user registration system (`CreateUser.
 - Database tokenisation - Payment data
 - Structured JSON logging - Security monitoring
 - Session token regeneration - [Session fixation]
-
-## Additional Components
-
-- SWIFT integration - International payments (not needed, it's a mockup)
-- Multi-currency support - Currency handling (symbols)
-- Pre-registered employee system - No registration required (give temp users)
-- Transaction verification workflow - Employee approval process (admin page with employee approval)
